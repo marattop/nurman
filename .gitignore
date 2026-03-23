@@ -1,12 +1,3 @@
+# Игнорируем только сборщики
 /vendor/
 /node_modules/
-/storage/framework/cache/*
-/storage/framework/sessions/*
-/storage/framework/views/*
-/storage/logs/*
-/.env
-!/.env.example
-/composer.phar
-/.idea/
-/.vscode/
-*.log
