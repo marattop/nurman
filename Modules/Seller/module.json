@@ -1,0 +1,12 @@
+{
+    "name": "Seller",
+    "alias": "seller",
+    "description": "Модуль продавца - продажи, корзина, чеки, купоны",
+    "keywords": ["nurman", "seller", "pos", "sales"],
+    "priority": 3,
+    "providers": [
+        "Modules\\Seller\\Providers\\SellerServiceProvider"
+    ],
+    "files": [],
+    "requires": ["Core"]
+}

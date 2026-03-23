@@ -1,0 +1,31 @@
+{
+    "name": "modules/seller",
+    "description": "Модуль продавца для системы NURMAN",
+    "authors": [
+        {
+            "name": "NURMAN",
+            "email": "info@nurman.kg"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\Seller\\Providers\\SellerServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Seller\\": "",
+            "Modules\\Seller\\Database\\Factories\\": "database/factories/",
+            "Modules\\Seller\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Seller\\Tests\\": "tests/"
+        }
+    },
+    "require": {}
+}

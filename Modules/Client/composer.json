@@ -1,0 +1,31 @@
+{
+    "name": "modules/client",
+    "description": "Модуль клиента для системы NURMAN",
+    "authors": [
+        {
+            "name": "NURMAN",
+            "email": "info@nurman.kg"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\Client\\Providers\\ClientServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Client\\": "",
+            "Modules\\Client\\Database\\Factories\\": "database/factories/",
+            "Modules\\Client\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Client\\Tests\\": "tests/"
+        }
+    },
+    "require": {}
+}

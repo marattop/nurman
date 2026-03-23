@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проверка безопасности - NURMAN</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background: #1a1a2e;
+            color: #fff;
+        }
+        h1 { color: #10b981; }
+        .test-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            background: #16213e;
+            border-radius: 8px;
+        }
+        .secure { color: #10b981; }
+        .insecure { color: #ef4444; }
+        .path { font-family: monospace; }
+        .status { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🔒 Проверка безопасности</h1>
+    <p>Скрипт проверяет, заблокированы ли чувствительные файлы и папки.</p>
+    
+    <h2>Чувствительные файлы (должны быть 403)</h2>
+    <div id="files-test"></div>
+    
+    <h2>Чувствительные папки (должны быть 403)</h2>
+    <div id="folders-test"></div>
+    
+    <h2>Публичные маршруты (должны работать)</h2>
+    <div id="public-test"></div>
+
+    <script>
+        const sensitiveFiles = [
+            '/.env',
+            '/config/app.php',
+            '/config/database.php',
+            '/database/factories/UserFactory.php',
+            '/composer.json',
+            '/composer.lock',
+            '/.git/config',
+        ];
+
+        const sensitiveFolders = [
+            '/vendor/',
+            '/storage/',
+            '/bootstrap/',
+            '/tests/',
+            '/routes/',
+            '/resources/',
+        ];
+
+        const publicRoutes = [
+            '/login',
+            '/seller/pos',
+            '/seller/customers',
+        ];
+
+        async function checkUrl(url) {
+            try {
+                const response = await fetch(url, { method: 'HEAD' });
+                return { status: response.status, ok: response.ok };
+            } catch (e) {
+                return { status: 'ERR', ok: false };
+            }
+        }
+
+        function renderTest(containerId, items, expectedBlocked) {
+            const container = document.getElementById(containerId);
+            items.forEach(async (item) => {
+                const result = await checkUrl(item);
+                const isSecure = expectedBlocked ? result.status === 403 : result.ok;
+                const statusText = expectedBlocked 
+                    ? (result.status === 403 ? '✓ ЗАБЛОКИРОВАНО' : '✗ ДОСТУПНО!')
+                    : (result.ok ? '✓ РАБОТАЕТ' : '✗ ОШИБКА');
+                const statusClass = isSecure ? 'secure' : 'insecure';
+                
+                container.innerHTML += `
+                    <div class="test-item">
+                        <span class="path">${item}</span>
+                        <span class="status ${statusClass}">${statusText} (${result.status})</span>
+                    </div>
+                `;
+            });
+        }
+
+        renderTest('files-test', sensitiveFiles, true);
+        renderTest('folders-test', sensitiveFolders, true);
+        renderTest('public-test', publicRoutes, false);
+    </script>
+</body>
+</html>

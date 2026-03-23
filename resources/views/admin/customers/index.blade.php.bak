@@ -1,0 +1,650 @@
+@extends('layouts.app')
+
+@section('title', 'Клиенты и купоны - Администратор')
+
+@section('content')
+<style>
+    .data-card {
+        background: var(--bg-card);
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        border: 1px solid var(--border-color);
+    }
+    .filter-section {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .table {
+        --bs-table-hover-bg: var(--table-hover);
+        color: var(--text-primary);
+    }
+    .table th {
+        font-weight: 600;
+        color: var(--primary);
+        border-top: none;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: var(--table-header-bg);
+    }
+    .table td {
+        padding: 1rem 1.25rem;
+        vertical-align: middle;
+        color: var(--text-primary);
+    }
+    .btn-action {
+        padding: 0.375rem 0.625rem;
+        border-radius: 6px;
+        transition: 0.2s;
+    }
+    .page-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 1.5rem;
+    }
+    .page-title-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--gradient);
+        color: white;
+    }
+    .type-badge {
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.8rem;
+    }
+    .type-percent { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .type-fixed { background: var(--success-bg); color: var(--success); }
+    .type-wholesale { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .status-badge {
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.8rem;
+    }
+    .status-active { background: var(--success-bg); color: var(--success); }
+    .status-inactive { background: rgba(107, 114, 128, 0.15); color: var(--text-secondary); }
+    .form-control, .form-select {
+        background: var(--bg-card);
+        border-color: var(--border-color);
+        color: var(--text-primary);
+    }
+    .form-control:focus, .form-select:focus {
+        background: var(--bg-card);
+        border-color: var(--primary);
+        color: var(--text-primary);
+        box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.25);
+    }
+    .form-control::placeholder {
+        color: var(--text-muted);
+    }
+    .input-group-text {
+        background: var(--bg-card);
+        border-color: var(--border-color);
+        color: var(--text-secondary);
+    }
+    .modal-content {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+    }
+    .modal-header {
+        background: var(--gradient-warm);
+        color: white;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .modal-title {
+        color: white;
+    }
+    .modal-body {
+        color: var(--text-primary);
+    }
+    .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+    [data-theme="light"] .btn-close {
+        filter: none;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="page-header">
+        <div class="page-title-icon">
+            <i class="bi bi-person-heart"></i>
+        </div>
+        <h1 class="h3 mb-0" style="color: var(--primary);">Клиенты и купоны</h1>
+        <div class="ms-auto">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCouponModal">
+                <i class="bi bi-ticket-perforated"></i> Создать купон
+            </button>
+        </div>
+    </div>
+
+    {{-- Таблица --}}
+    <div class="data-card">
+        <div class="filter-section">
+            <form action="{{ route('admin.customers.index') }}" method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: var(--bg-card); border-color: var(--border-color); color: var(--text-secondary);"><i class="bi bi-search"></i></span>
+                        <input type="text" name="search" class="form-control" style="background: var(--bg-card); border-color: var(--border-color); color: var(--text-primary);" placeholder="Поиск клиентов..." value="{{ request('search') }}">
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i> Поиск
+                        </button>
+                        <a href="{{ route('admin.customers.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg"></i> Сброс
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Клиент</th>
+                        <th>Телефон</th>
+                        <th>Код купона</th>
+                        <th>Тип скидки</th>
+                        <th>Размер</th>
+                        <th>Срок действия</th>
+                        <th>Статус</th>
+                        <th>QR-код</th>
+                        <th style="width: 150px;">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($coupons as $coupon)
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ $coupon->customer?->full_name ?? '—' }}</div>
+                        </td>
+                        <td>{{ $coupon->customer?->phone ?? '—' }}</td>
+                        <td>
+                            <code style="background: var(--primary-light); padding: 4px 8px; border-radius: 4px; color: #059669;">{{ $coupon->code }}</code>
+                        </td>
+                        <td>
+                            @if($coupon->discount_type === 'percent')
+                                <span class="type-badge type-percent"><i class="bi bi-percent"></i> Процент</span>
+                            @else
+                                <span class="type-badge type-wholesale"><i class="bi bi-bag"></i> Опт</span>
+                            @endif
+                        </td>
+                        <td class="fw-semibold">
+                            @if($coupon->discount_type === 'wholesale')
+                                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                                    <i class="bi bi-tag"></i> Оптовая цена
+                                </span>
+                            @else
+                                {{ $coupon->discount_value }}
+                                @if($coupon->discount_type === 'percent')<span class="text-muted">%</span>@endif
+                            @endif
+                        </td>
+                        <td>
+                            @if($coupon->valid_until)
+                                <small>{{ $coupon->valid_until->format('d.m.Y') }}</small>
+                            @else
+                                <span class="text-muted">Бессрочно</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($coupon->is_active)
+                                <span class="status-badge status-active">
+                                    <i class="bi bi-check-circle"></i> Активен
+                                </span>
+                            @else
+                                <span class="status-badge status-inactive">
+                                    <i class="bi bi-x-circle"></i> Неактивен
+                                </span>
+                            @endif
+                        </td>
+                        <td>
+                            @php
+                                $qrCode = $coupon->qrCode;
+                            @endphp
+                            @if($qrCode)
+                                <button class="badge bg-success border-0 show-qr-btn"
+                                    style="cursor: pointer;"
+                                    data-coupon-id="{{ $coupon->id }}"
+                                    data-coupon-code="{{ $coupon->code }}"
+                                    data-customer-name="{{ $coupon->customer->full_name ?? 'Клиент' }}"
+                                    data-customer-phone="{{ $coupon->customer->phone ?? '' }}"
+                                    title="Показать QR-код">
+                                    <i class="bi bi-qr-code"></i> Есть
+                                </button>
+                            @else
+                                <span class="badge bg-secondary"><i class="bi bi-qr-code-slash"></i> Нет QR-кода</span>
+                            @endif
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-action edit-coupon-btn" 
+                                    style="background: var(--primary-light); color: var(--primary-dark);"
+                                    title="Редактировать"
+                                    data-id="{{ $coupon->id }}"
+                                    data-phone="{{ $coupon->customer?->phone ?? '' }}"
+                                    data-full-name="{{ $coupon->customer?->full_name ?? '' }}"
+                                    data-discount-type="{{ $coupon->discount_type }}"
+                                    data-discount-value="{{ $coupon->discount_value }}"
+                                    data-is-active="{{ $coupon->is_active ? '1' : '0' }}"
+                                    data-valid-until="{{ $coupon->valid_until ? $coupon->valid_until->format('Y-m-d') : '' }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-action toggle-block-coupon-btn" 
+                                    style="background: #FEF3C7; color: #D97706;" 
+                                    title="{{ $coupon->is_active ? 'Заблокировать' : 'Разблокировать' }}"
+                                    data-id="{{ $coupon->id }}"
+                                    data-is-active="{{ $coupon->is_active ? '1' : '0' }}">
+                                    <i class="bi bi-{{ $coupon->is_active ? 'lock' : 'unlock' }}"></i>
+                                </button>
+                                <form action="{{ route('admin.customers.delete', $coupon) }}" method="POST" class="d-inline" onsubmit="return confirm('Вы уверены?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-action" style="background: #FEE2E2; color: #DC2626;" title="Удалить">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div style="font-size: 3rem; color: var(--primary-light);">
+                                <i class="bi bi-inbox"></i>
+                            </div>
+                            <p class="text-muted mt-3">Клиентов не найдено</p>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        @if($coupons->hasPages())
+        <div class="p-3">
+            {{ $coupons->links() }}
+        </div>
+        @endif
+    </div>
+</div>
+
+{{-- Модальное окно для создания --}}
+<div class="modal fade" id="addCouponModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ route('admin.customers.store') }}" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-ticket-perforated"></i>
+                        Создать купон
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Телефон <span class="text-danger">*</span></label>
+                        <input type="text" name="phone" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ФИО</label>
+                        <input type="text" name="full_name" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Тип скидки <span class="text-danger">*</span></label>
+                        <select name="discount_type" class="form-select" required onchange="toggleDiscountValueFieldCreate()">
+                            <option value="percent">Процент (%)</option>
+                            <option value="wholesale">Оптовая цена</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="discountValueFieldCreate">
+                        <label class="form-label">Размер скидки <span class="text-danger">*</span></label>
+                        <input type="number" name="discount_value" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Срок действия</label>
+                        <select name="validity_period" class="form-select" onchange="toggleCustomValidity()">
+                            <option value="1">1 месяц</option>
+                            <option value="3">3 месяца</option>
+                            <option value="6">6 месяцев</option>
+                            <option value="12" selected>1 год</option>
+                            <option value="999">Бессрочно</option>
+                            <option value="custom">Свой срок</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="customValidityField" style="display: none;">
+                        <label class="form-label">Дата окончания действия</label>
+                        <input type="date" name="valid_until" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Модальное окно для редактирования --}}
+<div class="modal fade" id="editCouponModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editCouponForm" method="POST">
+                @csrf
+                @method('PUT')
+                <input type="hidden" id="editCouponId" name="id">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil"></i>
+                        Редактировать купон
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Телефон</label>
+                        <input type="text" id="editCouponPhone" name="phone" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ФИО</label>
+                        <input type="text" id="editCouponFullName" name="full_name" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Тип скидки <span class="text-danger">*</span></label>
+                        <select name="discount_type" id="editDiscountType" class="form-select" required onchange="toggleDiscountValueField()">
+                            <option value="percent">Процент (%)</option>
+                            <option value="wholesale">Оптовая цена</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="discountValueField">
+                        <label class="form-label">Размер скидки <span class="text-danger">*</span></label>
+                        <input type="number" name="discount_value" id="editDiscountValue" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Статус</label>
+                        <select name="is_active" id="editIsActive" class="form-select">
+                            <option value="1">Активен</option>
+                            <option value="0">Неактивен</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Срок действия</label>
+                        <input type="date" name="valid_until" id="editValidUntil" class="form-control">
+                        <small class="form-text text-muted">Оставьте пустым для бессрочного действия</small>
+                    </div>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-warning w-100" onclick="resetPassword()">
+                            <i class="bi bi-key"></i> Сбросить пароль
+                        </button>
+                        <small class="form-text text-muted">Сгенерировать новый пароль для клиента</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Показ/скрытие поля размера скидки (для создания)
+function toggleDiscountValueFieldCreate() {
+    var discountType = document.querySelector('#addCouponModal select[name="discount_type"]').value;
+    var valueField = document.getElementById('discountValueFieldCreate');
+    var valueInput = valueField.querySelector('input');
+
+    if (discountType === 'wholesale') {
+        valueField.style.display = 'none';
+        valueInput.required = false;
+    } else {
+        valueField.style.display = 'block';
+        valueInput.required = true;
+    }
+}
+
+// Показ/скрытие поля пользовательского срока
+function toggleCustomValidity() {
+    var select = document.querySelector('select[name="validity_period"]');
+    var customField = document.getElementById('customValidityField');
+    var dateInput = customField.querySelector('input');
+    
+    if (select.value === 'custom') {
+        customField.style.display = 'block';
+        dateInput.required = true;
+    } else {
+        customField.style.display = 'none';
+        dateInput.required = false;
+    }
+}
+
+// Показ/скрытие поля размера скидки (для редактирования)
+function toggleDiscountValueField() {
+    var discountType = document.getElementById('editDiscountType').value;
+    var valueField = document.getElementById('discountValueField');
+    var valueInput = document.getElementById('editDiscountValue');
+
+    if (discountType === 'wholesale') {
+        valueField.style.display = 'none';
+        valueInput.required = false;
+    } else {
+        valueField.style.display = 'block';
+        valueInput.required = true;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка кнопки редактирования
+    document.querySelectorAll('.edit-coupon-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id = this.dataset.id;
+            var phone = this.dataset.phone;
+            var fullName = this.dataset.fullName;
+            var discountType = this.dataset.discountType;
+            var discountValue = this.dataset.discountValue;
+            var isActive = this.dataset.isActive;
+            var validUntil = this.dataset.validUntil;
+
+            // Заполняем форму редактирования
+            document.getElementById('editCouponId').value = id;
+            document.getElementById('editCouponPhone').value = phone;
+            document.getElementById('editCouponFullName').value = fullName;
+
+            // Выбираем правильный тип скидки
+            var select = document.getElementById('editDiscountType');
+            select.value = discountType;
+
+            // Устанавливаем размер скидки
+            document.getElementById('editDiscountValue').value = discountValue;
+            
+            // Устанавливаем статус
+            document.getElementById('editIsActive').value = isActive;
+            
+            // Устанавливаем срок действия
+            document.getElementById('editValidUntil').value = validUntil;
+
+            // Показываем/скрываем поле размера скидки
+            toggleDiscountValueField();
+
+            // Обновляем action формы
+            document.getElementById('editCouponForm').action = '{{ route('admin.customers.update', '__ID__') }}'.replace('__ID__', id);
+
+            // Показываем модальное окно
+            var editModal = new bootstrap.Modal(document.getElementById('editCouponModal'));
+            editModal.show();
+        });
+    });
+
+    // Обработка кнопки заблокировать/разблокировать
+    document.querySelectorAll('.toggle-block-coupon-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id = this.dataset.id;
+            var isActive = this.dataset.isActive === '1';
+            var confirmMsg = isActive ? 'Заблокировать купон?' : 'Разблокировать купон?';
+            
+            if (confirm(confirmMsg)) {
+                // Создаём форму для отправки запроса
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '{{ url('admin/customers/toggle-block') }}/' + id;
+                
+                var csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = document.querySelector('meta[name="csrf-token"]').content;
+                
+                var methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                methodInput.value = 'PUT';
+
+                var activeInput = document.createElement('input');
+                activeInput.type = 'hidden';
+                activeInput.name = 'is_active';
+                activeInput.value = isActive ? '0' : '1';
+
+                form.appendChild(csrfInput);
+                form.appendChild(methodInput);
+                form.appendChild(activeInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    });
+
+    // Показать QR-код клиента
+    window.showQrCode = function(customerId, customerName, customerPhone) {
+        // Генерируем данные для QR-кода
+        var qrData = JSON.stringify({
+            type: 'customer',
+            customer_id: customerId,
+            phone: customerPhone
+        });
+
+        // Используем API для генерации QR-кода
+        var qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrData);
+
+        document.getElementById('qrCodeImage').src = qrCodeUrl;
+        document.getElementById('qrCodeCustomerName').textContent = customerName;
+        document.getElementById('qrCodeCustomerPhone').textContent = customerPhone;
+
+        var modal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+        modal.show();
+    };
+
+    // Печать QR-кода
+    window.printQrCode = function() {
+        var printWindow = window.open('', '', 'height=400,width=400');
+        var qrSrc = document.getElementById('qrCodeImage').src;
+        var name = document.getElementById('qrCodeCustomerName').textContent;
+        var phone = document.getElementById('qrCodeCustomerPhone').textContent;
+
+        printWindow.document.write('<html><head><title>QR-код</title>');
+        printWindow.document.write('<style>');
+        printWindow.document.write('body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }');
+        printWindow.document.write('img { max-width: 200px; margin: 10px; }');
+        printWindow.document.write('h3 { margin: 10px 0 5px; font-size: 16px; }');
+        printWindow.document.write('p { margin: 0; color: #666; }');
+        printWindow.document.write('</style></head><body>');
+        printWindow.document.write('<img src="' + qrSrc + '" alt="QR-код">');
+        printWindow.document.write('<h3>' + name + '</h3>');
+        printWindow.document.write('<p>' + phone + '</p>');
+        printWindow.document.write('</body></html>');
+
+        printWindow.document.close();
+        printWindow.print();
+    };
+
+    // Обработка кнопок показа QR-кода
+    document.querySelectorAll('.show-qr-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var couponId = this.dataset.couponId;
+            var couponCode = this.dataset.couponCode;
+            var customerName = this.dataset.customerName;
+            var customerPhone = this.dataset.customerPhone;
+
+            // Генерируем данные для QR-кода (купон)
+            var qrData = JSON.stringify({
+                type: 'coupon',
+                coupon_id: couponId,
+                code: couponCode
+            });
+
+            // Используем API для генерации QR-кода
+            var qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrData);
+
+            document.getElementById('qrCodeImage').src = qrCodeUrl;
+            document.getElementById('qrCodeCustomerName').textContent = customerName + ' (' + couponCode + ')';
+            document.getElementById('qrCodeCustomerPhone').textContent = customerPhone || '';
+
+            var modal = new bootstrap.Modal(document.getElementById('qrCodeModal'));
+            modal.show();
+        });
+    });
+});
+
+// Сброс пароля клиента
+function resetPassword() {
+    const customerId = document.getElementById('editCouponId').value;
+    if (!customerId) return;
+    
+    if (!confirm('Сгенерировать новый пароль для клиента?')) return;
+    
+    fetch(`/admin/customers/${customerId}/reset-password`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('Новый пароль: ' + data.password + '\n\nСообщите этот пароль клиенту!');
+        } else {
+            alert('Ошибка: ' + data.message);
+        }
+    })
+    .catch(err => alert('Ошибка сети: ' + err));
+}
+</script>
+
+{{-- Модальное окно просмотра QR-кода --}}
+<div class="modal fade" id="qrCodeModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-qr-code"></i>
+                    QR-код клиента
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="qrCodeImage" src="" alt="QR-код" class="img-fluid mb-3" style="max-width: 200px;">
+                <h6 class="fw-bold mb-1" id="qrCodeCustomerName"></h6>
+                <p class="text-muted mb-0" id="qrCodeCustomerPhone"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-sm btn-primary" onclick="printQrCode()">
+                    <i class="bi bi-printer"></i> Печать
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection

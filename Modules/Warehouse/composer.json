@@ -1,0 +1,31 @@
+{
+    "name": "modules/warehouse",
+    "description": "Модуль склада для системы NURMAN",
+    "authors": [
+        {
+            "name": "NURMAN",
+            "email": "info@nurman.kg"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\Warehouse\\Providers\\WarehouseServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Warehouse\\": "",
+            "Modules\\Warehouse\\Database\\Factories\\": "database/factories/",
+            "Modules\\Warehouse\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Warehouse\\Tests\\": "tests/"
+        }
+    },
+    "require": {}
+}

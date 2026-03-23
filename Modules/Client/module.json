@@ -1,0 +1,12 @@
+{
+    "name": "Client",
+    "alias": "client",
+    "description": "Модуль клиента - покупки, купоны, история, карта лояльности",
+    "keywords": ["nurman", "client", "loyalty", "coupons"],
+    "priority": 5,
+    "providers": [
+        "Modules\\Client\\Providers\\ClientServiceProvider"
+    ],
+    "files": [],
+    "requires": ["Core"]
+}

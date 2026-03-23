@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Тест QR-кода</title>
+    <style>
+        body {
+            text-align: center;
+            padding: 50px;
+            font-family: Arial;
+            background: #f0f0f0;
+        }
+        h1 { color: #10b981; }
+        .qr-wrapper {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .qr-wrapper img {
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>✓ Тест генерации QR-кода</h1>
+    <div class="qr-wrapper">
+        <img id="test-qr" src="" alt="QR Code" />
+    </div>
+    <p><strong>Артикул: ART113907</strong></p>
+    <p id="status" style="color: #666;">Генерация...</p>
+    
+    <script>
+        // Используем Google Charts API для генерации QR
+        const article = 'ART113907';
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(article)}&color=000000&bgcolor=ffffff&margin=10`;
+        
+        const img = document.getElementById('test-qr');
+        img.src = qrUrl;
+        
+        img.onload = function() {
+            document.getElementById('status').innerHTML = '✓ QR-код успешно сгенерирован!';
+            document.getElementById('status').style.color = '#10b981';
+        };
+        
+        img.onerror = function() {
+            document.getElementById('status').innerHTML = '✗ Ошибка загрузки QR';
+            document.getElementById('status').style.color = 'red';
+        };
+    </script>
+</body>
+</html>

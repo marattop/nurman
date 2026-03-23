@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест QR-кода клиента</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        img {
+            max-width: 200px;
+            margin: 10px 0;
+        }
+        .result {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #059669;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Тест QR-кода клиента</h1>
+    
+    <div class="test-section">
+        <h3>1. Введите данные клиента</h3>
+        <input type="text" id="customerId" placeholder="ID клиента" value="1" style="padding: 8px; margin: 5px;"><br>
+        <input type="text" id="customerPhone" placeholder="Телефон" value="+996779238856" style="padding: 8px; margin: 5px;"><br>
+        <input type="text" id="customerName" placeholder="Имя" value="Эмилбеков Элмир" style="padding: 8px; margin: 5px;"><br>
+        <button onclick="generateQr()">Сгенерировать QR-код</button>
+    </div>
+
+    <div class="test-section">
+        <h3>2. QR-код</h3>
+        <div id="qrContainer"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Данные в QR-коде</h3>
+        <div id="qrData" class="result">Нажмите "Сгенерировать QR-код"</div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Как проверить:</h3>
+        <ol>
+            <li>Наведите камеру телефона на QR-код выше</li>
+            <li>Или используйте приложение для сканирования QR</li>
+            <li>Должны увидеть JSON с данными клиента</li>
+            <li>Нажмите кнопку "Проверить сканирование" ниже и введите данные из QR</li>
+        </ol>
+        <button onclick="testScan()">✅ Проверить сканирование</button>
+    </div>
+
+    <script>
+        function generateQr() {
+            var customerId = document.getElementById('customerId').value;
+            var customerPhone = document.getElementById('customerPhone').value;
+            var customerName = document.getElementById('customerName').value;
+
+            // Генерируем данные для QR-кода
+            var qrData = JSON.stringify({
+                type: 'customer',
+                customer_id: customerId,
+                phone: customerPhone
+            });
+
+            // Показываем данные
+            document.getElementById('qrData').textContent = qrData;
+
+            // Генерируем QR-код через API
+            var qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrData);
+            
+            document.getElementById('qrContainer').innerHTML = 
+                '<img src="' + qrCodeUrl + '" alt="QR-код">' +
+                '<br><a href="' + qrCodeUrl + '" target="_blank" download="qr-code.png">📥 Скачать QR-код</a>';
+        }
+
+        function testScan() {
+            var scannedData = prompt('Отсканируйте QR-код и вставьте данные сюда:');
+            if (scannedData) {
+                try {
+                    var data = JSON.parse(scannedData);
+                    var customerId = document.getElementById('customerId').value;
+                    var customerPhone = document.getElementById('customerPhone').value;
+
+                    if (data.type === 'customer' && 
+                        data.customer_id == customerId && 
+                        data.phone === customerPhone) {
+                        alert('✅ QR-код работает правильно!\n\nДанные совпали:\n- Тип: ' + data.type + '\n- ID клиента: ' + data.customer_id + '\n- Телефон: ' + data.phone);
+                    } else {
+                        alert('❌ Данные не совпали!\n\nОжидалось:\n- customer_id: ' + customerId + '\n- phone: ' + customerPhone + '\n\nПолучено:\n' + JSON.stringify(data, null, 2));
+                    }
+                } catch (e) {
+                    alert('❌ Ошибка parsing JSON: ' + e.message + '\n\nУбедитесь, что сканировали правильный QR-код');
+                }
+            }
+        }
+
+        // Генерируем при загрузке
+        generateQr();
+    </script>
+</body>
+</html>

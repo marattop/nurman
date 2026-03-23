@@ -1,0 +1,21 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Разрешить доступ к публичным файлам
+    RewriteCond %{REQUEST_URI} !^/public/
+    
+    # ВСЕ запросы перенаправлять в public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Блокировка прямого доступа к чувствительным файлам
+<FilesMatch "^\.env|^\.git|composer\.json|composer\.lock|package\.json|phpunit\.xml">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Блокировка доступа к папкам (кроме public/)
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(database|vendor|config|storage|bootstrap|tests|routes|resources|app)/ - [F,L]
+</IfModule>

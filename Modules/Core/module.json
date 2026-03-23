@@ -1,0 +1,12 @@
+{
+    "name": "Core",
+    "alias": "core",
+    "description": "Базовый модуль системы NURMAN - аутентификация, роли, пользователи",
+    "keywords": ["nurman", "core", "auth", "roles"],
+    "priority": 1,
+    "providers": [
+        "Modules\\Core\\Providers\\CoreServiceProvider"
+    ],
+    "files": [],
+    "requires": []
+}

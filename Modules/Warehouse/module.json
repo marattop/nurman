@@ -1,0 +1,12 @@
+{
+    "name": "Warehouse",
+    "alias": "warehouse",
+    "description": "Модуль склада - товары, закупки, остатки, QR-коды, инвентаризация",
+    "keywords": ["nurman", "warehouse", "stock", "qr"],
+    "priority": 4,
+    "providers": [
+        "Modules\\Warehouse\\Providers\\WarehouseServiceProvider"
+    ],
+    "files": [],
+    "requires": ["Core"]
+}
