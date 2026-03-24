@@ -1,207 +1,107 @@
-@extends('layouts.app')
-
-@section('title', 'Отчёт по продажам')
-
+@extends('layouts.admin')
+@section('page-title', 'Продажи')
 @section('content')
-<style>
-    .data-card {
-        background: var(--bg-card);
-        border-radius: 12px;
-        box-shadow: var(--card-shadow);
-    }
-    .filter-section {
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid var(--border-color);
-    }
-    .stat-card {
-        background: var(--bg-card);
-        border-radius: 12px;
-        padding: 1.25rem;
-        box-shadow: var(--card-shadow);
-        border-left: 4px solid var(--primary);
-    }
-    .stat-label {
-        color: var(--text-secondary);
-        font-size: 0.875rem;
-        font-weight: 500;
-        margin-bottom: 0.25rem;
-    }
-    .stat-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--primary);
-        margin: 0;
-    }
-    .table {
-        --bs-table-hover-bg: var(--table-hover);
-    }
-    .table th {
-        font-weight: 600;
-        color: var(--primary);
-        border-top: none;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .page-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 1.5rem;
-    }
-    .page-title-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--gradient);
-        color: white;
-    }
-    .amount-badge {
-        background: var(--primary-light);
-        color: var(--primary-dark);
-        padding: 0.375rem 0.75rem;
-        border-radius: 6px;
-        font-weight: 600;
-    }
-    .form-control, .form-select {
-        background: var(--bg-card);
-        border-color: var(--border-color);
-        color: var(--text-primary);
-    }
-    .form-control:focus, .form-select:focus {
-        background: var(--bg-card);
-        border-color: var(--primary);
-        color: var(--text-primary);
-        box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.25);
-    }
-    .form-label {
-        color: var(--text-primary);
-    }
-</style>
-
-<div class="container-fluid">
-    <div class="page-header">
-        <div class="page-title-icon">
-            <i class="bi bi-graph-up-arrow"></i>
-        </div>
-        <h1 class="h3 mb-0" style="color: var(--primary);">Отчёт по продажам</h1>
-        <div class="ms-auto">
-            <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Назад
-            </a>
-        </div>
+<div class="page-header">
+    <div class="page-icon"><i class="bi bi-graph-up-arrow"></i></div>
+    <div>
+        <h1 class="page-title">Продажи</h1>
+        <p class="page-subtitle">Отчёт по продажам</p>
     </div>
-
-    {{-- Фильтры --}}
-    <div class="data-card mb-4">
-        <div class="filter-section">
-            <form action="{{ route('admin.reports.sales') }}" method="GET" class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label">С даты</label>
-                    <input type="date" name="date_from" class="form-control" value="{{ $dateFrom }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">По дату</label>
-                    <input type="date" name="date_to" class="form-control" value="{{ $dateTo }}">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Магазин</label>
-                    <select name="shop_id" class="form-select">
-                        <option value="">Все магазины</option>
-                        @foreach($shops as $shop)
-                            <option value="{{ $shop->id }}" {{ request('shop_id') == $shop->id ? 'selected' : '' }}>{{ $shop->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-3 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary flex-fill">
-                        <i class="bi bi-search"></i> Сформировать
-                    </button>
-                    <button type="button" class="btn" style="background: var(--gradient); color: white;">
-                        <i class="bi bi-file-earmark-excel"></i> Excel
-                    </button>
-                </div>
-            </form>
-        </div>
+    <div style="margin-left: auto;">
+        <a href="{{ route('admin.reports.index') }}" class="btn btn-outline">
+            <i class="bi bi-arrow-left"></i> Назад
+        </a>
     </div>
+</div>
 
-    {{-- Статистика --}}
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="stat-card">
-                <div class="stat-label">Всего продаж</div>
-                <h3 class="stat-value">{{ $totalTransactions }}</h3>
-            </div>
+{{-- Фильтры --}}
+<div class="card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
+    <form action="{{ route('admin.reports.sales') }}" method="GET" style="padding: 16px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 1; min-width: 150px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #94a3b8;">С даты</label>
+            <input type="date" name="date_from" class="input" value="{{ $dateFrom }}">
         </div>
-        <div class="col-md-4">
-            <div class="stat-card">
-                <div class="stat-label">Общая сумма</div>
-                <h3 class="stat-value">{{ number_format($totalAmount, 2, ',', ' ') }} с</h3>
-            </div>
+        <div style="flex: 1; min-width: 150px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #94a3b8;">По дату</label>
+            <input type="date" name="date_to" class="input" value="{{ $dateTo }}">
         </div>
-        <div class="col-md-4">
-            <div class="stat-card">
-                <div class="stat-label">Средний чек</div>
-                <h3 class="stat-value">{{ $totalTransactions > 0 ? number_format($totalAmount / $totalTransactions, 2, ',', ' ') : 0 }} с</h3>
-            </div>
+        <div style="flex: 1; min-width: 150px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #94a3b8;">Магазин</label>
+            <select name="shop_id" class="input">
+                <option value="">Все магазины</option>
+                @foreach($shops as $shop)
+                    <option value="{{ $shop->id }}" {{ request('shop_id') == $shop->id ? 'selected' : '' }}>{{ $shop->name }}</option>
+                @endforeach
+            </select>
         </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i> Сформировать
+            </button>
+        </div>
+    </form>
+</div>
+
+{{-- Статистика --}}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div class="card">
+        <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Всего продаж</div>
+        <div style="font-size: 28px; font-weight: 700; color: #38bdf8;">{{ $totalTransactions }}</div>
     </div>
+    <div class="card">
+        <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Общая сумма</div>
+        <div style="font-size: 28px; font-weight: 700; color: #10b981;">{{ number_format($totalAmount, 0, '.', ' ') }} сом</div>
+    </div>
+    <div class="card">
+        <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Средний чек</div>
+        <div style="font-size: 28px; font-weight: 700; color: #f59e0b;">{{ $totalTransactions > 0 ? number_format($totalAmount / $totalTransactions, 0, '.', ' ') : 0 }} сом</div>
+    </div>
+</div>
 
-    {{-- Таблица --}}
-    <div class="data-card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>Дата</th>
-                        <th>№</th>
-                        <th>Кассир</th>
-                        <th>Магазин</th>
-                        <th>Сумма</th>
-                        <th>Оплата</th>
-                        <th>Товаров</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($sales as $sale)
-                    <tr>
-                        <td>
-                            <div class="fw-semibold">{{ $sale->created_at->format('d.m.Y') }}</div>
-                            <small class="text-muted">{{ $sale->created_at->format('H:i') }}</small>
-                        </td>
-                        <td><code>{{ $sale->id }}</code></td>
-                        <td>{{ $sale->seller?->username ?? '—' }}</td>
-                        <td>{{ $sale->shop?->name ?? '—' }}</td>
-                        <td><span class="amount-badge">{{ number_format($sale->amount, 2) }} с</span></td>
-                        <td>
-                            <span class="badge" style="background: var(--primary-light); color: var(--primary-dark);">
-                                {{ ucfirst($sale->payment_method ?? 'cash') }}
-                            </span>
-                        </td>
-                        <td>{{ $sale->items_count ?? 0 }}</td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="7" class="text-center py-5">
-                            <div style="font-size: 3rem; color: var(--primary-light);">
-                                <i class="bi bi-inbox"></i>
-                            </div>
-                            <p class="text-muted mt-3">Нет данных за выбранный период</p>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        @if($sales->hasPages())
-        <div class="p-3">
-            {{ $sales->links() }}
-        </div>
-        @endif
+{{-- Таблица --}}
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div class="card-header">
+        <h3 class="card-header-title"><i class="bi bi-list-ul" style="color: #38bdf8;"></i> Список продаж</h3>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Дата</th>
+                    <th>№</th>
+                    <th>Кассир</th>
+                    <th>Магазин</th>
+                    <th>Сумма</th>
+                    <th>Оплата</th>
+                    <th>Товаров</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($sales as $sale)
+                <tr>
+                    <td>
+                        <div style="font-weight: 500;">{{ $sale->created_at->format('d.m.Y') }}</div>
+                        <div style="color: #94a3b8; font-size: 13px;">{{ $sale->created_at->format('H:i') }}</div>
+                    </td>
+                    <td style="color: #94a3b8;">{{ $sale->id }}</td>
+                    <td style="color: #94a3b8;">{{ $sale->seller?->username ?? '—' }}</td>
+                    <td style="color: #94a3b8;">{{ $sale->shop?->name ?? '—' }}</td>
+                    <td style="color: #10b981; font-weight: 600;">{{ number_format($sale->amount, 0, '.', ' ') }} сом</td>
+                    <td>
+                        <span class="badge badge-blue">{{ ucfirst($sale->payment_method ?? 'cash') }}</span>
+                    </td>
+                    <td style="color: #94a3b8;">{{ $sale->items_count ?? 0 }}</td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 3rem; color: #64748b;">
+                        <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 12px;"></i>
+                        Нет данных за выбранный период
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 </div>
 @endsection

@@ -1,143 +1,68 @@
-@extends('layouts.app')
-
-@section('title', 'Отчёт по складу')
-
+@extends('layouts.admin')
+@section('page-title', 'Остатки')
 @section('content')
-<style>
-    .data-card {
-        background: var(--bg-card);
-        border-radius: 12px;
-        box-shadow: var(--card-shadow);
-    }
-    .stat-card {
-        background: var(--bg-card);
-        border-radius: 12px;
-        padding: 1.25rem;
-        box-shadow: var(--card-shadow);
-        border-left: 4px solid var(--primary);
-    }
-    .stat-label {
-        color: var(--text-secondary);
-        font-size: 0.875rem;
-        font-weight: 500;
-        margin-bottom: 0.25rem;
-    }
-    .stat-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--primary);
-        margin: 0;
-    }
-    .table {
-        --bs-table-hover-bg: var(--table-hover);
-    }
-    .table th {
-        font-weight: 600;
-        color: var(--primary);
-        border-top: none;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .page-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 1.5rem;
-    }
-    .page-title-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--gradient);
-        color: white;
-    }
-    .value-badge {
-        background: var(--primary-light);
-        color: var(--primary-dark);
-        padding: 0.375rem 0.75rem;
-        border-radius: 6px;
-        font-weight: 600;
-    }
-</style>
-
-<div class="container-fluid">
-    <div class="page-header">
-        <div class="page-title-icon">
-            <i class="bi bi-layers"></i>
-        </div>
-        <h1 class="h3 mb-0" style="color: var(--primary);">Отчёт по складу</h1>
-        <div class="ms-auto">
-            <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Назад
-            </a>
-        </div>
+<div class="page-header">
+    <div class="page-icon"><i class="bi bi-layers"></i></div>
+    <div>
+        <h1 class="page-title">Остатки</h1>
+        <p class="page-subtitle">Отчёт по складу</p>
     </div>
-
-    {{-- Статистика --}}
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="stat-card">
-                <div class="stat-label">Общая стоимость запасов</div>
-                <h3 class="stat-value">{{ number_format($totalValue, 2, ',', ' ') }} с</h3>
-            </div>
-        </div>
+    <div style="margin-left: auto;">
+        <a href="{{ route('admin.reports.index') }}" class="btn btn-outline">
+            <i class="bi bi-arrow-left"></i> Назад
+        </a>
     </div>
+</div>
 
-    {{-- Таблица --}}
-    <div class="data-card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>Товар</th>
-                        <th>Размер</th>
-                        <th>Магазин</th>
-                        <th style="width: 100px;">Количество</th>
-                        <th style="width: 120px;">Цена</th>
-                        <th style="width: 150px;">Стоимость</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($stock as $item)
-                    <tr>
-                        <td>
-                            <div class="fw-semibold">{{ $item->name }}</div>
-                        </td>
-                        <td>
-                            <span class="badge" style="background: var(--primary-light); color: var(--primary-dark);">{{ $item->size }}</span>
-                        </td>
-                        <td>{{ $item->shop_name ?? 'Склад' }}</td>
-                        <td>
-                            <span class="badge" style="background: var(--border-color); color: var(--text-primary);">{{ $item->quantity }} шт</span>
-                        </td>
-                        <td>{{ number_format($item->retail_price, 2) }} с</td>
-                        <td>
-                            <span class="value-badge">{{ number_format($item->total_value, 2, ',', ' ') }} с</span>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <div style="font-size: 3rem; color: var(--primary-light);">
-                                <i class="bi bi-inbox"></i>
-                            </div>
-                            <p class="text-muted mt-3">Нет данных</p>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+{{-- Статистика --}}
+<div class="card" style="margin-bottom: 24px;">
+    <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Общая стоимость запасов</div>
+    <div style="font-size: 32px; font-weight: 700; color: #10b981;">{{ number_format($totalValue, 0, '.', ' ') }} сом</div>
+</div>
 
-        @if($stock->hasPages())
-        <div class="p-3">
-            {{ $stock->links() }}
-        </div>
-        @endif
+{{-- Таблица --}}
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div class="card-header">
+        <h3 class="card-header-title"><i class="bi bi-list-ul" style="color: #38bdf8;"></i> Список товаров</h3>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Товар</th>
+                    <th>Размер</th>
+                    <th>Магазин</th>
+                    <th>Количество</th>
+                    <th>Цена</th>
+                    <th>Стоимость</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($stock as $item)
+                <tr>
+                    <td>
+                        <div style="font-weight: 500;">{{ $item->name }}</div>
+                    </td>
+                    <td>
+                        <span class="badge badge-blue">{{ $item->size }}</span>
+                    </td>
+                    <td style="color: #94a3b8;">{{ $item->shop_name ?? 'Склад' }}</td>
+                    <td>
+                        <span class="badge" style="background: rgba(148,163,184,0.15); color: #94a3b8;">{{ $item->quantity }} шт</span>
+                    </td>
+                    <td style="color: #94a3b8;">{{ number_format($item->retail_price, 0, '.', ' ') }} сом</td>
+                    <td style="color: #10b981; font-weight: 600;">{{ number_format($item->total_value, 0, '.', ' ') }} сом</td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 3rem; color: #64748b;">
+                        <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 12px;"></i>
+                        Нет данных
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 </div>
 @endsection

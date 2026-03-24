@@ -1,136 +1,83 @@
-@extends('core::layouts.master')
-
-@section('page-title', 'Дашборд продавца')
-
+@extends('seller::layouts.seller')
+@section('page-title', 'Дашборд')
 @section('content')
-<div class="row g-4">
-    <!-- Stats -->
-    <div class="col-12 col-md-4">
-        <div class="stats-card">
-            <div class="stats-card-icon">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div class="stat-card">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Продаж сегодня</div>
+                <div style="font-size: 32px; font-weight: 700; color: #10b981;">{{ $todayCount ?? 0 }}</div>
+            </div>
+            <div style="width: 56px; height: 56px; background: rgba(16,185,129,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 24px;">
                 <i class="bi bi-cart"></i>
             </div>
-            <div class="stats-card-body">
-                <h4>{{ $todayCount }}</h4>
-                <p>Продаж сегодня</p>
-            </div>
         </div>
     </div>
-    
-    <div class="col-12 col-md-4">
-        <div class="stats-card">
-            <div class="stats-card-icon" style="background: linear-gradient(135deg, #28a745, #218838);">
+
+    <div class="stat-card">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Выручка сегодня</div>
+                <div style="font-size: 32px; font-weight: 700; color: #38bdf8;">{{ number_format($todaySales ?? 0, 0, '.', ' ') }} сом</div>
+            </div>
+            <div style="width: 56px; height: 56px; background: rgba(56,189,248,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 24px;">
                 <i class="bi bi-cash"></i>
             </div>
-            <div class="stats-card-body">
-                <h4>{{ number_format($todaySales, 0, '.', ' ') }} сом</h4>
-                <p>Выручка сегодня</p>
-            </div>
         </div>
     </div>
-    
-    <div class="col-12 col-md-4">
-        <div class="stats-card" style="cursor: pointer;" onclick="location.href='{{ route('seller.sale') }}'">
-            <div class="stats-card-icon" style="background: linear-gradient(135deg, #007bff, #0056b3);">
+
+    <div class="stat-card" style="cursor: pointer;" onclick="location.href='{{ route('seller.sale') }}'">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Новая продажа</div>
+                <div style="font-size: 20px; font-weight: 600; color: #f59e0b;">Начать →</div>
+            </div>
+            <div style="width: 56px; height: 56px; background: rgba(245,158,11,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 24px;">
                 <i class="bi bi-plus-circle"></i>
             </div>
-            <div class="stats-card-body">
-                <h4>Новая продажа</h4>
-                <p>Нажмите для начала</p>
-            </div>
         </div>
     </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="row g-4 mt-2">
-    <div class="col-12 col-md-6 col-lg-3">
-        <a href="{{ route('seller.sale') }}" class="text-decoration-none">
-            <div class="card h-100 text-center p-4">
-                <i class="bi bi-cart fs-1 text-primary mb-3"></i>
-                <h5>Продажа</h5>
-                <p class="text-muted small mb-0">Оформить продажу</p>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+    <a href="{{ route('seller.pos.index') }}" style="text-decoration: none;">
+        <div class="card" style="text-align: center; transition: 0.2s;">
+            <div style="width: 56px; height: 56px; margin: 0 auto 12px; background: rgba(16,185,129,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 28px;">
+                <i class="bi bi-cart3"></i>
             </div>
-        </a>
-    </div>
-    
-    <div class="col-12 col-md-6 col-lg-3">
-        <a href="{{ route('seller.products') }}" class="text-decoration-none">
-            <div class="card h-100 text-center p-4">
-                <i class="bi bi-box fs-1 text-success mb-3"></i>
-                <h5>Товары</h5>
-                <p class="text-muted small mb-0">Посмотреть наличие</p>
-            </div>
-        </a>
-    </div>
-    
-    <div class="col-12 col-md-6 col-lg-3">
-        <a href="{{ route('seller.coupons') }}" class="text-decoration-none">
-            <div class="card h-100 text-center p-4">
-                <i class="bi bi-ticket fs-1 text-warning mb-3"></i>
-                <h5>Купоны</h5>
-                <p class="text-muted small mb-0">Создать купон</p>
-            </div>
-        </a>
-    </div>
-    
-    <div class="col-12 col-md-6 col-lg-3">
-        <a href="{{ route('seller.receipts') }}" class="text-decoration-none">
-            <div class="card h-100 text-center p-4">
-                <i class="bi bi-receipt fs-1 text-info mb-3"></i>
-                <h5>Чеки</h5>
-                <p class="text-muted small mb-0">История продаж</p>
-            </div>
-        </a>
-    </div>
-</div>
-
-<!-- Recent Sales -->
-<div class="card mt-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-receipt me-2"></i>Последние продажи</span>
-        <a href="{{ route('seller.receipts') }}" class="btn btn-sm btn-outline-primary">Все</a>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>№</th>
-                        <th>Время</th>
-                        <th>Товаров</th>
-                        <th>Сумма</th>
-                        <th>Оплата</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($recentSales as $sale)
-                        <tr>
-                            <td><span class="badge bg-secondary">{{ $sale->transaction_number }}</span></td>
-                            <td>{{ $sale->created_at->format('H:i') }}</td>
-                            <td><span class="badge bg-info">{{ $sale->items_count }} шт</span></td>
-                            <td><strong>{{ number_format($sale->total_amount, 0, '.', ' ') }} сом</strong></td>
-                            <td>
-                                @if($sale->payment_method === 'cash')
-                                    <span class="badge bg-success"><i class="bi bi-cash"></i> Наличные</span>
-                                @elseif($sale->payment_method === 'card')
-                                    <span class="badge bg-primary"><i class="bi bi-credit-card"></i> Карта</span>
-                                @else
-                                    <span class="badge bg-info"><i class="bi bi-arrow-left-right"></i> Перевод</span>
-                                @endif
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
-                                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
-                                <p class="mt-2">Пока нет продаж</p>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+            <div style="font-weight: 600; margin-bottom: 4px;">Продажа</div>
+            <div style="font-size: 13px; color: #94a3b8;">Оформить заказ</div>
         </div>
-    </div>
+    </a>
+
+    <a href="{{ route('seller.my-sales.index') }}" style="text-decoration: none;">
+        <div class="card" style="text-align: center; transition: 0.2s;">
+            <div style="width: 56px; height: 56px; margin: 0 auto 12px; background: rgba(56,189,248,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 28px;">
+                <i class="bi bi-receipt"></i>
+            </div>
+            <div style="font-weight: 600; margin-bottom: 4px;">Мои продажи</div>
+            <div style="font-size: 13px; color: #94a3b8;">История</div>
+        </div>
+    </a>
+
+    <a href="{{ route('seller.customers.index') }}" style="text-decoration: none;">
+        <div class="card" style="text-align: center; transition: 0.2s;">
+            <div style="width: 56px; height: 56px; margin: 0 auto 12px; background: rgba(245,158,11,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 28px;">
+                <i class="bi bi-people"></i>
+            </div>
+            <div style="font-weight: 600; margin-bottom: 4px;">Клиенты</div>
+            <div style="font-size: 13px; color: #94a3b8;">База клиентов</div>
+        </div>
+    </a>
+
+    <a href="{{ route('seller.products.scan') }}" style="text-decoration: none;">
+        <div class="card" style="text-align: center; transition: 0.2s;">
+            <div style="width: 56px; height: 56px; margin: 0 auto 12px; background: rgba(129,140,248,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #818cf8; font-size: 28px;">
+                <i class="bi bi-qr-code-scan"></i>
+            </div>
+            <div style="font-weight: 600; margin-bottom: 4px;">Сканер товаров</div>
+            <div style="font-size: 13px; color: #94a3b8;">Сканировать</div>
+        </div>
+    </a>
 </div>
 @endsection

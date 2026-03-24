@@ -1,62 +1,105 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 @section('page-title', 'Товары')
 @section('content')
-<style>
-:root { --accent-green: #10b981; --accent-blue: #3b82f6; --accent-red: #ef4444; --radius-lg: 24px; --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.08); }
-:root, [data-theme="light"] { --bg-color: #F2F2F7; --text-main: #1C1C1E; --text-muted: #8E8E93; --border-color: rgba(0, 0, 0, 0.08); --glass-bg: rgba(255, 255, 255, 0.75); --glass-border: rgba(0, 0, 0, 0.05); --card-hover: rgba(255, 255, 255, 0.85); --gradient: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-[data-theme="dark"] { --bg-color: #000000; --text-main: #FFFFFF; --text-muted: rgba(255, 255, 255, 0.7); --border-color: rgba(255, 255, 255, 0.1); --glass-bg: rgba(30, 30, 30, 0.8); --glass-border: rgba(255, 255, 255, 0.08); --card-hover: rgba(40, 40, 40, 0.9); --gradient: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-body { background: var(--bg-color); color: var(--text-main); transition: all 0.3s; }
-.data-card { background: var(--glass-bg); backdrop-filter: blur(20px); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); border: 1px solid var(--glass-border); overflow: hidden; }
-.data-card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
-.table { width: 100%; }
-.table th { padding: 14px 20px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
-.table td { padding: 16px 20px; border-bottom: 1px solid var(--glass-border); color: var(--text-main); }
-.table tr:hover { background: var(--card-hover); }
-.product-thumbnail { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
-.product-placeholder { width: 48px; height: 48px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center; color: var(--accent-green); }
-.btn { padding: 8px 16px; border-radius: 10px; font-weight: 600; transition: all 0.3s; border: none; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-.btn-primary { background: var(--gradient); color: white; }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4); color: white; }
-.btn-outline { background: var(--glass-bg); border: 1px solid var(--glass-border); color: var(--text-main); }
-.btn-outline:hover { border-color: var(--accent-green); color: var(--accent-green); }
-.btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
-.stock-badge { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); padding: 6px 12px; border-radius: 8px; font-size: 12px; }
-.stock-badge-danger { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); padding: 6px 12px; border-radius: 8px; font-size: 12px; }
-.search-box { display: flex; align-items: center; gap: 8px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 8px 12px; }
-.search-box input { background: transparent; border: none; color: var(--text-main); outline: none; }
-small { color: var(--text-muted) !important; }
-strong { color: var(--text-main); }
-</style>
-<div class="container-fluid py-4">
-    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem;"><div style="width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--gradient); color: white; font-size: 1.25rem;"><i class="bi bi-box-seam"></i></div><div><h2 style="font-size: 28px; font-weight: 700; color: var(--text-main); margin: 0;">Товары</h2><p style="font-size: 14px; color: var(--text-muted); margin: 4px 0 0 0;">Управление ассортиментом</p></div></div>
-    <div class="data-card">
-        <div class="data-card-header">
-            <h3 style="font-size: 18px; font-weight: 700; color: var(--text-main); margin: 0;"><i class="bi bi-list-ul me-2"></i>Список товаров</h3>
-            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                <form method="GET" class="search-box"><i class="bi bi-search" style="color: var(--text-muted);"></i><input type="text" name="search" placeholder="Поиск товаров..." value="{{ request('search') }}"></form>
-                <a href="{{ route('admin.products.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i>Добавить</a>
-            </div>
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.15); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 24px;">
+        <i class="bi bi-box-seam"></i>
+    </div>
+    <div>
+        <h2 style="font-size: 28px; font-weight: 700; margin: 0;">Товары</h2>
+        <p style="font-size: 14px; color: #94a3b8; margin: 4px 0 0 0;">Управление ассортиментом</p>
+    </div>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <h3 style="font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-list-ul" style="color: #38bdf8;"></i> Список товаров
+        </h3>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <form method="GET" style="display: flex; align-items: center; gap: 8px; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 8px 12px;">
+                <i class="bi bi-search" style="color: #94a3b8;"></i>
+                <input type="text" name="search" placeholder="Поиск..." value="{{ request('search') }}" style="background: transparent; border: none; color: #f1f5f9; outline: none; font-size: 14px;">
+            </form>
+            <a href="{{ route('admin.products.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Добавить
+            </a>
         </div>
-        <table class="table">
-            <thead><tr><th>Фото</th><th>Название</th><th>Артикул</th><th>Цена</th><th>Остаток</th><th>Действия</th></tr></thead>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Фото</th>
+                    <th style="text-align: left;">Название</th>
+                    <th>Артикул</th>
+                    <th>Цена</th>
+                    <th>Остаток</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
             <tbody>
                 @forelse($products as $product)
                 <tr>
-                    <td>@if($product->photo)<img src="{{ asset('storage/' . $product->photo) }}" class="product-thumbnail">@else<div class="product-placeholder"><i class="bi bi-box"></i></div>@endif</td>
-                    <td><strong>{{ Str::limit($product->name, 50) }}</strong><br><small>{{ $product->category?->name ?? '' }}</small></td>
-                    <td><small>{{ $product->article }}</small></td>
-                    <td><strong style="color: var(--accent-green);">{{ number_format($product->price, 0, '.', ' ') }} сом</strong></td>
-                    <td>@if($product->stock_quantity <= 5)<span class="stock-badge-danger">{{ $product->stock_quantity }} шт</span>@else<span class="stock-badge">{{ $product->stock_quantity }} шт</span>@endif</td>
-                    <td style="display: flex; gap: 8px;">
-                        <a href="{{ route('admin.products.edit', $product->id) }}" class="btn btn-outline"><i class="bi bi-pencil"></i></a>
-                        <form action="{{ route('admin.products.delete', $product->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Удалить?')">@csrf @method('DELETE')<button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i></button></form>
+                    <td>
+                        @if($product->photo)
+                            <img src="{{ asset('storage/' . $product->photo) }}" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover;">
+                        @else
+                            <div style="width: 44px; height: 44px; border-radius: 8px; background: rgba(16,185,129,0.15); display: flex; align-items: center; justify-content: center; color: #10b981;">
+                                <i class="bi bi-box"></i>
+                            </div>
+                        @endif
+                    </td>
+                    <td>
+                        <div style="font-weight: 500;">{{ Str::limit($product->name, 50) }}</div>
+                        <div style="color: #94a3b8; font-size: 13px;">{{ $product->category?->name ?? '' }}</div>
+                    </td>
+                    <td style="color: #94a3b8;">{{ $product->article }}</td>
+                    <td style="color: #10b981; font-weight: 600;">{{ number_format($product->price, 0, '.', ' ') }} сом</td>
+                    <td>
+                        @if($product->stock_quantity <= 5)
+                            <span class="badge badge-danger">{{ $product->stock_quantity }} шт</span>
+                        @else
+                            <span class="badge badge-success">{{ $product->stock_quantity }} шт</span>
+                        @endif
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 8px;">
+                            <a href="{{ route('admin.products.edit', $product->id) }}" style="padding: 8px 12px; border-radius: 8px; background: rgba(56,189,248,0.1); color: #38bdf8; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 14px;">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form action="{{ route('admin.products.delete', $product->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Удалить?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" style="padding: 8px 12px; border-radius: 8px; background: rgba(239,68,68,0.15); color: #ef4444; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 14px;">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="6" style="text-align: center; padding: 3rem; color: var(--text-muted);">Товары не найдены</td></tr>
+                <tr><td colspan="6" style="text-align: center; padding: 3rem; color: #64748b;">Товары не найдены</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
+    
+    @if($products->hasPages())
+    <div style="padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+        <div style="color: #94a3b8; font-size: 13px;">Показано {{ $products->firstItem() ?? 0 }} - {{ $products->lastItem() ?? 0 }} из {{ $products->total() }}</div>
+        <div style="display: flex; gap: 8px;">
+            @if($products->onFirstPage())
+                <span style="padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #64748b; text-decoration: none; font-size: 14px;">← Назад</span>
+            @else
+                <a href="{{ $products->previousPageUrl() }}" style="padding: 8px 14px; border-radius: 8px; background: rgba(56,189,248,0.1); color: #38bdf8; text-decoration: none; font-size: 14px;">← Назад</a>
+            @endif
+            @if($products->hasMorePages())
+                <a href="{{ $products->nextPageUrl() }}" style="padding: 8px 14px; border-radius: 8px; background: rgba(56,189,248,0.1); color: #38bdf8; text-decoration: none; font-size: 14px;">Вперёд →</a>
+            @else
+                <span style="padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #64748b; text-decoration: none; font-size: 14px;">Вперёд →</span>
+            @endif
+        </div>
+    </div>
+    @endif
 </div>
 @endsection

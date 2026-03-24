@@ -1,154 +1,77 @@
-@extends('layouts.app')
-
-@section('title', 'Отчёт по товарам')
-
+@extends('layouts.admin')
+@section('page-title', 'Товары')
 @section('content')
-<style>
-    .data-card {
-        background: var(--bg-card);
-        border-radius: 12px;
-        box-shadow: var(--card-shadow);
-    }
-    .filter-section {
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid var(--border-color);
-    }
-    .table {
-        --bs-table-hover-bg: var(--table-hover);
-    }
-    .table th {
-        font-weight: 600;
-        color: var(--primary);
-        border-top: none;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .page-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 1.5rem;
-    }
-    .page-title-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--gradient);
-        color: white;
-    }
-    .revenue-badge {
-        background: var(--primary-light);
-        color: var(--primary-dark);
-        padding: 0.375rem 0.75rem;
-        border-radius: 6px;
-        font-weight: 600;
-    }
-    .form-control, .form-select {
-        background: var(--bg-card);
-        border-color: var(--border-color);
-        color: var(--text-primary);
-    }
-    .form-control:focus, .form-select:focus {
-        background: var(--bg-card);
-        border-color: var(--primary);
-        color: var(--text-primary);
-        box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.25);
-    }
-    .form-label {
-        color: var(--text-primary);
-    }
-</style>
-
-<div class="container-fluid">
-    <div class="page-header">
-        <div class="page-title-icon">
-            <i class="bi bi-box-seam"></i>
-        </div>
-        <h1 class="h3 mb-0" style="color: var(--primary);">Отчёт по товарам</h1>
-        <div class="ms-auto">
-            <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Назад
-            </a>
-        </div>
+<div class="page-header">
+    <div class="page-icon"><i class="bi bi-box-seam"></i></div>
+    <div>
+        <h1 class="page-title">Товары</h1>
+        <p class="page-subtitle">Отчёт по товарам</p>
     </div>
-
-    {{-- Фильтры --}}
-    <div class="data-card mb-4">
-        <div class="filter-section">
-            <form action="{{ route('admin.reports.products') }}" method="GET" class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label">С даты</label>
-                    <input type="date" name="date_from" class="form-control" value="{{ $dateFrom }}">
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">По дату</label>
-                    <input type="date" name="date_to" class="form-control" value="{{ $dateTo }}">
-                </div>
-                <div class="col-md-4 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary flex-fill">
-                        <i class="bi bi-search"></i> Сформировать
-                    </button>
-                    <button type="button" class="btn" style="background: var(--gradient); color: white;">
-                        <i class="bi bi-file-earmark-excel"></i> Excel
-                    </button>
-                </div>
-            </form>
-        </div>
+    <div style="margin-left: auto;">
+        <a href="{{ route('admin.reports.index') }}" class="btn btn-outline">
+            <i class="bi bi-arrow-left"></i> Назад
+        </a>
     </div>
+</div>
 
-    {{-- Таблица --}}
-    <div class="data-card">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>Товар</th>
-                        <th>Артикул</th>
-                        <th style="width: 120px;">Продано шт</th>
-                        <th style="width: 150px;">Выручка</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($products as $product)
-                    <tr>
-                        <td>
-                            <div class="fw-semibold">{{ $product->name }}</div>
-                        </td>
-                        <td>
-                            <code style="background: var(--primary-light); padding: 4px 8px; border-radius: 4px; color: var(--primary);">{{ $product->article }}</code>
-                        </td>
-                        <td>
-                            <span class="badge" style="background: var(--primary-light); color: var(--primary-dark);">
-                                {{ number_format($product->sold_qty, 0) }} шт
-                            </span>
-                        </td>
-                        <td>
-                            <span class="revenue-badge">{{ number_format($product->revenue, 2, ',', ' ') }} с</span>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="4" class="text-center py-5">
-                            <div style="font-size: 3rem; color: var(--primary-light);">
-                                <i class="bi bi-inbox"></i>
-                            </div>
-                            <p class="text-muted mt-3">Нет данных за выбранный период</p>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+{{-- Фильтры --}}
+<div class="card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
+    <form action="{{ route('admin.reports.products') }}" method="GET" style="padding: 16px 20px; display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;">
+        <div style="flex: 1; min-width: 150px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #94a3b8;">С даты</label>
+            <input type="date" name="date_from" class="input" value="{{ $dateFrom }}">
         </div>
+        <div style="flex: 1; min-width: 150px;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #94a3b8;">По дату</label>
+            <input type="date" name="date_to" class="input" value="{{ $dateTo }}">
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i> Сформировать
+            </button>
+        </div>
+    </form>
+</div>
 
-        @if($products->hasPages())
-        <div class="p-3">
-            {{ $products->links() }}
-        </div>
-        @endif
+{{-- Таблица --}}
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div class="card-header">
+        <h3 class="card-header-title"><i class="bi bi-list-ul" style="color: #38bdf8;"></i> Список товаров</h3>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Товар</th>
+                    <th>Артикул</th>
+                    <th>Продано шт</th>
+                    <th>Выручка</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($products as $product)
+                <tr>
+                    <td>
+                        <div style="font-weight: 500;">{{ $product->name }}</div>
+                    </td>
+                    <td>
+                        <code style="background: rgba(56,189,248,0.15); padding: 4px 8px; border-radius: 6px; color: #38bdf8; font-size: 13px;">{{ $product->article }}</code>
+                    </td>
+                    <td>
+                        <span class="badge badge-blue">{{ number_format($product->sold_qty, 0) }} шт</span>
+                    </td>
+                    <td style="color: #10b981; font-weight: 600;">{{ number_format($product->revenue, 0, '.', ' ') }} сом</td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 3rem; color: #64748b;">
+                        <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 12px;"></i>
+                        Нет данных за выбранный период
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 </div>
 @endsection

@@ -1,384 +1,76 @@
-@extends('layouts.app')
-
-@section('title', 'История продаж - Продавец')
-
+@extends('seller::layouts.seller')
+@section('page-title', 'Мои продажи')
 @section('content')
-<style>
-    :root {
-        --pos-header-height: 60px;
-    }
-
-    .history-container {
-        padding: 1.5rem;
-        background: var(--bg-secondary);
-        min-height: calc(100vh - var(--pos-header-height));
-    }
-
-    .history-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-    }
-
-    .history-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--text-primary);
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .stat-card {
-        background: var(--bg-card);
-        border-radius: 12px;
-        padding: 1.25rem;
-        border: 1px solid var(--border-color);
-    }
-
-    .stat-label {
-        font-size: 0.85rem;
-        color: var(--text-secondary);
-        margin-bottom: 0.5rem;
-    }
-
-    .stat-value {
-        font-size: 1.75rem;
-        font-weight: 700;
-        color: var(--primary);
-    }
-
-    .stat-icon {
-        font-size: 1.5rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .filters-card {
-        background: var(--bg-card);
-        border-radius: 12px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        border: 1px solid var(--border-color);
-    }
-
-    .filters-form {
-        display: flex;
-        gap: 1rem;
-        align-items: flex-end;
-        flex-wrap: wrap;
-    }
-
-    .filter-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .filter-label {
-        font-size: 0.85rem;
-        color: var(--text-secondary);
-        font-weight: 600;
-    }
-
-    .filter-input {
-        padding: 0.75rem 1rem;
-        border: 2px solid var(--border-color);
-        border-radius: 8px;
-        background: var(--bg-card);
-        color: var(--text-primary);
-        font-size: 0.95rem;
-    }
-
-    .filter-input:focus {
-        outline: none;
-        border-color: var(--primary);
-    }
-
-    .btn-filter {
-        padding: 0.75rem 1.5rem;
-        background: var(--gradient);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-
-    .btn-filter:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    }
-
-    .sales-table {
-        background: var(--bg-card);
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid var(--border-color);
-    }
-
-    .sales-table-header {
-        padding: 1rem 1.5rem;
-        background: var(--bg-secondary);
-        border-bottom: 1px solid var(--border-color);
-        font-weight: 700;
-        color: var(--text-primary);
-    }
-
-    .sales-table-row {
-        display: grid;
-        grid-template-columns: 1fr 2fr 1fr 1fr 1fr 1fr;
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--border-color);
-        align-items: center;
-        transition: 0.2s;
-    }
-
-    .sales-table-row:last-child {
-        border-bottom: none;
-    }
-
-    .sales-table-row:hover {
-        background: var(--bg-secondary);
-    }
-
-    .sales-table-cell {
-        color: var(--text-primary);
-    }
-
-    .sales-table-cell.muted {
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-    }
-
-    .status-badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .status-badge.success {
-        background: rgba(16, 185, 129, 0.15);
-        color: var(--success);
-    }
-
-    .payment-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-        font-size: 0.85rem;
-        color: var(--text-primary);
-    }
-
-    .btn-view {
-        padding: 0.5rem 1rem;
-        background: var(--primary);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-
-    .btn-view:hover {
-        background: var(--primary-dark);
-        transform: translateY(-1px);
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 3rem 1rem;
-        color: var(--text-secondary);
-    }
-
-    .empty-icon {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-    }
-
-    .pagination {
-        display: flex;
-        justify-content: center;
-        gap: 0.5rem;
-        margin-top: 1.5rem;
-        flex-wrap: wrap;
-    }
-
-    .pagination a,
-    .pagination span {
-        padding: 0.5rem 1rem;
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
-        color: var(--text-primary);
-        text-decoration: none;
-        transition: 0.2s;
-    }
-
-    .pagination a:hover {
-        background: var(--primary);
-        border-color: var(--primary);
-        color: white;
-    }
-
-    .pagination .active {
-        background: var(--primary);
-        border-color: var(--primary);
-        color: white;
-    }
-
-    .pagination .disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    @media (max-width: 768px) {
-        .sales-table-row {
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 0.5rem;
-        }
-    }
-</style>
-
-<div class="history-container">
-    <div class="history-header">
-        <h1 class="history-title">
-            История продаж
-        </h1>
-        <a href="{{ route('seller.pos.index') }}" class="btn-view">
-            Назад в POS
-        </a>
+<div class="page-header">
+    <div class="page-icon"><i class="bi bi-receipt"></i></div>
+    <div>
+        <h1 class="page-title">Мои продажи</h1>
+        <p class="page-subtitle">История продаж</p>
     </div>
-
-    <!-- Статистика -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-label">Продаж сегодня</div>
-            <div class="stat-value">{{ $stats['today_count'] }}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Сумма сегодня</div>
-            <div class="stat-value">{{ number_format($stats['today'], 0, ',', ' ') }} с</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Всего продаж</div>
-            <div class="stat-value">{{ number_format($stats['total'], 0, ',', ' ') }} с</div>
-        </div>
-    </div>
-
-    <!-- Фильтры -->
-    <div class="filters-card">
-        <form class="filters-form" method="GET" action="{{ route('seller.my-sales.index') }}">
-            <div class="filter-group">
-                <label class="filter-label">С даты</label>
-                <input type="date" name="date_from" class="filter-input" value="{{ request('date_from') }}">
-            </div>
-            <div class="filter-group">
-                <label class="filter-label">По дату</label>
-                <input type="date" name="date_to" class="filter-input" value="{{ request('date_to') }}">
-            </div>
-            <button type="submit" class="btn-filter">
-                Фильтр
-            </button>
-            @if(request('date_from') || request('date_to'))
-                <a href="{{ route('seller.my-sales.index') }}" class="btn-filter" style="background: var(--bg-secondary);">
-                    Сброс
-                </a>
-            @endif
-        </form>
-    </div>
-
-    <!-- Таблица продаж -->
-    <div class="sales-table">
-        <div class="sales-table-header">
-            <div class="sales-table-row" style="border-bottom: none;">
-                <div>№</div>
-                <div>Товары</div>
-                <div>Клиент</div>
-                <div>Сумма</div>
-                <div>Оплата</div>
-                <div>Действие</div>
-            </div>
-        </div>
-
-        @forelse($sales as $sale)
-            <div class="sales-table-row">
-                <div class="sales-table-cell muted">
-                    <div style="font-weight: 600;">{{ $sale->transaction_number }}</div>
-                    <div style="font-size: 0.75rem;">{{ $sale->created_at->format('d.m.Y H:i') }}</div>
-                </div>
-                <div class="sales-table-cell">
-                    @php
-                        $itemsCount = $sale->items->count();
-                        $itemsSummary = $sale->items->take(2)->map(function($item) {
-                            return $item->variant->product->name ?? 'Товар';
-                        })->join(', ');
-                    @endphp
-                    {{ $itemsSummary }}
-                    @if($itemsCount > 2)
-                        <span style="color: var(--text-secondary);">+{{ $itemsCount - 2 }} ещё</span>
-                    @endif
-                </div>
-                <div class="sales-table-cell">
-                    @if($sale->customer)
-                        <div>{{ $sale->customer->full_name ?? 'Клиент' }}</div>
-                        <div style="font-size: 0.75rem; color: var(--text-secondary);">{{ $sale->customer->phone ?? '' }}</div>
-                    @else
-                        <span style="color: var(--text-secondary);">Без клиента</span>
-                    @endif
-                </div>
-                <div class="sales-table-cell" style="font-weight: 700; color: var(--primary);">
-                    {{ number_format($sale->total_amount, 0, ',', ' ') }} с
-                </div>
-                <div class="sales-table-cell">
-                    <span class="payment-badge">
-                        @if($sale->payment_method === 'cash')
-                            Наличные
-                        @elseif($sale->payment_method === 'card')
-                            Карта
-                        @elseif($sale->payment_method === 'transfer')
-                            Перевод
-                        @endif
-                    </span>
-                </div>
-                <div class="sales-table-cell">
-                    <button class="btn-view" onclick="viewSale({{ $sale->id }})">
-                        Просмотр
-                    </button>
-                </div>
-            </div>
-        @empty
-            <div class="empty-state">
-                <div class="empty-icon">
-                    <i class="bi bi-box"></i>
-                </div>
-                <p>Продажей пока нет</p>
-                <small>Оформите первую продажу через POS-терминал</small>
-            </div>
-        @endforelse
-    </div>
-
-    <!-- Пагинация -->
-    @if($sales->hasPages())
-        <div class="pagination">
-            {{ $sales->links() }}
-        </div>
-    @endif
 </div>
 
-<script>
-function viewSale(id) {
-    const baseUrl = window.location.origin;
-    window.open(baseUrl + '/seller/pos/receipt/' + id + '?print=1', '_blank');
-}
-</script>
+{{-- Статистика --}}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <div class="stat-card">
+        <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Всего продаж</div>
+        <div style="font-size: 28px; font-weight: 700; color: #10b981;">{{ $stats['total_sales'] ?? 0 }}</div>
+    </div>
+    <div class="stat-card">
+        <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Сумма</div>
+        <div style="font-size: 28px; font-weight: 700; color: #38bdf8;">{{ number_format($stats['total_amount'] ?? 0, 0, '.', ' ') }} сом</div>
+    </div>
+    <div class="stat-card">
+        <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Средний чек</div>
+        <div style="font-size: 28px; font-weight: 700; color: #f59e0b;">{{ number_format($stats['average_check'] ?? 0, 0, '.', ' ') }} сом</div>
+    </div>
+</div>
+
+{{-- Таблица --}}
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div class="card-header">
+        <h3 class="card-header-title"><i class="bi bi-list-ul" style="color: #10b981;"></i> Список продаж</h3>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Дата</th>
+                    <th>№ заказа</th>
+                    <th>Сумма</th>
+                    <th>Оплата</th>
+                    <th>Товаров</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($sales as $sale)
+                <tr>
+                    <td>
+                        <div style="font-weight: 500;">{{ $sale->created_at->format('d.m.Y') }}</div>
+                        <div style="color: #94a3b8; font-size: 13px;">{{ $sale->created_at->format('H:i') }}</div>
+                    </td>
+                    <td style="color: #94a3b8;">#{{ $sale->id }}</td>
+                    <td style="color: #10b981; font-weight: 600;">{{ number_format($sale->amount, 0, '.', ' ') }} сом</td>
+                    <td>
+                        <span class="badge badge-blue">{{ ucfirst($sale->payment_method ?? 'cash') }}</span>
+                    </td>
+                    <td style="color: #94a3b8;">{{ $sale->items_count ?? 0 }}</td>
+                    <td>
+                        <button class="btn btn-outline" onclick="alert('Функция просмотра будет доступна позже')">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 3rem; color: #64748b;">
+                        <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 12px;"></i>
+                        Продаж ещё не было
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
 @endsection

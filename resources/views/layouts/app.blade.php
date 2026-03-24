@@ -55,19 +55,19 @@
         
         /* Тёмная тема (по умолчанию) */
         [data-theme="dark"] {
-            --bg-primary: var(--bg-color);
+            --bg-primary: #000000;
             --bg-secondary: #1C1C1E;
-            --bg-glass: rgba(28, 28, 30, 0.6);
-            --bg-glass-heavy: rgba(28, 28, 30, 0.8);
-            --text-primary: var(--text-main);
+            --bg-glass: rgba(30, 30, 30, 0.8);
+            --bg-glass-heavy: rgba(40, 40, 40, 0.9);
+            --text-primary: #FFFFFF;
             --text-secondary: #98989D;
             --text-muted: #636366;
             --border-color: rgba(255, 255, 255, 0.08);
             --border-light: rgba(255, 255, 255, 0.12);
-            --sidebar-bg: rgba(28, 28, 30, 0.7);
+            --sidebar-bg: rgba(30, 30, 30, 0.7);
             --sidebar-hover: rgba(255, 255, 255, 0.08);
             --sidebar-active: rgba(0, 122, 255, 0.2);
-            
+
             /* Алиасы для совместимости */
             --bg-card: var(--bg-glass);
             --bg-card-hover: var(--bg-glass-heavy);
@@ -347,9 +347,82 @@
             color: var(--text-primary);
         }
 
+        .table tbody td strong {
+            color: var(--text-primary) !important;
+        }
+
+        .table tbody td small,
+        .table tbody td .table-small {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Тёмная тема - явные цвета для таблиц */
+        [data-theme="dark"] .table,
+        [data-theme="dark"] .table tbody td,
+        [data-theme="dark"] .table thead th {
+            color: #FFFFFF !important;
+        }
+
+        [data-theme="dark"] .table tbody td small,
+        [data-theme="dark"] .table tbody td .table-small {
+            color: rgba(255, 255, 255, 0.85) !important;
+        }
+
+        [data-theme="dark"] .table-hover tbody tr:hover {
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+
         .table-hover tbody tr:hover {
             background: var(--sidebar-hover);
         }
+
+        /* === DASHBOARD CARDS === */
+        .dashboard-header, .stat-card, .data-card {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .dashboard-header { padding: 40px; margin-bottom: 32px; }
+        .stat-card { padding: 1.5rem; border-left: 4px solid #10b981; height: 100%; }
+        .data-card { overflow: hidden; }
+        .data-card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); font-weight: 700; background: rgba(16, 185, 129, 0.08); }
+
+        [data-theme="dark"] .dashboard-header,
+        [data-theme="dark"] .stat-card,
+        [data-theme="dark"] .data-card {
+            background: #1a1a1a !important;
+        }
+
+        [data-theme="dark"] .data-card-header {
+            background: rgba(16, 185, 129, 0.15) !important;
+            color: #FFFFFF !important;
+        }
+
+        /* Dashboard elements */
+        .stat-label { color: #636366; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+        .stat-value { font-size: 2rem; font-weight: 800; color: #10b981; line-height: 1; }
+        .stat-subtitle { font-size: 0.8rem; color: #8E8E93; margin-top: 0.5rem; }
+        .stat-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-size: 1.5rem; }
+        .mini-stat { text-align: center; padding: 0 16px; }
+        .mini-stat-value { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+        .mini-stat-label { font-size: 12px; color: var(--text-secondary); }
+        .product-thumbnail { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
+        .product-placeholder { width: 48px; height: 48px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center; color: #10b981; }
+        .stock-badge { background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 6px 12px; border-radius: 8px; font-size: 12px; }
+        .stock-badge-danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 6px 12px; border-radius: 8px; font-size: 12px; }
+        .empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
+        .empty-state-icon { font-size: 3rem; opacity: 0.4; margin-bottom: 1rem; }
+
+        [data-theme="dark"] .stat-label { color: rgba(255, 255, 255, 0.6) !important; }
+        [data-theme="dark"] .stat-subtitle { color: rgba(255, 255, 255, 0.5) !important; }
+        [data-theme="dark"] .mini-stat-label { color: rgba(255, 255, 255, 0.6) !important; }
+        [data-theme="dark"] .product-placeholder { background: rgba(16, 185, 129, 0.2) !important; color: #10b981 !important; }
+        [data-theme="dark"] .stock-badge { background: rgba(16, 185, 129, 0.2) !important; color: #10b981 !important; }
+        [data-theme="dark"] .stock-badge-danger { background: rgba(239, 68, 68, 0.2) !important; color: #ef4444 !important; }
+        [data-theme="dark"] .empty-state { color: rgba(255, 255, 255, 0.6) !important; }
+        [data-theme="dark"] .empty-state-icon { opacity: 0.5 !important; }
 
         /* === BADGES === */
         .badge {

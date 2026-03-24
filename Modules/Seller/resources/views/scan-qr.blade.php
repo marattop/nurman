@@ -1,54 +1,82 @@
-@extends('seller::layout')
-@section('page-title', 'Сканер QR-кода')
+@extends('seller::layouts.seller')
+@section('page-title', 'QR-сканер')
 @section('content')
-<div class="row g-4">
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header"><i class="bi bi-qr-code-scan me-2"></i>Сканировать QR-код</div>
-            <div class="card-body text-center">
-                <div id="scanner-container" class="mb-3"></div>
-                
-                <div class="d-grid gap-2">
-                    <button id="start-scan" class="btn btn-primary">
-                        <i class="bi bi-camera"></i> Включить камеру
-                    </button>
-                    <button id="stop-scan" class="btn btn-danger" disabled>
-                        <i class="bi bi-camera-off"></i> Остановить
-                    </button>
+<div class="page-header">
+    <div class="page-icon"><i class="bi bi-qr-code-scan"></i></div>
+    <div>
+        <h1 class="page-title">QR-сканер</h1>
+        <p class="page-subtitle">Сканирование QR-кодов товаров</p>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+    <div class="card">
+        <div style="text-align: center;">
+            <div id="scanner-container" style="background: #0f172a; border-radius: 12px; overflow: hidden; margin-bottom: 20px; min-height: 300px; display: flex; align-items: center; justify-content: center;">
+                <video id="scanner-video" style="width: 100%; display: none;"></video>
+                <div id="scanner-placeholder" style="color: #64748b;">
+                    <i class="bi bi-camera" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 12px;"></i>
+                    Нажмите "Начать сканирование"
                 </div>
-                
-                <hr>
-                
-                <div class="mb-3">
-                    <label class="form-label">Или введите данные QR-кода вручную:</label>
-                    <div class="input-group">
-                        <input type="text" id="manual-qr" class="form-control" placeholder="Отсканируйте или введите код">
-                        <button class="btn btn-outline-primary" type="button" onclick="scanManual()">
-                            <i class="bi bi-search"></i> Найти
-                        </button>
-                    </div>
+            </div>
+            
+            <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <button id="start-scan" class="btn btn-primary">
+                    <i class="bi bi-camera"></i> Начать сканирование
+                </button>
+                <button id="stop-scan" class="btn btn-danger" style="display: none;">
+                    <i class="bi bi-stop-circle"></i> Остановить
+                </button>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <label style="display: block; color: #94a3b8; font-size: 13px; margin-bottom: 8px;">Или введите код вручную:</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="manual-qr" class="input" placeholder="Введите QR-код">
+                    <button class="btn btn-outline" onclick="scanManual()">
+                        <i class="bi bi-search"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div class="col-lg-6">
-        <div class="card" id="result-card" style="display: none;">
-            <div class="card-header bg-primary text-white">
-                <i class="bi bi-info-circle me-2"></i>Информация о товаре
+
+    <div class="card">
+        <div id="result-card" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <div style="width: 40px; height: 40px; background: rgba(16,185,129,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #10b981;">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div>
+                    <div style="font-weight: 600; color: #10b981;">Товар найден!</div>
+                    <div style="font-size: 13px; color: #94a3b8;">Информация о товаре</div>
+                </div>
             </div>
-            <div class="card-body">
-                <div id="result-content"></div>
+            
+            <div id="product-info">
+                <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                    <div id="product-image" style="width: 100px; height: 100px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #64748b;">
+                        <i class="bi bi-box" style="font-size: 32px; opacity: 0.3;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div id="product-name" style="font-weight: 600; font-size: 18px; margin-bottom: 8px;">—</div>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div style="color: #94a3b8; font-size: 13px;">Артикул: <span id="product-article" style="color: #f1f5f9;">—</span></div>
+                            <div style="color: #94a3b8; font-size: 13px;">Цена: <span id="product-price" style="color: #10b981; font-weight: 600;">—</span></div>
+                            <div style="color: #94a3b8; font-size: 13px;">Остаток: <span id="product-stock" style="color: #f1f5f9;">—</span></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" style="width: 100%;" onclick="addToCart()">
+                    <i class="bi bi-cart-plus"></i> Добавить в корзину
+                </button>
             </div>
         </div>
         
-        <div class="card" id="error-card" style="display: none;">
-            <div class="card-header bg-danger text-white">
-                <i class="bi bi-exclamation-triangle me-2"></i>Ошибка
-            </div>
-            <div class="card-body">
-                <p id="error-message" class="mb-0"></p>
-            </div>
+        <div id="no-result" style="text-align: center; padding: 40px 20px; color: #64748b;">
+            <i class="bi bi-qr-code" style="font-size: 64px; opacity: 0.2; display: block; margin-bottom: 16px;"></i>
+            <div>Отсканируйте QR-код для получения информации о товаре</div>
         </div>
     </div>
 </div>
@@ -56,114 +84,95 @@
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 let html5QrcodeScanner = null;
-let isScanning = false;
+let currentProduct = null;
 
-function startScan() {
-    if (isScanning) return;
+document.getElementById('start-scan').addEventListener('click', function() {
+    this.style.display = 'none';
+    document.getElementById('stop-scan').style.display = 'inline-flex';
+    document.getElementById('scanner-placeholder').style.display = 'none';
+    document.getElementById('scanner-video').style.display = 'block';
+    
     html5QrcodeScanner = new Html5Qrcode("scanner-container");
-    html5QrcodeScanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        onScanSuccess,
-        onScanFailure
-    ).then(() => {
-        isScanning = true;
-        document.getElementById('start-scan').disabled = true;
-        document.getElementById('stop-scan').disabled = false;
+    
+    Html5Qrcode.getCameras().then(cameras => {
+        if (cameras && cameras.length) {
+            html5QrcodeScanner.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                onScanSuccess
+            ).catch(err => {
+                console.error("Ошибка запуска сканера", err);
+                alert("Не удалось запустить камеру");
+            });
+        }
     }).catch(err => {
-        console.error("Ошибка:", err);
-        showError("Не удалось запустить камеру");
+        console.error("Ошибка получения камер", err);
+        alert("Камера не найдена");
     });
-}
+});
 
-function stopScan() {
-    if (!isScanning || !html5QrcodeScanner) return;
-    html5QrcodeScanner.stop().then(() => {
-        isScanning = false;
-        document.getElementById('start-scan').disabled = false;
-        document.getElementById('stop-scan').disabled = true;
-        html5QrcodeScanner.clear();
-    });
-}
+document.getElementById('stop-scan').addEventListener('click', function() {
+    this.style.display = 'none';
+    document.getElementById('start-scan').style.display = 'inline-flex';
+    document.getElementById('scanner-placeholder').style.display = 'block';
+    document.getElementById('scanner-video').style.display = 'none';
+    
+    if (html5QrcodeScanner) {
+        html5QrcodeScanner.stop().then(() => {
+            html5QrcodeScanner.clear();
+        }).catch(err => {
+            console.error("Ошибка остановки", err);
+        });
+    }
+});
 
-function onScanSuccess(decodedText, decodedResult) {
-    processQrData(decodedText);
-}
-
-function onScanFailure(error) {}
-
-function processQrData(qrData) {
-    document.getElementById('manual-qr').value = qrData;
-    fetch('{{ route("seller.scan-qr.api") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({ qr_data: qrData })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) showResult(data);
-        else showError(data.error || 'Товар не найден');
-    })
-    .catch(error => showError('Ошибка при получении данных'));
+function onScanSuccess(decodedText) {
+    document.getElementById('manual-qr').value = decodedText;
+    findProduct(decodedText);
 }
 
 function scanManual() {
-    const qrData = document.getElementById('manual-qr').value.trim();
-    if (!qrData) { showError('Введите данные QR-кода'); return; }
-    processQrData(qrData);
+    const code = document.getElementById('manual-qr').value.trim();
+    if (code) {
+        findProduct(code);
+    }
 }
 
-function showResult(data) {
-    document.getElementById('error-card').style.display = 'none';
+function findProduct(code) {
+    fetch('/seller/products/search-by-article/' + code)
+        .then(r => r.json())
+        .then(data => {
+            if (data.product) {
+                currentProduct = data.product;
+                showProduct(data.product);
+            } else {
+                alert('Товар не найден');
+            }
+        })
+        .catch(() => {
+            alert('Ошибка поиска товара');
+        });
+}
+
+function showProduct(product) {
+    document.getElementById('no-result').style.display = 'none';
     document.getElementById('result-card').style.display = 'block';
     
-    const stockHtml = data.stock.map(s => `
-        <tr><td>${s.location}</td><td><strong>${s.quantity}</strong></td><td>${s.reserved}</td><td>${s.available}</td></tr>
-    `).join('');
+    document.getElementById('product-name').textContent = product.name;
+    document.getElementById('product-article').textContent = product.article;
+    document.getElementById('product-price').textContent = product.price + ' сом';
+    document.getElementById('product-stock').textContent = (product.stock_quantity || 0) + ' шт';
     
-    document.getElementById('result-content').innerHTML = `
-        <h5 class="text-primary">${data.product.name}</h5>
-        <p class="mb-1"><strong>Артикул:</strong> ${data.product.article}</p>
-        <p class="mb-1"><strong>Категория:</strong> ${data.product.category}</p>
-        <p class="mb-1"><strong>Цена:</strong> <span class="text-primary fw-bold">${data.product.retail_price} сом</span></p>
-        <hr>
-        <p class="mb-1"><strong>Размер:</strong> ${data.variant.size}</p>
-        <p class="mb-1"><strong>Цвет:</strong> ${data.variant.color}</p>
-        <p class="mb-1"><strong>SKU:</strong> ${data.variant.sku}</p>
-        <hr>
-        <h6>Остатки:</h6>
-        <table class="table table-sm table-bordered">
-            <thead><tr><th>Точка</th><th>Всего</th><th>Резерв</th><th>Доступно</th></tr></thead>
-            <tbody>${stockHtml}</tbody>
-        </table>
-        <div class="row g-2 mt-2">
-            <div class="col-6">
-                <div class="p-2 bg-light rounded text-center">
-                    <small class="text-muted">Всего</small>
-                    <div class="fs-6 fw-bold">${data.total.total_quantity} шт</div>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="p-2 bg-light rounded text-center">
-                    <small class="text-muted">Доступно</small>
-                    <div class="fs-6 fw-bold text-success">${data.total.total_available} шт</div>
-                </div>
-            </div>
-        </div>
-    `;
+    if (product.photo) {
+        document.getElementById('product-image').innerHTML = `<img src="/storage/${product.photo}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">`;
+    }
 }
 
-function showError(message) {
-    document.getElementById('result-card').style.display = 'none';
-    document.getElementById('error-card').style.display = 'block';
-    document.getElementById('error-message').textContent = message;
+function addToCart() {
+    if (currentProduct) {
+        // Добавление в корзину (реализуйте вашу логику)
+        alert('Добавлено: ' + currentProduct.name);
+    }
 }
-
-document.getElementById('start-scan').addEventListener('click', startScan);
-document.getElementById('stop-scan').addEventListener('click', stopScan);
-window.addEventListener('beforeunload', () => { if (isScanning) stopScan(); });
 </script>
 @endsection

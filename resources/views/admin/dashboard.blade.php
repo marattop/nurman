@@ -1,69 +1,163 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 @section('page-title', 'Дашборд')
 @section('content')
-<style>
-:root { --accent-green: #10b981; --accent-blue: #3b82f6; --accent-red: #ef4444; --accent-orange: #f59e0b; --radius-lg: 24px; --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.08); --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.12); }
-:root, [data-theme="light"] { --bg-color: #F2F2F7; --text-main: #1C1C1E; --text-muted: #8E8E93; --text-secondary: #636366; --border-color: rgba(0, 0, 0, 0.08); --glass-bg: rgba(255, 255, 255, 0.75); --glass-border: rgba(0, 0, 0, 0.05); --card-hover: rgba(255, 255, 255, 0.85); --gradient: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-[data-theme="dark"] { --bg-color: #000000; --text-main: #FFFFFF; --text-muted: rgba(255, 255, 255, 0.7); --text-secondary: rgba(255, 255, 255, 0.5); --border-color: rgba(255, 255, 255, 0.1); --glass-bg: rgba(30, 30, 30, 0.8); --glass-border: rgba(255, 255, 255, 0.08); --card-hover: rgba(40, 40, 40, 0.9); --gradient: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-body { background: var(--bg-color); color: var(--text-main); transition: all 0.3s; }
-.dashboard-header, .stat-card, .data-card { background: var(--glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); }
-.dashboard-header { padding: 40px; margin-bottom: 32px; box-shadow: var(--shadow-lg); }
-.dashboard-header h2 { font-size: 32px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
-.dashboard-header p { font-size: 15px; color: var(--text-muted); }
-.stat-card { padding: 1.5rem; box-shadow: var(--shadow-md); transition: all 0.3s; border-left: 4px solid var(--accent-green); height: 100%; }
-.stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); background: var(--card-hover); }
-.stat-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: var(--gradient); color: white; font-size: 1.5rem; }
-.stat-label { color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem; }
-.stat-value { font-size: 2rem; font-weight: 800; color: var(--accent-green); line-height: 1; }
-.stat-subtitle { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; display: flex; align-items: center; gap: 0.25rem; }
-.data-card { box-shadow: var(--shadow-md); overflow: hidden; }
-.data-card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--glass-border); font-weight: 700; color: var(--text-main); background: rgba(16, 185, 129, 0.08); }
-.table th { padding: 14px 20px; font-size: 12px; color: var(--text-secondary); text-transform: uppercase; border-bottom: 1px solid var(--border-color); }
-.table td { padding: 16px 20px; border-bottom: 1px solid var(--glass-border); color: var(--text-main); }
-.table tr:hover { background: var(--card-hover); }
-.product-thumbnail { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; }
-.product-placeholder { width: 48px; height: 48px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center; color: var(--accent-green); }
-.stock-badge { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); padding: 6px 12px; border-radius: 8px; font-size: 12px; }
-.stock-badge-danger { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); padding: 6px 12px; border-radius: 8px; font-size: 12px; }
-.empty-state { text-align: center; padding: 3rem; color: var(--text-muted); }
-.empty-state-icon { font-size: 3rem; opacity: 0.4; margin-bottom: 1rem; }
-small { color: var(--text-muted) !important; }
-strong { color: var(--text-main); }
-</style>
-<div class="container-fluid py-4">
-    <div class="dashboard-header">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <div><h2 class="mb-2"><i class="bi bi-speedometer2 me-2"></i>Дашборд</h2><p class="mb-0">Панель администратора</p></div>
-            <div class="d-flex gap-3"><div class="mini-stat"><div class="mini-stat-value" style="color: var(--text-main);">{{ $stats['shops_count'] ?? 0 }}</div><div class="mini-stat-label" style="color: var(--text-muted);">Магазинов</div></div><div class="mini-stat"><div class="mini-stat-value" style="color: var(--text-main);">{{ $stats['active_users'] ?? 0 }}</div><div class="mini-stat-label" style="color: var(--text-muted);">Сотрудников</div></div></div>
-        </div>
-    </div>
-    <div class="row g-4 mb-4">
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="stat-card"><div class="d-flex align-items-start justify-content-between"><div><div class="stat-label">Товаров</div><div class="stat-value">{{ $stats['products_count'] ?? 0 }}</div><div class="stat-subtitle"><i class="bi bi-box-seam"></i>Активных: {{ $stats['products_active'] ?? 0 }}</div></div><div class="stat-icon"><i class="bi bi-box"></i></div></div></div>
-        </div>
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="stat-card"><div class="d-flex align-items-start justify-content-between"><div><div class="stat-label">Продаж сегодня</div><div class="stat-value">{{ $stats['today_sales'] ?? 0 }}</div><div class="stat-subtitle"><i class="bi bi-cash"></i>{{ number_format($stats['today_revenue'] ?? 0, 0, '.', ' ') }} сом</div></div><div class="stat-icon"><i class="bi bi-cart"></i></div></div></div>
-        </div>
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="stat-card"><div class="d-flex align-items-start justify-content-between"><div><div class="stat-label">Сотрудников</div><div class="stat-value">{{ $stats['active_users'] ?? 0 }}</div><div class="stat-subtitle"><i class="bi bi-people"></i>Всего: {{ $stats['users_count'] ?? 0 }}</div></div><div class="stat-icon"><i class="bi bi-person-badge"></i></div></div></div>
-        </div>
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="stat-card"><div class="d-flex align-items-start justify-content-between"><div><div class="stat-label">Магазинов</div><div class="stat-value">{{ $stats['shops_count'] ?? 0 }}</div><div class="stat-subtitle"><i class="bi bi-shop"></i>Работает</div></div><div class="stat-icon"><i class="bi bi-shop"></i></div></div></div>
-        </div>
-    </div>
-    <div class="row g-4">
-        <div class="col-12 col-lg-8">
-            <div class="data-card">
-                <div class="data-card-header"><i class="bi bi-clock-history me-2"></i>Последние товары</div>
-                <table class="table"><thead><tr><th>Товар</th><th>Артикул</th><th>Категория</th><th>Дата</th></tr></thead><tbody>@forelse($recentProducts as $product)<tr><td><div class="d-flex align-items-center gap-2">@if($product->photo)<img src="{{ asset('storage/' . $product->photo) }}" class="product-thumbnail">@else<div class="product-placeholder"><i class="bi bi-box"></i></div>@endif<strong>{{ Str::limit($product->name, 40) }}</strong></div></td><td><small>{{ $product->article }}</small></td><td><small>{{ $product->category?->name ?? '—' }}</small></td><td><small>{{ $product->created_at->format('d.m H:i') }}</small></td></tr>@empty<tr><td colspan="4" class="text-center"><div class="empty-state"><div class="empty-state-icon"><i class="bi bi-box"></i></div><p>Нет новых товаров</p></div></td></tr>@endforelse</tbody></table>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+    <!-- Товаров -->
+    <div class="card">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Товаров</div>
+                <div style="font-size: 32px; font-weight: 700; color: #10b981;">{{ $stats['products_count'] ?? 0 }}</div>
+                <div style="color: #64748b; font-size: 13px; margin-top: 4px;">
+                    <i class="bi bi-box-seam"></i> Активных: {{ $stats['products_active'] ?? 0 }}
+                </div>
+            </div>
+            <div style="width: 56px; height: 56px; background: rgba(16,185,129,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 24px;">
+                <i class="bi bi-box"></i>
             </div>
         </div>
-        <div class="col-12 col-lg-4">
-            <div class="data-card">
-                <div class="data-card-header"><i class="bi bi-exclamation-triangle me-2"></i>Заканчиваются</div>
-                <table class="table"><thead><tr><th>Товар</th><th>Остаток</th></tr></thead><tbody>@forelse($lowStockProducts as $product)<tr><td><strong>{{ Str::limit($product->name, 35) }}</strong><br><small>{{ $product->article }}</small></td><td>@if($product->quantity <= 5)<span class="stock-badge-danger">{{ $product->quantity }} шт</span>@else<span class="stock-badge">{{ $product->quantity }} шт</span>@endif</td></tr>@empty<tr><td colspan="2" class="text-center"><div class="empty-state"><div class="empty-state-icon"><i class="bi bi-check-circle"></i></div><p>Все товары в наличии</p></div></td></tr>@endforelse</tbody></table>
+    </div>
+
+    <!-- Продаж сегодня -->
+    <div class="card">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Продаж сегодня</div>
+                <div style="font-size: 32px; font-weight: 700; color: #38bdf8;">{{ $stats['today_sales'] ?? 0 }}</div>
+                <div style="color: #64748b; font-size: 13px; margin-top: 4px;">
+                    <i class="bi bi-cash"></i> {{ number_format($stats['today_revenue'] ?? 0, 0, '.', ' ') }} сом
+                </div>
+            </div>
+            <div style="width: 56px; height: 56px; background: rgba(56,189,248,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 24px;">
+                <i class="bi bi-cart"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Сотрудников -->
+    <div class="card">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Сотрудников</div>
+                <div style="font-size: 32px; font-weight: 700; color: #818cf8;">{{ $stats['active_users'] ?? 0 }}</div>
+                <div style="color: #64748b; font-size: 13px; margin-top: 4px;">
+                    <i class="bi bi-people"></i> Всего: {{ $stats['users_count'] ?? 0 }}
+                </div>
+            </div>
+            <div style="width: 56px; height: 56px; background: rgba(129,140,248,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #818cf8; font-size: 24px;">
+                <i class="bi bi-person-badge"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Магазинов -->
+    <div class="card">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Магазинов</div>
+                <div style="font-size: 32px; font-weight: 700; color: #f59e0b;">{{ $stats['shops_count'] ?? 0 }}</div>
+                <div style="color: #64748b; font-size: 13px; margin-top: 4px;">
+                    <i class="bi bi-shop"></i> Работает
+                </div>
+            </div>
+            <div style="width: 56px; height: 56px; background: rgba(245,158,11,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 24px;">
+                <i class="bi bi-shop"></i>
             </div>
         </div>
     </div>
 </div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
+    <!-- Последние товары -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(56,189,248,0.05); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-clock-history" style="color: #38bdf8;"></i> Последние товары
+        </div>
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Товар</th>
+                    <th>Артикул</th>
+                    <th>Категория</th>
+                    <th>Дата</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($recentProducts as $product)
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            @if($product->photo)
+                                <img src="{{ asset('storage/' . $product->photo) }}" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover;">
+                            @else
+                                <div style="width: 44px; height: 44px; border-radius: 8px; background: rgba(16,185,129,0.15); display: flex; align-items: center; justify-content: center; color: #10b981;">
+                                    <i class="bi bi-box"></i>
+                                </div>
+                            @endif
+                            <span style="font-weight: 500;">{{ Str::limit($product->name, 35) }}</span>
+                        </div>
+                    </td>
+                    <td style="color: #94a3b8;">{{ $product->article }}</td>
+                    <td style="color: #94a3b8;">{{ $product->category?->name ?? '—' }}</td>
+                    <td style="color: #94a3b8;">{{ $product->created_at->format('d.m H:i') }}</td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 40px; color: #64748b;">
+                        <i class="bi bi-box" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 12px;"></i>
+                        Нет новых товаров
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Заканчиваются -->
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(239,68,68,0.05); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-exclamation-triangle" style="color: #ef4444;"></i> Заканчиваются
+        </div>
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align: left;">Товар</th>
+                    <th>Остаток</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($lowStockProducts as $product)
+                <tr>
+                    <td>
+                        <div style="font-weight: 500;">{{ Str::limit($product->name, 30) }}</div>
+                        <div style="color: #94a3b8; font-size: 13px;">{{ $product->article }}</div>
+                    </td>
+                    <td>
+                        @if($product->quantity <= 5)
+                            <span class="badge badge-danger">{{ $product->quantity }} шт</span>
+                        @else
+                            <span class="badge badge-success">{{ $product->quantity }} шт</span>
+                        @endif
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="2" style="text-align: center; padding: 40px; color: #64748b;">
+                        <i class="bi bi-check-circle" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 12px;"></i>
+                        Всё в наличии
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+@media (max-width: 1024px) {
+    div[style*="grid-template-columns: 2fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
 @endsection
