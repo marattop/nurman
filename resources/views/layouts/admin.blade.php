@@ -66,6 +66,22 @@
         .page-subtitle { font-size: 14px; color: #94a3b8; margin: 4px 0 0 0; }
         .card-header { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .card-header-title { font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px; }
+        
+        /* Modal styles */
+        .modal { display: none; position: fixed; inset: 0; z-index: 1000; overflow-y: auto; }
+        .modal.show { display: block; }
+        .modal-dialog { margin: 1.75rem auto; max-width: 500px; }
+        .modal-dialog.modal-lg { max-width: 800px; }
+        .modal-dialog.modal-dialog-centered { display: flex; align-items: center; min-height: calc(100% - 3.5rem); }
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
+        .modal-content { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; margin: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 16px 20px; }
+        .modal-body { padding: 20px; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid rgba(255,255,255,0.05); padding: 16px 20px; }
+        .modal-title { color: #f1f5f9; font-size: 18px; font-weight: 600; margin: 0; }
+        .btn-close { background: transparent; border: none; font-size: 24px; color: #94a3b8; cursor: pointer; padding: 0; line-height: 1; }
+        .btn-close:hover { color: #f1f5f9; }
+        
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); transition: 0.3s; }
             .sidebar.show { transform: translateX(0); }
@@ -170,6 +186,60 @@
             sidebar.classList.toggle('show');
             overlay.style.display = overlay.style.display === 'block' ? 'none' : 'block';
         }
+        
+        // Modal functions
+        window.bootstrap = {
+            Modal: function(element) {
+                this.element = element;
+                this.backdrop = null;
+            }
+        };
+        
+        bootstrap.Modal.prototype.show = function() {
+            this.element.classList.add('show');
+            this.element.style.display = 'block';
+            
+            // Create backdrop
+            this.backdrop = document.createElement('div');
+            this.backdrop.className = 'modal-backdrop';
+            this.backdrop.onclick = () => this.hide();
+            document.body.appendChild(this.backdrop);
+            document.body.style.overflow = 'hidden';
+        };
+        
+        bootstrap.Modal.prototype.hide = function() {
+            this.element.classList.remove('show');
+            this.element.style.display = 'none';
+
+            // На проекте модалки могут открываться/закрываться разными инстансами.
+            // Поэтому безопасно чистим все backdrops на странице.
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            this.backdrop = null;
+
+            document.body.style.overflow = '';
+        };
+        
+        bootstrap.Modal.getInstance = function(element) {
+            return element.modalInstance || null;
+        };
+        
+        // Store instance on element
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.modalInstance = new bootstrap.Modal(modal);
+        });
+
+        // Поддержка закрытия модалок через data-bs-dismiss="modal"
+        // (на проекте нет полного bootstrap JS, поэтому нужен минимальный обработчик).
+        document.addEventListener('click', function(e) {
+            const dismissEl = e.target.closest('[data-bs-dismiss="modal"]');
+            if (!dismissEl) return;
+
+            const modalEl = dismissEl.closest('.modal');
+            if (!modalEl) return;
+
+            const instance = bootstrap.Modal.getInstance(modalEl);
+            if (instance) instance.hide();
+        });
     </script>
     @stack('scripts')
 </body>

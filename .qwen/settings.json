@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(composer *)",
+      "Bash(git add *)"
+    ]
+  },
+  "$version": 3
+}

@@ -41,14 +41,19 @@
                     </td>
                     <td style="color: #94a3b8;">{{ $product->article }}</td>
                     <td>
-                        @if($product->qrCodes && $product->qrCodes->count() > 0)
-                            <span class="badge badge-success">{{ $product->qrCodes->count() }} шт</span>
+                        @php
+                            // В контроллере загружается: variants.qrCodes
+                            $qrCount = $product->variants->sum(fn($v) => $v->qrCodes->count());
+                        @endphp
+
+                        @if($qrCount > 0)
+                            <span class="badge badge-success">{{ $qrCount }} шт</span>
                         @else
                             <span class="badge badge-danger">Нет QR</span>
                         @endif
                     </td>
                     <td>
-                        <a href="{{ route('admin.qr.generate', $product->id) }}" class="btn btn-outline">
+                        <a href="{{ route('admin.qr.generate.page', $product->id) }}" class="btn btn-outline">
                             <i class="bi bi-plus-lg"></i> Генерировать
                         </a>
                     </td>

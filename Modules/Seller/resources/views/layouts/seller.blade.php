@@ -104,7 +104,7 @@
             <a href="{{ route('seller.products.scan') }}" class="menu-item {{ request()->routeIs('seller.products.scan') ? 'active' : '' }}">
                 <i class="bi bi-qr-code-scan"></i> Сканер товаров
             </a>
-            <a href="{{ route('seller.pos.scan-coupon') }}" class="menu-item {{ request()->routeIs('seller.pos.scan-coupon') ? 'active' : '' }}">
+            <a href="{{ route('seller.pos.index') }}" class="menu-item {{ request()->routeIs('seller.pos.index') ? 'active' : '' }}">
                 <i class="bi bi-ticket"></i> Сканер купонов
             </a>
         </nav>

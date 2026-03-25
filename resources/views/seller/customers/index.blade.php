@@ -26,22 +26,22 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($customers as $customer)
+                @forelse($coupons as $coupon)
                 <tr>
                     <td>
-                        <div style="font-weight: 500;">{{ $customer->full_name ?? '—' }}</div>
-                        <div style="color: #94a3b8; font-size: 13px;">{{ $customer->email ?? '' }}</div>
+                        <div style="font-weight: 500;">{{ $coupon->customer?->full_name ?? '—' }}</div>
+                        <div style="color: #94a3b8; font-size: 13px;">{{ $coupon->customer?->email ?? '' }}</div>
                     </td>
-                    <td style="color: #94a3b8;">{{ $customer->phone ?? '—' }}</td>
+                    <td style="color: #94a3b8;">{{ $coupon->customer?->phone ?? '—' }}</td>
                     <td>
-                        @if(($customer->balance ?? 0) > 0)
-                            <span style="color: #10b981; font-weight: 600;">{{ number_format($customer->balance, 2) }} сом</span>
+                        @if(($coupon->customer?->balance ?? 0) > 0)
+                            <span style="color: #10b981; font-weight: 600;">{{ number_format($coupon->customer?->balance, 2) }} сом</span>
                         @else
                             <span style="color: #94a3b8;">0 сом</span>
                         @endif
                     </td>
                     <td>
-                        @if(($customer->is_gold ?? false))
+                        @if(($coupon->customer?->is_gold ?? false))
                             <span class="badge badge-warning"><i class="bi bi-star-fill"></i> Gold</span>
                         @else
                             <span class="badge" style="background: rgba(148,163,184,0.15); color: #94a3b8;">Обычный</span>
@@ -60,17 +60,17 @@
         </table>
     </div>
     
-    @if($customers->hasPages())
+    @if($coupons->hasPages())
     <div style="padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
-        <div style="color: #94a3b8; font-size: 13px;">Показано {{ $customers->firstItem() ?? 0 }} - {{ $customers->lastItem() ?? 0 }} из {{ $customers->total() }}</div>
+        <div style="color: #94a3b8; font-size: 13px;">Показано {{ $coupons->firstItem() ?? 0 }} - {{ $coupons->lastItem() ?? 0 }} из {{ $coupons->total() }}</div>
         <div style="display: flex; gap: 8px;">
-            @if($customers->onFirstPage())
+            @if($coupons->onFirstPage())
                 <span style="padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #64748b; text-decoration: none; font-size: 14px;">← Назад</span>
             @else
-                <a href="{{ $customers->previousPageUrl() }}" style="padding: 8px 14px; border-radius: 8px; background: rgba(16,185,129,0.1); color: #10b981; text-decoration: none; font-size: 14px;">← Назад</a>
+                <a href="{{ $coupons->previousPageUrl() }}" style="padding: 8px 14px; border-radius: 8px; background: rgba(16,185,129,0.1); color: #10b981; text-decoration: none; font-size: 14px;">← Назад</a>
             @endif
-            @if($customers->hasMorePages())
-                <a href="{{ $customers->nextPageUrl() }}" style="padding: 8px 14px; border-radius: 8px; background: rgba(16,185,129,0.1); color: #10b981; text-decoration: none; font-size: 14px;">Вперёд →</a>
+            @if($coupons->hasMorePages())
+                <a href="{{ $coupons->nextPageUrl() }}" style="padding: 8px 14px; border-radius: 8px; background: rgba(16,185,129,0.1); color: #10b981; text-decoration: none; font-size: 14px;">Вперёд →</a>
             @else
                 <span style="padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #64748b; text-decoration: none; font-size: 14px;">Вперёд →</span>
             @endif

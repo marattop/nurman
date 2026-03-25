@@ -28,6 +28,15 @@ class QrCodeController extends Controller
     }
 
     /**
+     * Страница генерации QR-кодов для товара
+     */
+    public function generatePage(Product $product)
+    {
+        $product->load('variants.qrCodes');
+        return view('admin.qr.generate', compact('product'));
+    }
+
+    /**
      * Генерация QR-кода для товара (только артикул)
      */
     public function generate(Request $request)

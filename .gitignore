@@ -1,3 +1,6 @@
 # Игнорируем только сборщики
 /vendor/
 /node_modules/
+.aider*
+.env
+.env

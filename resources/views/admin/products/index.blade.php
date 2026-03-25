@@ -55,21 +55,46 @@
                         <div style="color: #94a3b8; font-size: 13px;">{{ $product->category?->name ?? '' }}</div>
                     </td>
                     <td style="color: #94a3b8;">{{ $product->article }}</td>
-                    <td style="color: #10b981; font-weight: 600;">{{ number_format($product->price, 0, '.', ' ') }} сом</td>
+                    <td style="color: #10b981; font-weight: 600;">{{ number_format($product->retail_price ?? 0, 0, '.', ' ') }} сом</td>
                     <td>
-                        @if($product->stock_quantity <= 5)
-                            <span class="badge badge-danger">{{ $product->stock_quantity }} шт</span>
+                        @php
+                            $totalStock = $product->variants->sum(fn($v) => $v->stock->sum('quantity') ?? 0);
+                        @endphp
+                        @if($totalStock <= 5)
+                            <span class="badge badge-danger">{{ $totalStock }} шт</span>
                         @else
-                            <span class="badge badge-success">{{ $product->stock_quantity }} шт</span>
+                            <span class="badge badge-success">{{ $totalStock }} шт</span>
                         @endif
                     </td>
                     <td>
                         <div style="display: flex; gap: 8px;">
+                            {{-- QR-код --}}
+                            @php
+                                $hasQr = false;
+                                $firstQrCodes = [];
+                                foreach($product->variants as $variant) {
+                                    if($variant->qrCodes && $variant->qrCodes->count() > 0) {
+                                        $hasQr = true;
+                                        $firstQrCodes = $variant->qrCodes->toArray();
+                                        break;
+                                    }
+                                }
+                            @endphp
+                            @if($hasQr)
+                                <button type="button" onclick="showQrModal({{ $product->id }}, '{{ addslashes($product->name) }}', @json($firstQrCodes))" style="padding: 8px 12px; border-radius: 8px; background: rgba(16,185,129,0.15); color: #10b981; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 14px;" title="Показать QR-код">
+                                    <i class="bi bi-qr-code"></i>
+                                </button>
+                            @else
+                                <a href="{{ route('admin.qr.generate.page', $product->id) }}" style="padding: 8px 12px; border-radius: 8px; background: rgba(245,158,11,0.15); color: #f59e0b; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 14px;" title="Сгенерировать QR-код">
+                                    <i class="bi bi-qr-code"></i>
+                                </a>
+                            @endif
+                            
                             <a href="{{ route('admin.products.edit', $product->id) }}" style="padding: 8px 12px; border-radius: 8px; background: rgba(56,189,248,0.1); color: #38bdf8; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 14px;">
                                 <i class="bi bi-pencil"></i>
                             </a>
                             <form action="{{ route('admin.products.delete', $product->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Удалить?')">
-                                @csrf @method('DELETE')
+                                @csrf
                                 <button type="submit" style="padding: 8px 12px; border-radius: 8px; background: rgba(239,68,68,0.15); color: #ef4444; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 14px;">
                                     <i class="bi bi-trash"></i>
                                 </button>
@@ -102,4 +127,53 @@
     </div>
     @endif
 </div>
+
+{{-- Модальное окно просмотра QR-кода --}}
+<div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-qr-code"></i> QR-коды товара</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <h4 id="qr-product-name" style="font-size: 18px; font-weight: 600; color: #f1f5f9; margin-bottom: 8px;"></h4>
+                <div id="qr-codes-container" style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; margin-top: 20px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showQrModal(productId, productName, qrCodes) {
+    document.getElementById('qr-product-name').textContent = productName;
+    
+    const container = document.getElementById('qr-codes-container');
+    container.innerHTML = '';
+    
+    qrCodes.forEach(qr => {
+        const div = document.createElement('div');
+        div.style = 'text-align: center;';
+        
+        // Генерируем QR-код через API если нет пути
+        const qrContent = qr.qr_data && qr.qr_data.article ? qr.qr_data.article : '—';
+        const qrImageUrl = qr.qr_code_path ? '/storage/' + qr.qr_code_path : 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(qrContent);
+        
+        div.innerHTML = `
+            <img src="${qrImageUrl}" alt="QR" style="width: 180px; height: 180px; object-fit: contain; border: 2px solid rgba(56,189,248,0.3); border-radius: 12px; margin-bottom: 8px;">
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">${qrContent}</div>
+            <a href="${qrImageUrl}" download class="btn btn-outline" style="font-size: 12px; padding: 6px 12px;">
+                <i class="bi bi-download"></i> Скачать
+            </a>
+        `;
+        container.appendChild(div);
+    });
+    
+    const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+    modal.show();
+}
+</script>
 @endsection

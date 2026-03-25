@@ -196,7 +196,10 @@ class AdminController extends Controller
         $shops = Shop::where('is_active', true)->get();
         $warehouses = Warehouse::where('is_active', true)->get();
 
-        return view('admin.products.create', compact('categories', 'shops', 'warehouses'));
+        // Получаем первый магазин для выбора по умолчанию
+        $firstShopId = $shops->first()?->id ?? null;
+
+        return view('admin.products.create', compact('categories', 'shops', 'warehouses', 'firstShopId'));
     }
 
     /**
@@ -211,6 +214,7 @@ class AdminController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'retail_price' => 'required|numeric|min:0',
             'supplier_price' => 'nullable|numeric|min:0',
+            'wholesale_price' => 'nullable|numeric|min:0',
             'brand' => 'nullable|string|max:100',
             'material' => 'nullable|string|max:100',
             'country' => 'nullable|string|max:100',
@@ -223,7 +227,6 @@ class AdminController extends Controller
             'variants.*.size' => 'required|string|max:20',
             'variants.*.color' => 'nullable|string|max:50',
             'variants.*.quantity' => 'required|integer|min:0',
-            'variants.*.price' => 'nullable|numeric|min:0',
         ]);
 
         // Генерация артикула если не указан
@@ -256,15 +259,18 @@ class AdminController extends Controller
 
         // Создание вариантов
         $shopId = $validated['shop_id'] ?? null;
+        $warehouseId = $validated['warehouse_id'] ?? null;
         $supplierPrice = $request->input('supplier_price', 0);
+        $wholesalePrice = $request->input('wholesale_price', null);
+        
         foreach ($validated['variants'] as $variantData) {
             $variant = ProductVariant::create([
                 'product_id' => $product->id,
                 'size' => $variantData['size'],
                 'color' => $variantData['color'] ?? null,
                 'sku' => $validated['article'] . '-' . strtoupper($variantData['size']),
-                'supplier_price' => $variantData['supplier_price'] ?? $supplierPrice ?? 0,
-                'wholesale_price' => $variantData['wholesale_price'] ?? null,
+                'supplier_price' => $supplierPrice,
+                'wholesale_price' => $wholesalePrice,
                 'is_active' => true,
             ]);
 
@@ -273,6 +279,13 @@ class AdminController extends Controller
                 Stock::create([
                     'variant_id' => $variant->id,
                     'shop_id' => $shopId,
+                    'quantity' => $variantData['quantity'],
+                    'min_stock' => 5,
+                ]);
+            } elseif ($warehouseId) {
+                Stock::create([
+                    'variant_id' => $variant->id,
+                    'warehouse_id' => $warehouseId,
                     'quantity' => $variantData['quantity'],
                     'min_stock' => 5,
                 ]);
@@ -306,7 +319,18 @@ class AdminController extends Controller
 
         $product->load(['variants.stock.shop', 'variants.qrCodes']);
 
-        return view('admin.products.edit', compact('product', 'categories', 'shops', 'warehouses'));
+        // Получаем shop_id из первого stock
+        $shopId = null;
+        $warehouseId = null;
+        if ($product->variants->isNotEmpty()) {
+            $firstStock = $product->variants->first()->stock->first();
+            if ($firstStock) {
+                $shopId = $firstStock->shop_id;
+                $warehouseId = $firstStock->warehouse_id;
+            }
+        }
+
+        return view('admin.products.edit', compact('product', 'categories', 'shops', 'warehouses', 'shopId', 'warehouseId'));
     }
 
     /**
@@ -321,12 +345,19 @@ class AdminController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'retail_price' => 'required|numeric|min:0',
             'supplier_price' => 'nullable|numeric|min:0',
+            'wholesale_price' => 'nullable|numeric|min:0',
             'brand' => 'nullable|string|max:100',
             'material' => 'nullable|string|max:100',
             'country' => 'nullable|string|max:100',
             'photo' => 'nullable|image|max:2048',
             'camera_photo' => 'nullable|image|max:2048',
             'is_active' => 'boolean',
+            'shop_id' => 'nullable|exists:shops,id',
+            'warehouse_id' => 'nullable|exists:warehouses,id',
+            'variants' => 'nullable|array',
+            'variants.*.size' => 'nullable|string|max:20',
+            'variants.*.color' => 'nullable|string|max:50',
+            'variants.*.quantity' => 'nullable|integer|min:0',
         ]);
 
         $oldName = $product->name;
@@ -350,10 +381,102 @@ class AdminController extends Controller
 
         $product->update($validated);
 
-        // Обновление цены закупки для всех вариантов
-        if ($request->filled('supplier_price')) {
+        // Обновление цены закупки и оптовой цены для всех вариантов
+        if ($request->filled('supplier_price') || $request->filled('wholesale_price')) {
             foreach ($product->variants as $variant) {
-                $variant->update(['supplier_price' => $request->supplier_price]);
+                $updateData = [];
+                if ($request->filled('supplier_price')) {
+                    $updateData['supplier_price'] = $request->supplier_price;
+                }
+                if ($request->filled('wholesale_price')) {
+                    $updateData['wholesale_price'] = $request->wholesale_price;
+                }
+                $variant->update($updateData);
+            }
+        }
+
+        // Обновление вариантов и остатков
+        if ($request->filled('variants')) {
+            $shopId = $request->shop_id;
+            $warehouseId = $request->warehouse_id;
+
+            foreach ($request->variants as $index => $variantData) {
+                $variant = $product->variants[$index] ?? null;
+
+                if (!$variant) {
+                    // Создаём новый вариант если нет существующего
+                    $variant = ProductVariant::create([
+                        'product_id' => $product->id,
+                        'size' => $variantData['size'] ?? '',
+                        'color' => $variantData['color'] ?? '',
+                        'sku' => $product->article . '-' . strtoupper(substr(md5($variantData['size'] . $variantData['color'] . time() . $index), 0, 6)),
+                        'supplier_price' => $variantData['price'] ?? $request->supplier_price ?? 0,
+                        'wholesale_price' => null,
+                        'barcode' => null,
+                        'is_active' => true,
+                    ]);
+                } else {
+                    // Обновляем существующий вариант
+                    $variant->update([
+                        'size' => $variantData['size'] ?? $variant->size,
+                        'color' => $variantData['color'] ?? $variant->color,
+                        'supplier_price' => $variantData['price'] ?? $variant->supplier_price,
+                    ]);
+                }
+
+                // Обновляем остатки
+                if ($variant && isset($variantData['quantity'])) {
+                    $newQuantity = (int) $variantData['quantity'];
+
+                    // Если указан shop_id, обновляем/создаём для магазина
+                    if ($shopId) {
+                        // Удаляем складские остатки для этого варианта
+                        Stock::where('variant_id', $variant->id)
+                            ->whereNotNull('warehouse_id')
+                            ->delete();
+
+                        // Обновляем или создаём остаток для магазина
+                        $stock = Stock::where('variant_id', $variant->id)
+                            ->where('shop_id', $shopId)
+                            ->first();
+
+                        if ($stock) {
+                            $stock->update(['quantity' => $newQuantity]);
+                        } else {
+                            Stock::create([
+                                'variant_id' => $variant->id,
+                                'shop_id' => $shopId,
+                                'quantity' => $newQuantity,
+                                'reserved' => 0,
+                                'min_stock' => 5,
+                            ]);
+                        }
+                    }
+                    // Если указан warehouse_id, обновляем/создаём для склада
+                    elseif ($warehouseId) {
+                        // Удаляем магазинные остатки для этого варианта
+                        Stock::where('variant_id', $variant->id)
+                            ->whereNotNull('shop_id')
+                            ->delete();
+
+                        // Обновляем или создаём остаток для склада
+                        $stock = Stock::where('variant_id', $variant->id)
+                            ->where('warehouse_id', $warehouseId)
+                            ->first();
+
+                        if ($stock) {
+                            $stock->update(['quantity' => $newQuantity]);
+                        } else {
+                            Stock::create([
+                                'variant_id' => $variant->id,
+                                'warehouse_id' => $warehouseId,
+                                'quantity' => $newQuantity,
+                                'reserved' => 0,
+                                'min_stock' => 5,
+                            ]);
+                        }
+                    }
+                }
             }
         }
 
