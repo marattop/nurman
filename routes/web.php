@@ -251,6 +251,7 @@ Route::middleware(['auth', 'role:admin'])
             
             // Управление QR-кодами
             Route::get('manage', [QrCodeController::class, 'index'])->name('manage');
+            Route::get('manage/product/{product}', [QrCodeController::class, 'manageProduct'])->name('manage.product');
             Route::get('generate/{product}', [QrCodeController::class, 'generatePage'])->name('generate.page');
             Route::post('generate', [QrCodeController::class, 'generate'])->name('generate');
             Route::post('generate-all', [QrCodeController::class, 'generateAll'])->name('generate-all');

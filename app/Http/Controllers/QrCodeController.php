@@ -70,14 +70,16 @@ class QrCodeController extends Controller
                 if ($existingQr) {
                     // Обновляем существующий
                     $existingQr->update([
-                        'qr_data' => json_encode(['article' => $qrData]),
+                        // qr_data в модели кастится в array, поэтому НЕ json_encode
+                        'qr_data' => ['article' => $qrData],
                     ]);
                     $generated[] = $existingQr;
                 } else {
                     // Создаем новый
                     $qrCode = QrCode::create([
                         'variant_id' => $variant->id,
-                        'qr_data' => json_encode(['article' => $qrData]),
+                        // qr_data в модели кастится в array, поэтому НЕ json_encode
+                        'qr_data' => ['article' => $qrData],
                         'is_printed' => false,
                     ]);
                     $generated[] = $qrCode;
@@ -119,7 +121,8 @@ class QrCodeController extends Controller
                     QrCode::updateOrCreate(
                         ['variant_id' => $variant->id],
                         [
-                            'qr_data' => json_encode(['article' => $qrData]),
+                            // qr_data в модели кастится в array, поэтому НЕ json_encode
+                            'qr_data' => ['article' => $qrData],
                             'is_printed' => false,
                         ]
                     );
@@ -153,16 +156,19 @@ class QrCodeController extends Controller
         ]);
 
         $variant = ProductVariant::with(['product', 'qrCodes'])->findOrFail($request->variant_id);
-        
+
         $qrCode = QrCode::where('variant_id', $variant->id)->first();
-        
+
         if (!$qrCode) {
             // Генерируем если нет
-            $this->generate(new Request([
-                'product_id' => $variant->product_id,
+            $product = $variant->product;
+            $qrData = $product->article;
+            
+            $qrCode = QrCode::create([
                 'variant_id' => $variant->id,
-            ]));
-            $qrCode = QrCode::where('variant_id', $variant->id)->first();
+                'qr_data' => ['article' => $qrData],
+                'is_printed' => false,
+            ]);
         }
 
         $qrCode->markAsPrinted(auth()->id());
@@ -176,6 +182,15 @@ class QrCodeController extends Controller
             'color' => $variant->color,
             'sku' => $variant->sku,
         ]);
+    }
+
+    /**
+     * Страница управления QR-кодами конкретного товара
+     */
+    public function manageProduct(Product $product)
+    {
+        $product->load(['variants.qrCodes', 'variants.stock']);
+        return view('admin.qr.manage-product', compact('product'));
     }
 
     /**
