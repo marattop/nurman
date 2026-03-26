@@ -49,7 +49,7 @@ class AdminController extends Controller
     public function dashboard()
     {
         $today = now()->format('Y-m-d');
-        
+
         $stats = [
             // Считаем только сотрудников (роли 2, 3, 4), без клиентов
             'users_count' => User::whereIn('role_id', [2, 3, 4])->count(),
@@ -71,12 +71,16 @@ class AdminController extends Controller
             ->limit(5)
             ->get();
 
-        // Товары с низким остатком
+        // Товары с низким остатком (дефицит)
+        $deficitCount = DB::table('stock')
+            ->whereRaw('quantity <= 5')
+            ->count();
+        
         $lowStockProducts = DB::table('products')
             ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
             ->join('stock', 'product_variants.id', '=', 'stock.variant_id')
             ->join('shops', 'stock.shop_id', '=', 'shops.id')
-            ->where('stock.quantity', '<=', 'stock.min_stock')
+            ->whereRaw('stock.quantity <= 5')
             ->select('products.id', 'products.name', 'products.article', 'products.photo',
                      'product_variants.size', 'shops.name as shop_name', 'stock.quantity')
             ->orderBy('stock.quantity')
@@ -90,7 +94,7 @@ class AdminController extends Controller
         $roles = Role::where('id', '!=', 1)->get();
 
         return view('admin.dashboard', compact(
-            'stats', 'recentProducts', 'lowStockProducts', 'qrAutoGenerate', 'roles'
+            'stats', 'recentProducts', 'lowStockProducts', 'deficitCount', 'qrAutoGenerate', 'roles'
         ));
     }
 
@@ -724,6 +728,14 @@ class AdminController extends Controller
      */
     public function updateUser(Request $request, User $user)
     {
+        // Приводим пустые строки от формы к null, чтобы `nullable|exists` работали корректно.
+        $request->merge([
+            'shop_id' => $request->input('shop_id') === '' ? null : $request->input('shop_id'),
+            'email' => $request->input('email') === '' ? null : $request->input('email'),
+            'phone' => $request->input('phone') === '' ? null : $request->input('phone'),
+            'full_name' => $request->input('full_name') === '' ? null : $request->input('full_name'),
+        ]);
+
         $validated = $request->validate([
             'username' => 'required|string|max:50|unique:users,username,' . $user->id,
             'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
@@ -737,7 +749,9 @@ class AdminController extends Controller
 
         $data = [
             'username' => $validated['username'],
-            'email' => $validated['email'],
+            // email может быть nullable, но чтобы случайно не перезаписать его на null —
+            // используем значение из запроса только если поле реально пришло.
+            'email' => $request->has('email') ? $validated['email'] : $user->email,
             'phone' => $validated['phone'],
             'full_name' => $validated['full_name'],
             'role_id' => $validated['role_id'],
@@ -768,7 +782,7 @@ class AdminController extends Controller
     public function deleteUser(User $user)
     {
         if ($user->id === auth()->id()) {
-            return back()->with('error', 'Нельзя удалить самого себя');
+            return redirect()->route('admin.users.index')->with('error', 'Нельзя удалить самого себя');
         }
 
         // Проверка: есть ли продажи
@@ -790,7 +804,7 @@ class AdminController extends Controller
             'model_id' => $user->id,
         ]);
 
-        return back()->with('success', $message);
+        return redirect()->route('admin.users.index')->with('success', $message);
     }
 
     // ========================================================================
@@ -805,6 +819,10 @@ class AdminController extends Controller
         $shops = Shop::withCount(['transactions'])
             ->get();
 
+        // Основной магазин (в seed лежит KARAKOL_MAIN, на всякий случай ищем и по шаблону)
+        $mainShop = Shop::where('code', 'KARAKOL_MAIN')->first()
+            ?? Shop::where('code', 'like', '%_MAIN')->first();
+
         $stats = [
             'total' => Shop::count(),
             'active' => Shop::where('is_active', true)->count(),
@@ -815,7 +833,7 @@ class AdminController extends Controller
                 ->sum(DB::raw('IFNULL(product_variants.supplier_price, 0) * stock.quantity')),
         ];
 
-        return view('admin.shops.index', compact('shops', 'stats'));
+        return view('admin.shops.index', compact('shops', 'stats', 'mainShop'));
     }
 
     /**
@@ -899,8 +917,114 @@ class AdminController extends Controller
     /**
      * Удаление магазина.
      */
-    public function deleteShop(Shop $shop)
+    public function deleteShop(Request $request, Shop $shop)
     {
+        $mainShop = Shop::where('code', 'KARAKOL_MAIN')->first()
+            ?? Shop::where('code', 'like', '%_MAIN')->first();
+
+        $isMainShop = $mainShop && (int)$mainShop->id === (int)$shop->id;
+
+        // Если основной магазин — запретим обычное удаление,
+        // разрешим только с переносом на другой магазин.
+        if ($isMainShop) {
+            $targetShopId = $request->input('transfer_to_shop_id');
+            if (empty($targetShopId)) {
+                return redirect()->route('admin.shops.index')->with('error', 'Нельзя удалить основной магазин без переноса на новый.');
+            }
+
+            $targetShop = Shop::find($targetShopId);
+            if (!$targetShop || (int)$targetShop->id === (int)$shop->id) {
+                return redirect()->route('admin.shops.index')->with('error', 'Выбран некорректный магазин для переноса.');
+            }
+
+            DB::beginTransaction();
+            try {
+                // Перенос сотрудников
+                User::where('shop_id', $shop->id)->update(['shop_id' => $targetShop->id]);
+
+                // Перенос остатков (склады в этом проекте не трогаем, только shop_id)
+                $oldAggregated = DB::table('stock')
+                    ->where('shop_id', $shop->id)
+                    ->select(
+                        'variant_id',
+                        'warehouse_id',
+                        DB::raw('SUM(quantity) as quantity'),
+                        DB::raw('SUM(reserved) as reserved'),
+                        DB::raw('MAX(min_stock) as min_stock')
+                    )
+                    ->groupBy('variant_id', 'warehouse_id')
+                    ->get();
+
+                $targetStocks = DB::table('stock')
+                    ->where('shop_id', $targetShop->id)
+                    ->select('id', 'variant_id', 'warehouse_id', 'quantity', 'reserved', 'min_stock')
+                    ->get();
+
+                $targetMap = [];
+                foreach ($targetStocks as $ts) {
+                    $key = $ts->variant_id . ':' . ($ts->warehouse_id ?? 'null');
+                    $targetMap[$key] = $ts;
+                }
+
+                $now = now();
+                foreach ($oldAggregated as $row) {
+                    $key = $row->variant_id . ':' . ($row->warehouse_id ?? 'null');
+                    if (isset($targetMap[$key])) {
+                        $existing = $targetMap[$key];
+                        DB::table('stock')->where('id', $existing->id)->update([
+                            'quantity' => (int)$existing->quantity + (int)$row->quantity,
+                            'reserved' => (int)$existing->reserved + (int)$row->reserved,
+                            'min_stock' => max((int)$existing->min_stock, (int)$row->min_stock),
+                            'updated_at' => $now,
+                        ]);
+                    } else {
+                        DB::table('stock')->insert([
+                            'variant_id' => $row->variant_id,
+                            'shop_id' => $targetShop->id,
+                            'warehouse_id' => $row->warehouse_id,
+                            'quantity' => (int)$row->quantity,
+                            'reserved' => (int)$row->reserved,
+                            'min_stock' => (int)$row->min_stock,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]);
+                    }
+                }
+
+                // Удаляем старые остатки основного магазина
+                DB::table('stock')->where('shop_id', $shop->id)->delete();
+
+                // Деактивируем основной магазин после переноса
+                // Если у основного магазина нет транзакций, можно удалить запись.
+                // Если транзакции есть — только деактивация, чтобы не потерять историю.
+                $hasTransactionsAfter = Transaction::where('shop_id', $shop->id)->exists();
+                if ($hasTransactionsAfter) {
+                    $shop->update(['is_active' => false]);
+                } else {
+                    $shop->delete();
+                }
+
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return redirect()->route('admin.shops.index')->with('error', 'Ошибка при переносе: ' . $e->getMessage());
+            }
+
+            ActivityLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'shop_delete_main_transferred',
+                'description' => "Основной магазин {$shop->name} деактивирован. Перенос -> {$targetShop->name}",
+                'model_type' => Shop::class,
+                'model_id' => $shop->id,
+            ]);
+
+            $deletedOrDeactivatedMessage = $shop->fresh()
+                ? 'Основной магазин деактивирован и данные перенесены на новый.'
+                : 'Основной магазин удалён и данные перенесены на новый.';
+
+            return redirect()->route('admin.shops.index')->with('success', $deletedOrDeactivatedMessage);
+        }
+
         // Проверка на связанные данные
         $hasStock = Stock::where('shop_id', $shop->id)->exists();
         $hasTransactions = Transaction::where('shop_id', $shop->id)->exists();
@@ -922,7 +1046,7 @@ class AdminController extends Controller
             'model_id' => $shop->id,
         ]);
 
-        return back()->with('success', $message);
+        return redirect()->route('admin.shops.index')->with('success', $message);
     }
 
     // ========================================================================
@@ -961,6 +1085,15 @@ class AdminController extends Controller
         }
 
         $customers = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        // Декодируем qr_data для каждого купона
+        foreach ($customers as $customer) {
+            foreach ($customer->myCoupons as $coupon) {
+                if ($coupon->qrCode && is_string($coupon->qrCode->qr_data)) {
+                    $coupon->qrCode->qr_data = json_decode($coupon->qrCode->qr_data, true);
+                }
+            }
+        }
 
         $stats = [
             'total' => User::where('role_id', 5)->count(),
@@ -1086,26 +1219,44 @@ class AdminController extends Controller
             'discount_value' => $validated['discount_value'] ?? 0,
             'is_active' => (bool)$validated['is_active'],
         ];
-        
+
         // Обновляем срок действия если указан
         if (!empty($validated['valid_until'])) {
             $updateData['valid_until'] = \Carbon\Carbon::parse($validated['valid_until']);
         }
-        
+
         $coupon->update($updateData);
 
+        if (request()->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Купон обновлён']);
+        }
         return redirect()->route('admin.customers.index')->with('success', 'Купон обновлён');
     }
 
     /**
-     * Блокировка/разблокировка купона.
+     * Блокировка купона.
      */
     public function toggleBlockCoupon(Coupon $coupon)
     {
-        $coupon->update(['is_active' => !$coupon->is_active]);
+        $coupon->update(['is_active' => false]);
+        
+        if (request()->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Купон заблокирован']);
+        }
+        return redirect()->route('admin.customers.index')->with('success', 'Купон заблокирован');
+    }
 
-        $action = $coupon->is_active ? 'разблокирован' : 'заблокирован';
-        return redirect()->route('admin.customers.index')->with('success', "Купон {$action}");
+    /**
+     * Разблокировка купона.
+     */
+    public function unblockCoupon(Coupon $coupon)
+    {
+        $coupon->update(['is_active' => true]);
+        
+        if (request()->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Купон разблокирован']);
+        }
+        return redirect()->route('admin.customers.index')->with('success', 'Купон разблокирован');
     }
 
     /**
@@ -1135,6 +1286,10 @@ class AdminController extends Controller
     public function deleteCoupon(Coupon $coupon)
     {
         $coupon->delete();
+        
+        if (request()->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Купон удалён']);
+        }
         return redirect()->route('admin.customers.index')->with('success', 'Купон удалён');
     }
 
@@ -1161,7 +1316,7 @@ class AdminController extends Controller
 
         $query = Transaction::sales()
             ->whereBetween('created_at', [$dateFrom, $dateTo])
-            ->with(['user', 'shop', 'items.variant.product']);
+            ->with(['user', 'shop', 'items']);
 
         if ($shopId) {
             $query->where('shop_id', $shopId);
@@ -1169,7 +1324,9 @@ class AdminController extends Controller
 
         $sales = $query->orderBy('created_at', 'desc')->paginate(50);
 
-        $totalAmount = $sales->sum('total_amount');
+        $totalAmount = $sales->sum(function($sale) {
+            return $sale->total_amount ?? 0;
+        });
         $totalTransactions = $sales->total();
 
         $shops = Shop::where('is_active', true)->get();
@@ -1210,10 +1367,14 @@ class AdminController extends Controller
             ->join('product_variants', 'stock.variant_id', '=', 'product_variants.id')
             ->join('products', 'product_variants.product_id', '=', 'products.id')
             ->leftJoin('shops', 'stock.shop_id', '=', 'shops.id')
-            ->selectRaw('products.name, product_variants.size, shops.name as shop_name,
-                stock.quantity, stock.min_stock, products.retail_price,
-                (products.retail_price * stock.quantity) as total_value')
-            ->orderBy('shop_name')
+            ->leftJoin('warehouses', 'stock.warehouse_id', '=', 'warehouses.id')
+            ->selectRaw('products.name, product_variants.size, products.retail_price,
+                SUM(CASE WHEN stock.shop_id IS NOT NULL THEN stock.quantity ELSE 0 END) as shop_quantity,
+                SUM(CASE WHEN stock.warehouse_id IS NOT NULL THEN stock.quantity ELSE 0 END) as warehouse_quantity,
+                SUM(stock.quantity) as total_quantity,
+                (products.retail_price * SUM(stock.quantity)) as total_value')
+            ->groupBy('products.id', 'product_variants.id', 'product_variants.size', 'products.retail_price', 'products.name')
+            ->orderBy('products.name')
             ->paginate(50);
 
         $totalValue = DB::table('stock')

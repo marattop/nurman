@@ -2,72 +2,72 @@
 @section('page-title', 'Редактировать товар')
 @section('content')
 
+<div class="flex items-center gap-3 mb-6">
+    <div class="w-12 h-12 rounded-xl bg-accent/15 flex items-center justify-center text-accent text-2xl">
+        <i class="bi bi-pencil"></i>
+    </div>
+    <div>
+        <h2 class="text-2xl md:text-3xl font-bold m-0">Редактировать товар</h2>
+        <p class="text-sm text-muted m-0">Артикул: <span class="text-text font-mono">{{ $product->article }}</span></p>
+    </div>
+</div>
+
 @if(session('success'))
-    <div style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #10b981; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px;">
-        <i class="bi bi-check-circle" style="font-size: 24px;"></i>
-        <span style="font-weight: 500;">{{ session('success') }}</span>
+    <div class="bg-success/15 border border-success/30 text-success rounded-xl p-4 mb-6 flex items-center gap-3 animate-in fade-in duration-500">
+        <i class="bi bi-check-circle-fill text-xl"></i>
+        <span class="font-medium">{{ session('success') }}</span>
     </div>
 @endif
 
 @if($errors->any())
-    <div style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-            <i class="bi bi-exclamation-circle" style="font-size: 24px;"></i>
-            <span style="font-weight: 600;">Ошибка при сохранении</span>
+    <div class="bg-danger/15 border border-danger/30 text-danger rounded-xl p-4 mb-6">
+        <div class="flex items-center gap-3 mb-2">
+            <i class="bi bi-exclamation-triangle-fill text-xl"></i>
+            <span class="font-bold">Ошибка при сохранении</span>
         </div>
-        <ul style="margin: 8px 0 0 24px; padding: 0;">
+        <ul class="list-disc list-inside text-sm opacity-90 space-y-1 ml-2">
             @foreach($errors->all() as $error)
-                <li style="margin-bottom: 4px;">{{ $error }}</li>
+                <li>{{ $error }}</li>
             @endforeach
         </ul>
     </div>
 @endif
 
-<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(56,189,248,0.15); display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 24px;">
-        <i class="bi bi-pencil"></i>
-    </div>
-    <div>
-        <h2 style="font-size: 28px; font-weight: 700; margin: 0;">Редактировать товар</h2>
-        <p style="font-size: 14px; color: #94a3b8; margin: 4px 0 0 0;">Артикул: {{ $product->article }}</p>
-    </div>
-</div>
-
-<form action="{{ route('admin.products.update', $product) }}" method="POST" enctype="multipart/form-data">
+<form action="{{ route('admin.products.update', $product) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
     @csrf
 
     {{-- Основная информация --}}
-    <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i class="bi bi-box-seam" style="color: #38bdf8;"></i> Основная информация
+    <div class="card !p-0 overflow-hidden border-white/5 shadow-xl">
+        <div class="px-5 py-4 border-b border-white/5 bg-white/5">
+            <h3 class="text-base font-semibold m-0 flex items-center gap-2">
+                <i class="bi bi-info-circle text-accent"></i> Основная информация
             </h3>
         </div>
-        <div style="padding: 20px;">
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+        <div class="p-5 space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Артикул</label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" name="article" class="input" value="{{ old('article', $product->article) }}" placeholder="Оставьте пустым для автогенерации">
-                        <button type="button" class="btn btn-outline" onclick="generateArticle()" title="Сгенерировать">
-                            <i class="bi bi-arrow-clockwise"></i>
+                    <label class="block font-semibold mb-2 text-text text-sm">Артикул</label>
+                    <div class="flex gap-2">
+                        <input type="text" name="article" class="input" value="{{ old('article', $product->article) }}" placeholder="Автогенерация если пусто">
+                        <button type="button" class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-xl bg-accent/10 text-accent border border-accent/20 hover:bg-accent/20 transition-colors" onclick="generateArticle()" title="Сгенерировать">
+                            <i class="bi bi-arrow-clockwise text-lg"></i>
                         </button>
                     </div>
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Название <span style="color: #ef4444;">*</span></label>
+                    <label class="block font-semibold mb-2 text-text text-sm">Название <span class="text-danger">*</span></label>
                     <input type="text" name="name" class="input" value="{{ old('name', $product->name) }}" required placeholder="Например: Футболка базовая">
                 </div>
             </div>
 
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Описание</label>
-                <textarea name="description" class="input" rows="4" placeholder="Описание товара...">{{ old('description', $product->description) }}</textarea>
+            <div>
+                <label class="block font-semibold mb-2 text-text text-sm">Описание</label>
+                <textarea name="description" class="input min-h-[100px]" rows="3" placeholder="Описание товара...">{{ old('description', $product->description) }}</textarea>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Категория</label>
+                    <label class="block font-semibold mb-2 text-text text-sm">Категория</label>
                     <select name="category_id" class="input">
                         <option value="">Выберите категорию</option>
                         @foreach($categories as $cat)
@@ -76,123 +76,308 @@
                     </select>
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Бренд</label>
+                    <label class="block font-semibold mb-2 text-text text-sm">Бренд</label>
                     <input type="text" name="brand" class="input" value="{{ old('brand', $product->brand) }}" placeholder="Например: Zara">
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Цена продажи (сом) <span style="color: #ef4444;">*</span></label>
+                    <label class="block font-semibold mb-2 text-text text-sm">Цена продажи (сом) <span class="text-danger">*</span></label>
                     <input type="number" name="retail_price" class="input" value="{{ old('retail_price', $product->retail_price ?? 0) }}" required min="0" step="0.01" placeholder="0.00">
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px;">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Цена закупки (сом)</label>
+                    <label class="block font-semibold mb-2 text-text text-sm">Цена закупки</label>
                     <input type="number" name="supplier_price" class="input" value="{{ old('supplier_price', $product->variants->first()->supplier_price ?? 0) }}" min="0" step="0.01" placeholder="0.00">
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Оптовая цена (сом)</label>
+                    <label class="block font-semibold mb-2 text-text text-sm">Оптовая цена</label>
                     <input type="number" name="wholesale_price" class="input" value="{{ old('wholesale_price', $product->variants->first()->wholesale_price ?? '') }}" min="0" step="0.01" placeholder="0.00">
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Материал</label>
-                    <input type="text" name="material" class="input" value="{{ old('material', $product->material) }}" placeholder="Например: Хлопок 100%">
+                    <label class="block font-semibold mb-2 text-text text-sm">Материал</label>
+                    <input type="text" name="material" class="input" value="{{ old('material', $product->material) }}" placeholder="Напр: Хлопок">
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Страна производства</label>
-                    <input type="text" name="country" class="input" value="{{ old('country', $product->country) }}" placeholder="Например: Кыргызстан">
+                    <label class="block font-semibold mb-2 text-text text-sm">Страна</label>
+                    <input type="text" name="country" class="input" value="{{ old('country', $product->country) }}" placeholder="Напр: Кыргызстан">
                 </div>
             </div>
 
-            <div>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" name="is_active" value="1" {{ old('is_active', $product->is_active) ? 'checked' : '' }} style="width: 18px; height: 18px;">
-                    <span style="color: #f1f5f9; font-weight: 500;">Активный товар</span>
+            <div class="pt-2">
+                <label class="inline-flex items-center gap-3 cursor-pointer group">
+                    <div class="relative flex items-center">
+                        <input type="checkbox" name="is_active" value="1" {{ old('is_active', $product->is_active) ? 'checked' : '' }} class="w-5 h-5 rounded border-white/10 bg-sidebar text-accent focus:ring-accent/30 focus:ring-offset-0">
+                    </div>
+                    <span class="text-text font-medium group-hover:text-accent transition-colors">Активный товар</span>
                 </label>
             </div>
         </div>
     </div>
 
-    {{-- Фото товара --}}
-    <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <h3 style="font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i class="bi bi-image" style="color: #38bdf8;"></i> Фото товара
-            </h3>
-        </div>
-        <div style="padding: 20px;">
-            @if($product->photo && file_exists(storage_path('app/public/' . $product->photo)))
-                <div style="margin-bottom: 16px; text-align: center;">
-                    <p style="color: #94a3b8; margin-bottom: 8px;">Текущее фото:</p>
-                    <img src="{{ asset('storage/' . $product->photo) }}" alt="Текущее фото" style="max-width: 300px; max-height: 300px; object-fit: cover; border-radius: 12px; border: 2px solid rgba(56,189,248,0.3);">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {{-- Фото товара --}}
+        <div class="card !p-0 overflow-hidden border-white/5 flex flex-col">
+            <div class="px-5 py-4 border-b border-white/5 bg-white/5">
+                <h3 class="text-base font-semibold m-0 flex items-center gap-2">
+                    <i class="bi bi-image text-accent"></i> Фото товара
+                </h3>
+            </div>
+            <div class="p-5 flex-grow flex flex-col justify-center">
+                <div class="relative group">
+                    <div class="border-2 border-dashed border-white/10 rounded-2xl bg-white/5 p-6 text-center hover:border-accent/50 hover:bg-accent/5 transition-all cursor-pointer overflow-hidden" onclick="document.getElementById('photo').click()">
+                        <div id="upload-placeholder" class="{{ $product->photo ? 'hidden' : '' }} space-y-3 py-4">
+                            <i class="bi bi-cloud-arrow-up text-4xl text-accent opacity-50 group-hover:opacity-100 transition-opacity"></i>
+                            <div class="text-text font-semibold text-sm">Загрузить новое фото</div>
+                            <div class="text-muted text-[10px]">PNG, JPG до 2MB</div>
+                        </div>
+                        
+                        <img id="preview" src="{{ $product->photo ? asset('storage/' . $product->photo) : '#' }}" alt="Предпросмотр" class="{{ $product->photo ? '' : 'hidden' }} max-w-full max-h-[300px] rounded-xl mx-auto object-contain shadow-2xl border border-white/10">
+                        <input type="file" name="photo" id="photo" accept="image/*" class="hidden" onchange="previewImage(this)">
+                    </div>
+                    
+                    <div class="mt-4 flex flex-wrap gap-3 justify-center">
+                        <button type="button" class="btn btn-outline py-2 px-4 text-xs" onclick="openCameraModal()">
+                            <i class="bi bi-camera"></i> Камера
+                        </button>
+                        <button type="button" id="remove-photo" class="{{ $product->photo ? '' : 'hidden' }} btn btn-danger py-2 px-4 text-xs" onclick="clearPhoto()">
+                            <i class="bi bi-x-circle"></i> Сбросить
+                        </button>
+                    </div>
                 </div>
-            @endif
-            
-            <div style="text-align: center; padding: 3rem; border: 2px dashed rgba(56,189,248,0.3); border-radius: 12px; background: rgba(56,189,248,0.05); cursor: pointer; transition: 0.2s;" onclick="document.getElementById('photo').click()" onmouseover="this.style.background='rgba(56,189,248,0.1)'" onmouseout="this.style.background='rgba(56,189,248,0.05)'">
-                <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #38bdf8; margin-bottom: 1rem;"></i>
-                <p style="margin: 0; font-weight: 600; color: #f1f5f9;">Загрузить новое фото</p>
-                <small style="color: #94a3b8; display: block; margin-top: 4px;">PNG, JPG до 2MB</small>
-                <input type="file" name="photo" id="photo" accept="image/*" onchange="previewImage(this)" style="display: none;">
             </div>
-            <div style="margin-top: 16px; text-align: center;">
-                <button type="button" class="btn btn-outline" onclick="openCameraModal()">
-                    <i class="bi bi-camera"></i> Сделать фото
-                </button>
+        </div>
+
+        {{-- Место размещения --}}
+        <div class="card !p-0 overflow-hidden border-white/5 flex flex-col">
+            <div class="px-5 py-4 border-b border-white/5 bg-white/5">
+                <h3 class="text-base font-semibold m-0 flex items-center gap-2">
+                    <i class="bi bi-geo-alt text-accent"></i> Место размещения
+                </h3>
             </div>
-            <img id="preview" src="#" alt="Предпросмотр" style="max-width: 300px; max-height: 300px; object-fit: cover; border-radius: 12px; display: none; margin: 16px auto 0;">
+            <div class="p-5 space-y-6">
+                <div>
+                    <label class="block font-semibold mb-3 text-text text-sm">Где находится товар?</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="relative flex flex-col p-4 border rounded-xl cursor-pointer transition-all border-white/5 bg-white/5 hover:bg-white/10 has-[:checked]:border-accent/50 has-[:checked]:bg-accent/5">
+                            <input type="radio" name="location_type" value="warehouse" onchange="toggleLocation()" class="absolute opacity-0" {{ !$shopId ? 'checked' : '' }}>
+                            <i class="bi bi-box-seam text-2xl text-accent mb-2"></i>
+                            <span class="font-bold text-sm">Склад</span>
+                        </label>
+                        <label class="relative flex flex-col p-4 border rounded-xl cursor-pointer transition-all border-white/5 bg-white/5 hover:bg-white/10 has-[:checked]:border-accent/50 has-[:checked]:bg-accent/5">
+                            <input type="radio" name="location_type" value="shop" onchange="toggleLocation()" class="absolute opacity-0" {{ $shopId ? 'checked' : '' }}>
+                            <i class="bi bi-shop text-2xl text-success mb-2"></i>
+                            <span class="font-bold text-sm">Витрина</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="warehouse-section" class="{{ $shopId ? 'hidden' : '' }} space-y-2">
+                    <label class="block font-semibold text-text text-sm">Выберите склад</label>
+                    <select name="warehouse_id" id="warehouse_id" class="input" {{ $shopId ? 'disabled' : '' }}>
+                        @foreach($warehouses as $warehouse)
+                            <option value="{{ $warehouse->id }}" {{ old('warehouse_id', $warehouseId ?? '') == $warehouse->id ? 'selected' : '' }}>{{ $warehouse->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div id="shop-section" class="{{ !$shopId ? 'hidden' : '' }} space-y-2">
+                    <label class="block font-semibold text-text text-sm">Выберите магазин</label>
+                    <select name="shop_id" id="shop_id" class="input" {{ !$shopId ? 'disabled' : '' }}>
+                        @foreach($shops as $shop)
+                            <option value="{{ $shop->id }}" {{ old('shop_id', $shopId ?? '') == $shop->id ? 'selected' : '' }}>{{ $shop->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
         </div>
     </div>
 
     {{-- Варианты товара --}}
-    <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i class="bi bi-layers" style="color: #38bdf8;"></i> Варианты товара
+    <div class="card !p-0 overflow-hidden border-white/5 shadow-xl">
+        <div class="px-5 py-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
+            <h3 class="text-base font-semibold m-0 flex items-center gap-2">
+                <i class="bi bi-layers text-accent"></i> Варианты и остатки
             </h3>
-            <button type="button" class="btn btn-primary" onclick="addVariant()">
+            <button type="button" class="btn btn-outline py-2 px-3 text-xs" onclick="addVariant()">
                 <i class="bi bi-plus-lg"></i> Добавить
             </button>
         </div>
-        <div style="padding: 20px;">
-            <div id="variants-container">
+        <div class="p-5">
+            <div id="variants-container" class="space-y-4">
                 @forelse($product->variants as $index => $variant)
-                <div class="variant-item" style="display: grid; grid-template-columns: 2fr 2fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 12px; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Размер</label>
-                        <input type="text" name="variants[{{ $index }}][size]" class="input" placeholder="S, M, L..." required value="{{ $variant->size }}">
+                <div class="variant-item bg-white/5 p-4 rounded-xl border border-white/5 relative group">
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Размер</label>
+                            <select name="variants[{{ $index }}][size]" class="input" required>
+                                <option value="">Выберите размер</option>
+                                <option value="XS" {{ $variant->size == 'XS' ? 'selected' : '' }}>XS (Extra Small)</option>
+                                <option value="S" {{ $variant->size == 'S' ? 'selected' : '' }}>S (Small)</option>
+                                <option value="M" {{ $variant->size == 'M' ? 'selected' : '' }}>M (Medium)</option>
+                                <option value="L" {{ $variant->size == 'L' ? 'selected' : '' }}>L (Large)</option>
+                                <option value="XL" {{ $variant->size == 'XL' ? 'selected' : '' }}>XL (Extra Large)</option>
+                                <option value="2XL" {{ $variant->size == '2XL' ? 'selected' : '' }}>2XL (XXL)</option>
+                                <option value="3XL" {{ $variant->size == '3XL' ? 'selected' : '' }}>3XL (XXXL)</option>
+                                <option value="4XL" {{ $variant->size == '4XL' ? 'selected' : '' }}>4XL (XXXXL)</option>
+                                <option value="5XL" {{ $variant->size == '5XL' ? 'selected' : '' }}>5XL (XXXXXL)</option>
+                                <option value="42" {{ $variant->size == '42' ? 'selected' : '' }}>42 (EU)</option>
+                                <option value="44" {{ $variant->size == '44' ? 'selected' : '' }}>44 (EU)</option>
+                                <option value="46" {{ $variant->size == '46' ? 'selected' : '' }}>46 (EU)</option>
+                                <option value="48" {{ $variant->size == '48' ? 'selected' : '' }}>48 (EU)</option>
+                                <option value="50" {{ $variant->size == '50' ? 'selected' : '' }}>50 (EU)</option>
+                                <option value="52" {{ $variant->size == '52' ? 'selected' : '' }}>52 (EU)</option>
+                                <option value="54" {{ $variant->size == '54' ? 'selected' : '' }}>54 (EU)</option>
+                                <option value="56" {{ $variant->size == '56' ? 'selected' : '' }}>56 (EU)</option>
+                                <option value="58" {{ $variant->size == '58' ? 'selected' : '' }}>58 (EU)</option>
+                                <option value="60" {{ $variant->size == '60' ? 'selected' : '' }}>60 (EU)</option>
+                                <option value="25" {{ $variant->size == '25' ? 'selected' : '' }}>25 (W)</option>
+                                <option value="26" {{ $variant->size == '26' ? 'selected' : '' }}>26 (W)</option>
+                                <option value="27" {{ $variant->size == '27' ? 'selected' : '' }}>27 (W)</option>
+                                <option value="28" {{ $variant->size == '28' ? 'selected' : '' }}>28 (W)</option>
+                                <option value="29" {{ $variant->size == '29' ? 'selected' : '' }}>29 (W)</option>
+                                <option value="30" {{ $variant->size == '30' ? 'selected' : '' }}>30 (W)</option>
+                                <option value="31" {{ $variant->size == '31' ? 'selected' : '' }}>31 (W)</option>
+                                <option value="32" {{ $variant->size == '32' ? 'selected' : '' }}>32 (W)</option>
+                                <option value="33" {{ $variant->size == '33' ? 'selected' : '' }}>33 (W)</option>
+                                <option value="34" {{ $variant->size == '34' ? 'selected' : '' }}>34 (W)</option>
+                                <option value="35" {{ $variant->size == '35' ? 'selected' : '' }}>35 (W)</option>
+                                <option value="36" {{ $variant->size == '36' ? 'selected' : '' }}>36 (W)</option>
+                                <option value="37" {{ $variant->size == '37' ? 'selected' : '' }}>37 (W)</option>
+                                <option value="38" {{ $variant->size == '38' ? 'selected' : '' }}>38 (W)</option>
+                                <option value="39" {{ $variant->size == '39' ? 'selected' : '' }}>39 (W)</option>
+                                <option value="40" {{ $variant->size == '40' ? 'selected' : '' }}>40 (W)</option>
+                                <option value="41" {{ $variant->size == '41' ? 'selected' : '' }}>41 (W)</option>
+                                <option value="42" {{ $variant->size == '42' ? 'selected' : '' }}>42 (W)</option>
+                                <option value="43" {{ $variant->size == '43' ? 'selected' : '' }}>43 (W)</option>
+                                <option value="44" {{ $variant->size == '44' ? 'selected' : '' }}>44 (W)</option>
+                                <option value="45" {{ $variant->size == '45' ? 'selected' : '' }}>45 (W)</option>
+                                <option value="46" {{ $variant->size == '46' ? 'selected' : '' }}>46 (W)</option>
+                                <option value="47" {{ $variant->size == '47' ? 'selected' : '' }}>47 (W)</option>
+                                <option value="48" {{ $variant->size == '48' ? 'selected' : '' }}>48 (W)</option>
+                                <option value="49" {{ $variant->size == '49' ? 'selected' : '' }}>49 (W)</option>
+                                <option value="50" {{ $variant->size == '50' ? 'selected' : '' }}>50 (W)</option>
+                                <option value="28/32" {{ $variant->size == '28/32' ? 'selected' : '' }}>28/32 (W/L)</option>
+                                <option value="29/32" {{ $variant->size == '29/32' ? 'selected' : '' }}>29/32 (W/L)</option>
+                                <option value="30/32" {{ $variant->size == '30/32' ? 'selected' : '' }}>30/32 (W/L)</option>
+                                <option value="31/32" {{ $variant->size == '31/32' ? 'selected' : '' }}>31/32 (W/L)</option>
+                                <option value="32/32" {{ $variant->size == '32/32' ? 'selected' : '' }}>32/32 (W/L)</option>
+                                <option value="33/32" {{ $variant->size == '33/32' ? 'selected' : '' }}>33/32 (W/L)</option>
+                                <option value="34/32" {{ $variant->size == '34/32' ? 'selected' : '' }}>34/32 (W/L)</option>
+                                <option value="36/32" {{ $variant->size == '36/32' ? 'selected' : '' }}>36/32 (W/L)</option>
+                                <option value="38/32" {{ $variant->size == '38/32' ? 'selected' : '' }}>38/32 (W/L)</option>
+                                <option value="29/30" {{ $variant->size == '29/30' ? 'selected' : '' }}>29/30 (W/L)</option>
+                                <option value="30/30" {{ $variant->size == '30/30' ? 'selected' : '' }}>30/30 (W/L)</option>
+                                <option value="31/30" {{ $variant->size == '31/30' ? 'selected' : '' }}>31/30 (W/L)</option>
+                                <option value="32/30" {{ $variant->size == '32/30' ? 'selected' : '' }}>32/30 (W/L)</option>
+                                <option value="33/30" {{ $variant->size == '33/30' ? 'selected' : '' }}>33/30 (W/L)</option>
+                                <option value="34/30" {{ $variant->size == '34/30' ? 'selected' : '' }}>34/30 (W/L)</option>
+                                <option value="36/30" {{ $variant->size == '36/30' ? 'selected' : '' }}>36/30 (W/L)</option>
+                                <option value="38/30" {{ $variant->size == '38/30' ? 'selected' : '' }}>38/30 (W/L)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Цвет</label>
+                            <input type="text" name="variants[{{ $index }}][color]" class="input" placeholder="Цвет" value="{{ $variant->color }}">
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Кол-во</label>
+                            <input type="number" name="variants[{{ $index }}][quantity]" class="input" placeholder="0" required value="{{ $variant->stock->sum('quantity') }}">
+                        </div>
+                        <div class="flex items-end">
+                            <button type="button" class="btn btn-outline w-full py-2" onclick="convertToInput(this)">
+                                <i class="bi bi-pencil"></i> Свой размер
+                            </button>
+                        </div>
                     </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Цвет</label>
-                        <input type="text" name="variants[{{ $index }}][color]" class="input" placeholder="Цвет" value="{{ $variant->color }}">
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Кол-во</label>
-                        <input type="number" name="variants[{{ $index }}][quantity]" class="input" placeholder="Кол-во" required value="{{ $variant->stock->sum('quantity') }}">
-                    </div>
-                    <div>
-                        <button type="button" class="btn btn-danger" onclick="removeVariant(this)" style="margin-top: 10px;">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
+                    <button type="button" class="absolute -top-2 -right-2 w-7 h-7 bg-danger text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" onclick="removeVariant(this)">
+                        <i class="bi bi-x"></i>
+                    </button>
                 </div>
                 @empty
-                <div class="variant-item" style="display: grid; grid-template-columns: 2fr 2fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 12px; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Размер</label>
-                        <input type="text" name="variants[0][size]" class="input" placeholder="S, M, L..." required>
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Цвет</label>
-                        <input type="text" name="variants[0][color]" class="input" placeholder="Цвет">
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Кол-во</label>
-                        <input type="number" name="variants[0][quantity]" class="input" placeholder="Кол-во" required>
-                    </div>
-                    <div>
-                        <button type="button" class="btn btn-danger" onclick="removeVariant(this)" style="margin-top: 10px;">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                <div class="variant-item bg-white/5 p-4 rounded-xl border border-white/5 relative group">
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Размер</label>
+                            <select name="variants[0][size]" class="input" required>
+                                <option value="">Выберите размер</option>
+                                <option value="XS">XS (Extra Small)</option>
+                                <option value="S">S (Small)</option>
+                                <option value="M">M (Medium)</option>
+                                <option value="L">L (Large)</option>
+                                <option value="XL">XL (Extra Large)</option>
+                                <option value="2XL">2XL (XXL)</option>
+                                <option value="3XL">3XL (XXXL)</option>
+                                <option value="4XL">4XL (XXXXL)</option>
+                                <option value="5XL">5XL (XXXXXL)</option>
+                                <option value="42">42 (EU)</option>
+                                <option value="44">44 (EU)</option>
+                                <option value="46">46 (EU)</option>
+                                <option value="48">48 (EU)</option>
+                                <option value="50">50 (EU)</option>
+                                <option value="52">52 (EU)</option>
+                                <option value="54">54 (EU)</option>
+                                <option value="56">56 (EU)</option>
+                                <option value="58">58 (EU)</option>
+                                <option value="60">60 (EU)</option>
+                                <option value="25">25 (W)</option>
+                                <option value="26">26 (W)</option>
+                                <option value="27">27 (W)</option>
+                                <option value="28">28 (W)</option>
+                                <option value="29">29 (W)</option>
+                                <option value="30">30 (W)</option>
+                                <option value="31">31 (W)</option>
+                                <option value="32">32 (W)</option>
+                                <option value="33">33 (W)</option>
+                                <option value="34">34 (W)</option>
+                                <option value="35">35 (W)</option>
+                                <option value="36">36 (W)</option>
+                                <option value="37">37 (W)</option>
+                                <option value="38">38 (W)</option>
+                                <option value="39">39 (W)</option>
+                                <option value="40">40 (W)</option>
+                                <option value="41">41 (W)</option>
+                                <option value="42">42 (W)</option>
+                                <option value="43">43 (W)</option>
+                                <option value="44">44 (W)</option>
+                                <option value="45">45 (W)</option>
+                                <option value="46">46 (W)</option>
+                                <option value="47">47 (W)</option>
+                                <option value="48">48 (W)</option>
+                                <option value="49">49 (W)</option>
+                                <option value="50">50 (W)</option>
+                                <option value="28/32">28/32 (W/L)</option>
+                                <option value="29/32">29/32 (W/L)</option>
+                                <option value="30/32">30/32 (W/L)</option>
+                                <option value="31/32">31/32 (W/L)</option>
+                                <option value="32/32">32/32 (W/L)</option>
+                                <option value="33/32">33/32 (W/L)</option>
+                                <option value="34/32">34/32 (W/L)</option>
+                                <option value="36/32">36/32 (W/L)</option>
+                                <option value="38/32">38/32 (W/L)</option>
+                                <option value="29/30">29/30 (W/L)</option>
+                                <option value="30/30">30/30 (W/L)</option>
+                                <option value="31/30">31/30 (W/L)</option>
+                                <option value="32/30">32/30 (W/L)</option>
+                                <option value="33/30">33/30 (W/L)</option>
+                                <option value="34/30">34/30 (W/L)</option>
+                                <option value="36/30">36/30 (W/L)</option>
+                                <option value="38/30">38/30 (W/L)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Цвет</label>
+                            <input type="text" name="variants[0][color]" class="input" placeholder="Цвет">
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Кол-во</label>
+                            <input type="number" name="variants[0][quantity]" class="input" placeholder="0" required>
+                        </div>
+                        <div class="flex items-end">
+                            <button type="button" class="btn btn-outline w-full py-2" onclick="convertToInput(this)">
+                                <i class="bi bi-pencil"></i> Свой размер
+                            </button>
+                        </div>
                     </div>
                 </div>
                 @endforelse
@@ -200,58 +385,13 @@
         </div>
     </div>
 
-    {{-- Магазины и склады --}}
-    <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <h3 style="font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i class="bi bi-shop" style="color: #38bdf8;"></i> Куда разместить товар?
-            </h3>
-        </div>
-        <div style="padding: 20px;">
-            {{-- Переключатель Склад/Витрина --}}
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #f1f5f9;">Место размещения</label>
-                <div style="display: flex; gap: 16px;">
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="radio" name="location_type" value="warehouse" onchange="toggleLocation()" style="width: 18px; height: 18px;" {{ !$shopId ? 'checked' : '' }}>
-                        <span style="color: #f1f5f9; font-weight: 500;"><i class="bi bi-box-seam" style="color: #38bdf8; margin-right: 6px;"></i> Склад</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="radio" name="location_type" value="shop" onchange="toggleLocation()" style="width: 18px; height: 18px;" {{ $shopId ? 'checked' : '' }}>
-                        <span style="color: #f1f5f9; font-weight: 500;"><i class="bi bi-shop" style="color: #10b981; margin-right: 6px;"></i> Витрина (магазин)</span>
-                    </label>
-                </div>
-            </div>
-
-            {{-- Склад --}}
-            <div id="warehouse-section" {{ $shopId ? 'style="display: none;"' : '' }}>
-                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Выберите склад</label>
-                <select name="warehouse_id" id="warehouse_id" class="input" {{ $shopId ? 'disabled' : '' }}>
-                    @foreach($warehouses as $warehouse)
-                        <option value="{{ $warehouse->id }}" {{ old('warehouse_id', $warehouseId ?? '') == $warehouse->id ? 'selected' : '' }}>{{ $warehouse->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- Магазин --}}
-            <div id="shop-section" {{ !$shopId ? 'style="display: none;"' : '' }}>
-                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Выберите магазин</label>
-                <select name="shop_id" id="shop_id" class="input" {{ !$shopId ? 'disabled' : '' }}>
-                    @foreach($shops as $shop)
-                        <option value="{{ $shop->id }}" {{ old('shop_id', $shopId ?? '') == $shop->id ? 'selected' : '' }}>{{ $shop->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-    </div>
-
     {{-- Кнопки --}}
-    <div style="display: flex; gap: 12px;">
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check-lg"></i> Сохранить изменения
+    <div class="flex flex-col sm:flex-row gap-3 pt-4">
+        <button type="submit" class="btn btn-primary px-8 py-3 justify-center shadow-lg shadow-accent/20">
+            <i class="bi bi-check2-circle text-lg"></i> <span>Сохранить изменения</span>
         </button>
-        <a href="{{ route('admin.products.index') }}" class="btn btn-outline">
-            <i class="bi bi-x-lg"></i> Отмена
+        <a href="{{ route('admin.products.index') }}" class="btn btn-outline px-8 py-3 justify-center">
+            <i class="bi bi-arrow-left"></i> Отмена
         </a>
     </div>
 </form>
@@ -259,20 +399,24 @@
 {{-- Модальное окно камеры --}}
 <div class="modal fade" id="cameraModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-camera"></i> Сделать фото</h5>
+        <div class="modal-content overflow-hidden">
+            <div class="modal-header border-b border-white/5">
+                <h5 class="modal-title"><i class="bi bi-camera text-accent"></i> Сделать фото</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body text-center">
-                <video id="cameraVideo" autoplay playsinline style="width: 100%; max-width: 640px; border-radius: 8px; background: #000;"></video>
-                <canvas id="cameraCanvas" style="display: none;"></canvas>
-                <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center;">
-                    <button type="button" class="btn btn-primary" onclick="takePhoto()">
-                        <i class="bi bi-camera-fill"></i> Сфотографировать
+            <div class="modal-body p-0 bg-black">
+                <div class="relative aspect-video flex items-center justify-center">
+                    <video id="cameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+                    <canvas id="cameraCanvas" class="hidden"></canvas>
+                </div>
+            </div>
+            <div class="modal-footer bg-sidebar border-t border-white/5">
+                <div class="flex gap-3 w-full justify-center">
+                    <button type="button" class="btn btn-primary py-3 px-6 rounded-full" onclick="takePhoto()">
+                        <i class="bi bi-camera-fill text-xl"></i>
                     </button>
-                    <button type="button" class="btn btn-outline" onclick="stopCamera()">
-                        <i class="bi bi-x-lg"></i> Отмена
+                    <button type="button" class="btn btn-outline py-3 px-6 rounded-full" onclick="stopCamera()">
+                        <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
             </div>
@@ -281,9 +425,8 @@
 </div>
 
 <script>
-let variantCounter = {{ $product->variants->count() }};
+let variantCounter = {{ $product->variants->count() > 0 ? $product->variants->count() : 1 }};
 
-// Переключение Склад/Витрина
 function toggleLocation() {
     const locationType = document.querySelector('input[name="location_type"]:checked').value;
     const warehouseSection = document.getElementById('warehouse-section');
@@ -292,25 +435,118 @@ function toggleLocation() {
     const shopSelect = document.getElementById('shop_id');
 
     if (locationType === 'warehouse') {
-        warehouseSection.style.display = 'block';
-        shopSection.style.display = 'none';
-        warehouseSelect.removeAttribute('disabled');
-        shopSelect.setAttribute('disabled', 'disabled');
+        warehouseSection.classList.remove('hidden');
+        shopSection.classList.add('hidden');
+        warehouseSelect.disabled = false;
+        shopSelect.disabled = true;
     } else {
-        warehouseSection.style.display = 'none';
-        shopSection.style.display = 'block';
-        warehouseSelect.setAttribute('disabled', 'disabled');
-        shopSelect.removeAttribute('disabled');
+        warehouseSection.classList.add('hidden');
+        shopSection.classList.remove('hidden');
+        warehouseSelect.disabled = true;
+        shopSelect.disabled = false;
     }
 }
 
 function addVariant() {
     const container = document.getElementById('variants-container');
     const newVariant = document.createElement('div');
-    newVariant.className = 'variant-item';
-    newVariant.innerHTML = '<div style="display: grid; grid-template-columns: 2fr 2fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 12px; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);"><div><label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Размер</label><input type="text" name="variants[' + variantCounter + '][size]" class="input" placeholder="S, M, L..." required></div><div><label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Цвет</label><input type="text" name="variants[' + variantCounter + '][color]" class="input" placeholder="Цвет"></div><div><label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Кол-во</label><input type="number" name="variants[' + variantCounter + '][quantity]" class="input" placeholder="Кол-во" required></div><div><button type="button" class="btn btn-danger" onclick="removeVariant(this)" style="margin-top: 10px;"><i class="bi bi-trash"></i></button></div></div>';
+    newVariant.className = 'variant-item bg-white/5 p-4 rounded-xl border border-white/5 relative group animate-in fade-in slide-in-from-top-2 duration-300';
+    newVariant.innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div>
+                <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Размер</label>
+                <select name="variants[${variantCounter}][size]" class="input" required>
+                    <option value="">Выберите размер</option>
+                    <option value="XS">XS (Extra Small)</option>
+                    <option value="S">S (Small)</option>
+                    <option value="M">M (Medium)</option>
+                    <option value="L">L (Large)</option>
+                    <option value="XL">XL (Extra Large)</option>
+                    <option value="2XL">2XL (XXL)</option>
+                    <option value="3XL">3XL (XXXL)</option>
+                    <option value="4XL">4XL (XXXXL)</option>
+                    <option value="5XL">5XL (XXXXXL)</option>
+                    <option value="42">42 (EU)</option>
+                    <option value="44">44 (EU)</option>
+                    <option value="46">46 (EU)</option>
+                    <option value="48">48 (EU)</option>
+                    <option value="50">50 (EU)</option>
+                    <option value="52">52 (EU)</option>
+                    <option value="54">54 (EU)</option>
+                    <option value="56">56 (EU)</option>
+                    <option value="58">58 (EU)</option>
+                    <option value="60">60 (EU)</option>
+                    <option value="25">25 (W)</option>
+                    <option value="26">26 (W)</option>
+                    <option value="27">27 (W)</option>
+                    <option value="28">28 (W)</option>
+                    <option value="29">29 (W)</option>
+                    <option value="30">30 (W)</option>
+                    <option value="31">31 (W)</option>
+                    <option value="32">32 (W)</option>
+                    <option value="33">33 (W)</option>
+                    <option value="34">34 (W)</option>
+                    <option value="35">35 (W)</option>
+                    <option value="36">36 (W)</option>
+                    <option value="37">37 (W)</option>
+                    <option value="38">38 (W)</option>
+                    <option value="39">39 (W)</option>
+                    <option value="40">40 (W)</option>
+                    <option value="41">41 (W)</option>
+                    <option value="42">42 (W)</option>
+                    <option value="43">43 (W)</option>
+                    <option value="44">44 (W)</option>
+                    <option value="45">45 (W)</option>
+                    <option value="46">46 (W)</option>
+                    <option value="47">47 (W)</option>
+                    <option value="48">48 (W)</option>
+                    <option value="49">49 (W)</option>
+                    <option value="50">50 (W)</option>
+                    <option value="28/32">28/32 (W/L)</option>
+                    <option value="29/32">29/32 (W/L)</option>
+                    <option value="30/32">30/32 (W/L)</option>
+                    <option value="31/32">31/32 (W/L)</option>
+                    <option value="32/32">32/32 (W/L)</option>
+                    <option value="33/32">33/32 (W/L)</option>
+                    <option value="34/32">34/32 (W/L)</option>
+                    <option value="36/32">36/32 (W/L)</option>
+                    <option value="38/32">38/32 (W/L)</option>
+                    <option value="29/30">29/30 (W/L)</option>
+                    <option value="30/30">30/30 (W/L)</option>
+                    <option value="31/30">31/30 (W/L)</option>
+                    <option value="32/30">32/30 (W/L)</option>
+                    <option value="33/30">33/30 (W/L)</option>
+                    <option value="34/30">34/30 (W/L)</option>
+                    <option value="36/30">36/30 (W/L)</option>
+                    <option value="38/30">38/30 (W/L)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Цвет</label>
+                <input type="text" name="variants[${variantCounter}][color]" class="input" placeholder="Цвет">
+            </div>
+            <div>
+                <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Кол-во</label>
+                <input type="number" name="variants[${variantCounter}][quantity]" class="input" placeholder="0" required min="0">
+            </div>
+            <div class="flex items-end">
+                <button type="button" class="btn btn-outline w-full py-2" onclick="convertToInput(this)">
+                    <i class="bi bi-pencil"></i> Свой размер
+                </button>
+            </div>
+        </div>
+        <button type="button" class="absolute -top-2 -right-2 w-7 h-7 bg-danger text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" onclick="removeVariant(this)">
+            <i class="bi bi-x"></i>
+        </button>
+    `;
     container.appendChild(newVariant);
     variantCounter++;
+}
+
+function convertToInput(button) {
+    const sizeSelect = button.closest('.grid').querySelector('select[name^="variants"][name$="[size]"]');
+    sizeSelect.outerHTML = `<input type="text" name="${sizeSelect.name}" class="input" placeholder="Введите размер" required value="${sizeSelect.value}">`;
+    button.parentElement.outerHTML = `<div class="flex items-end"><button type="button" class="btn btn-outline w-full py-2" disabled><i class="bi bi-check"></i> Текстовое поле</button></div>`;
 }
 
 function generateArticle() {
@@ -327,24 +563,45 @@ function previewImage(input) {
         const reader = new FileReader();
         reader.onload = function(e) {
             const preview = document.getElementById('preview');
+            const placeholder = document.getElementById('upload-placeholder');
+            const removeBtn = document.getElementById('remove-photo');
+            
             preview.src = e.target.result;
-            preview.style.display = 'block';
+            preview.classList.remove('hidden');
+            if(placeholder) placeholder.classList.add('hidden');
+            removeBtn.classList.remove('hidden');
         };
         reader.readAsDataURL(input.files[0]);
     }
 }
 
+function clearPhoto() {
+    const input = document.getElementById('photo');
+    const preview = document.getElementById('preview');
+    const placeholder = document.getElementById('upload-placeholder');
+    const removeBtn = document.getElementById('remove-photo');
+    
+    input.value = '';
+    preview.src = '#';
+    preview.classList.add('hidden');
+    if(placeholder) placeholder.classList.remove('hidden');
+    removeBtn.classList.add('hidden');
+}
+
 let cameraStream = null;
 
 function openCameraModal() {
-    const modal = new bootstrap.Modal(document.getElementById('cameraModal'));
+    const modalElement = document.getElementById('cameraModal');
+    const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
     modal.show();
     startCamera();
 }
 
 async function startCamera() {
     try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        cameraStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+        });
         document.getElementById('cameraVideo').srcObject = cameraStream;
     } catch (err) {
         alert('Ошибка доступа к камере: ' + err.message);
@@ -356,17 +613,20 @@ function stopCamera() {
         cameraStream.getTracks().forEach(track => track.stop());
         cameraStream = null;
     }
-    const modal = bootstrap.Modal.getInstance(document.getElementById('cameraModal'));
-    modal.hide();
+    const modalElement = document.getElementById('cameraModal');
+    const modal = bootstrap.Modal.getInstance(modalElement);
+    if (modal) modal.hide();
 }
 
 function takePhoto() {
     const video = document.getElementById('cameraVideo');
     const canvas = document.getElementById('cameraCanvas');
     const context = canvas.getContext('2d');
+    
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
     canvas.toBlob(function(blob) {
         const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
         const input = document.getElementById('photo');
@@ -375,7 +635,9 @@ function takePhoto() {
         input.files = dataTransfer.files;
         previewImage(input);
         stopCamera();
-    }, 'image/jpeg', 0.95);
+    }, 'image/jpeg', 0.9);
 }
+
+document.addEventListener('DOMContentLoaded', toggleLocation);
 </script>
 @endsection

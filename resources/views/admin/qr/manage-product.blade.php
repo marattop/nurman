@@ -2,6 +2,13 @@
 @section('page-title', 'Управление QR-кодами')
 @section('content')
 
+{{-- Расчет статистики QR-кодов --}}
+@php
+    $totalQr = $product->variants->sum(fn($v) => $v->qrCodes->count());
+    $printedQr = $product->variants->sum(fn($v) => $v->qrCodes->where('is_printed', true)->count());
+    $notPrintedQr = $totalQr - $printedQr;
+@endphp
+
 <div class="page-header">
     <div class="page-icon"><i class="bi bi-qr-code"></i></div>
     <div>
@@ -40,24 +47,25 @@
                 </div>
             </div>
 
-            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
                 <a href="{{ route('admin.qr.manage') }}" class="btn btn-outline">
                     <i class="bi bi-arrow-left"></i> Назад
                 </a>
-                <a href="{{ route('admin.qr.generate.page', $product->id) }}" class="btn btn-primary">
-                    <i class="bi bi-plus-lg"></i> Генерировать QR
-                </a>
+                @if($totalQr < $product->variants->count() || $product->variants->count() === 0)
+                    <a href="{{ route('admin.qr.generate.page', $product->id) }}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg"></i> {{ $totalQr > 0 ? 'Создать недостающие' : 'Генерировать QR' }}
+                    </a>
+                @else
+                    <div style="background: rgba(16,185,129,0.15); color: #10b981; padding: 10px 18px; border-radius: 12px; font-weight: 600; font-size: 14px; border: 1px solid rgba(16,185,129,0.3); display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-check-all" style="font-size: 20px;"></i> Все QR готовы
+                    </div>
+                @endif
             </div>
         </div>
     </div>
 </div>
 
 {{-- Статистика QR-кодов --}}
-@php
-    $totalQr = $product->variants->sum(fn($v) => $v->qrCodes->count());
-    $printedQr = $product->variants->sum(fn($v) => $v->qrCodes->where('is_printed', true)->count());
-    $notPrintedQr = $totalQr - $printedQr;
-@endphp
 
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
     <div style="background: linear-gradient(135deg, rgba(56,189,248,0.15), rgba(56,189,248,0.05)); border: 1px solid rgba(56,189,248,0.2); border-radius: 16px; padding: 20px; text-align: center;">
@@ -82,10 +90,16 @@
             Варианты товара 
             <span style="color: #94a3b8; font-size: 14px; font-weight: 400;">({{ $product->variants->count() }} шт)</span>
         </h3>
-        @if($product->variants->count() > 0 && $totalQr === 0)
-            <a href="{{ route('admin.qr.generate.page', $product->id) }}" class="btn btn-primary btn-sm">
-                <i class="bi bi-qr-code-scan"></i> Создать QR для всех
-            </a>
+        @if($product->variants->count() > 0)
+            @if($totalQr < $product->variants->count())
+                <a href="{{ route('admin.qr.generate.page', $product->id) }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-qr-code-scan"></i> {{ $totalQr > 0 ? 'Создать недостающие QR' : 'Создать QR для всех' }}
+                </a>
+            @else
+                <div class="badge badge-success" style="padding: 8px 12px; font-size: 13px;">
+                    <i class="bi bi-check-all"></i> Все QR-коды созданы
+                </div>
+            @endif
         @endif
     </div>
     
@@ -116,7 +130,30 @@
                          onmouseover="this.style.background='rgba(255,255,255,0.05)'; this.style.borderColor='rgba(56,189,248,0.2)'" 
                          onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(255,255,255,0.05)'">
                         
-                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; flex-wrap: wrap;">
+                        <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center; flex-wrap: wrap;">
+                            {{-- Предпросмотр QR --}}
+                            <div style="width: 80px; height: 80px; background: white; border-radius: 8px; padding: 4px; display: flex; align-items: center; justify-content: center; position: relative;">
+                                @if($hasQr)
+                                    @php
+                                        $qrContent = $variantQr->qr_data['article'] ?? $product->article;
+                                        $qrImageUrl = $variantQr->qr_code_path ? asset('storage/' . $variantQr->qr_code_path) : 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . urlencode($qrContent);
+                                    @endphp
+                                    <img src="{{ $qrImageUrl }}" alt="QR" style="width: 72px; height: 72px; object-fit: contain;">
+                                    @if($isPrinted)
+                                        <div style="position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; border: 2px solid #1e293b;">
+                                            <i class="bi bi-check"></i>
+                                        </div>
+                                    @endif
+                                @else
+                                    <div style="color: #cbd5e1; font-size: 24px; opacity: 0.2;">
+                                        <i class="bi bi-qr-code"></i>
+                                    </div>
+                                    <div style="position: absolute; inset: 0; background: rgba(30,41,59,0.5); display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                                        <i class="bi bi-slash-circle" style="color: #ef4444; font-size: 20px;"></i>
+                                    </div>
+                                @endif
+                            </div>
+
                             {{-- Информация о варианте --}}
                             <div>
                                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
@@ -163,27 +200,31 @@
                             {{-- Кнопки действий --}}
                             <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
                                 @if($hasQr)
-                                    <button onclick="printQr({{ $variant->id }}, '{{ $product->article }}', '{{ addslashes($product->name) }}', '{{ $variant->size ?? 'Стандарт' }}', '{{ $variant->color ?? '' }}')" 
-                                            class="btn btn-primary btn-sm"
-                                            style="min-width: 120px;">
-                                        <i class="bi bi-printer"></i> 
-                                        {{ $isPrinted ? 'Печатать снова' : 'Печать' }}
-                                    </button>
-                                    
-                                    <button onclick="deleteQr({{ $variantQr->id }}, {{ $variant->id }})" 
-                                            class="btn btn-outline-danger btn-sm">
-                                        <i class="bi bi-trash"></i> Удалить
-                                    </button>
+                                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                                        <button onclick="printQr({{ $variant->id }}, '{{ $product->article }}', '{{ addslashes($product->name) }}', '{{ $variant->size ?? 'Стандарт' }}', '{{ $variant->color ?? '' }}')" 
+                                                class="btn btn-primary btn-sm"
+                                                style="min-width: 130px; background: #38bdf8; border-color: #38bdf8; color: #1e293b; font-weight: 700;">
+                                            <i class="bi bi-printer"></i> 
+                                            {{ $isPrinted ? 'Печать снова' : 'Печать QR' }}
+                                        </button>
+                                        
+                                        <button onclick="deleteQr({{ $variantQr->id }}, {{ $variant->id }})" 
+                                                class="btn btn-outline-danger btn-sm"
+                                                style="font-size: 11px; padding: 2px 8px; opacity: 0.8;">
+                                            <i class="bi bi-trash"></i> Удалить QR
+                                        </button>
+                                    </div>
                                 @else
                                     <button onclick="generateSingleQr({{ $variant->id }})" 
                                             class="btn btn-outline-success btn-sm"
-                                            style="min-width: 120px;">
+                                            style="min-width: 130px; border-width: 2px;">
                                         <i class="bi bi-plus-lg"></i> Создать QR
                                     </button>
                                 @endif
                                 
                                 <a href="{{ route('admin.products.edit', $product->id) }}" 
-                                   class="btn btn-outline btn-sm">
+                                   class="btn btn-outline btn-sm"
+                                   style="display: flex; align-items: center; justify-content: center; width: 34px;">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                             </div>
@@ -321,7 +362,7 @@ async function deleteQr(qrId, variantId) {
     currentVariantId = variantId;
     
     try {
-        const response = await fetch(`{{ route('admin.qr.delete', '') }}/${qrId}`, {
+        const response = await fetch(`{{ route('admin.qr.delete', ['id' => 'QR_ID']) }}`.replace('QR_ID', qrId), {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content

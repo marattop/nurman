@@ -29,33 +29,67 @@
         <table class="table" style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr>
-                    <th style="text-align: left;">Товар</th>
-                    <th>Размер</th>
-                    <th>Магазин</th>
-                    <th>Количество</th>
-                    <th>Цена</th>
-                    <th>Стоимость</th>
+                    <th style="text-align: left; padding: 12px 16px;">Товар</th>
+                    <th style="text-align: center; padding: 12px 16px;">Размер</th>
+                    <th style="text-align: center; padding: 12px 16px;">В магазине</th>
+                    <th style="text-align: center; padding: 12px 16px;">На складе</th>
+                    <th style="text-align: center; padding: 12px 16px;">Всего</th>
+                    <th style="text-align: right; padding: 12px 16px;">Цена</th>
+                    <th style="text-align: right; padding: 12px 16px;">Стоимость</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($stock as $item)
-                <tr>
-                    <td>
+                @php
+                    $totalQty = ($item->shop_quantity ?? 0) + ($item->warehouse_quantity ?? 0);
+                    $isOutOfStock = $totalQty <= 0;
+                @endphp
+                <tr style="{{ $isOutOfStock ? 'opacity: 0.5;' : '' }}">
+                    <td style="padding: 12px 16px; vertical-align: middle;">
                         <div style="font-weight: 500;">{{ $item->name }}</div>
                     </td>
-                    <td>
+                    <td style="padding: 12px 16px; vertical-align: middle; text-align: center;">
                         <span class="badge badge-blue">{{ $item->size }}</span>
                     </td>
-                    <td style="color: #94a3b8;">{{ $item->shop_name ?? 'Склад' }}</td>
-                    <td>
-                        <span class="badge" style="background: rgba(148,163,184,0.15); color: #94a3b8;">{{ $item->quantity }} шт</span>
+                    <td style="padding: 12px 16px; vertical-align: middle; text-align: center;">
+                        @if(($item->shop_quantity ?? 0) > 0)
+                            <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
+                                <i class="bi bi-shop"></i> {{ $item->shop_quantity }} шт
+                            </span>
+                        @else
+                            <span style="color: #94a3b8;">—</span>
+                        @endif
                     </td>
-                    <td style="color: #94a3b8;">{{ number_format($item->retail_price, 0, '.', ' ') }} сом</td>
-                    <td style="color: #10b981; font-weight: 600;">{{ number_format($item->total_value, 0, '.', ' ') }} сом</td>
+                    <td style="padding: 12px 16px; vertical-align: middle; text-align: center;">
+                        @if(($item->warehouse_quantity ?? 0) > 0)
+                            <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
+                                <i class="bi bi-building"></i> {{ $item->warehouse_quantity }} шт
+                            </span>
+                        @else
+                            <span style="color: #94a3b8;">—</span>
+                        @endif
+                    </td>
+                    <td style="padding: 12px 16px; vertical-align: middle; text-align: center;">
+                        @if($isOutOfStock)
+                            <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
+                                <i class="bi bi-x-circle"></i> Нет
+                            </span>
+                        @else
+                            <span style="font-weight: 600; color: #f1f5f9;">{{ $totalQty }} шт</span>
+                        @endif
+                    </td>
+                    <td style="padding: 12px 16px; vertical-align: middle; text-align: right; color: #94a3b8;">{{ number_format($item->retail_price, 0, '.', ' ') }} сом</td>
+                    <td style="padding: 12px 16px; vertical-align: middle; text-align: right;">
+                        @if($isOutOfStock)
+                            <span style="color: #94a3b8;">Нет</span>
+                        @else
+                            <span style="color: #10b981; font-weight: 600;">{{ number_format($item->total_value ?? 0, 0, '.', ' ') }} сом</span>
+                        @endif
+                    </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 3rem; color: #64748b;">
+                    <td colspan="7" style="text-align: center; padding: 3rem; color: #64748b;">
                         <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 12px;"></i>
                         Нет данных
                     </td>

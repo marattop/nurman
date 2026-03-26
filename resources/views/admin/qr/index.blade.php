@@ -45,25 +45,31 @@
             Список товаров
             <span style="color: #94a3b8; font-size: 14px; font-weight: 400;">({{ $products->count() }} шт)</span>
         </h3>
-        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <form action="{{ route('admin.qr.manage') }}" method="GET" style="display: flex; margin-bottom: 0;">
-                <input type="text" name="search" class="form-control" placeholder="Поиск товаров..." value="{{ request('search') }}" style="min-width: 200px;">
-                <button class="btn btn-outline-secondary" type="submit" style="margin-left: 8px;">
-                    <i class="bi bi-search"></i>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; width: 100%; sm:width: auto;">
+            <form action="{{ route('admin.qr.manage') }}" method="GET" style="display: flex; margin-bottom: 0; width: 100%; max-width: 400px; gap: 8px;">
+                <div style="position: relative; flex: 1;">
+                    <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b;"></i>
+                    <input type="text" name="search" class="form-control" placeholder="Поиск товаров или артикула..." value="{{ request('search') }}" 
+                           style="padding-left: 36px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.2); color: #f1f5f9; border-radius: 10px; width: 100%; height: 42px; transition: 0.2s;"
+                           onfocus="this.style.borderColor='#38bdf8'; this.style.boxShadow='0 0 0 4px rgba(56, 189, 248, 0.1)'"
+                           onblur="this.style.borderColor='rgba(56, 189, 248, 0.2)'; this.style.boxShadow='none'">
+                </div>
+                <button class="btn btn-primary" type="submit" style="height: 42px; border-radius: 10px; padding: 0 16px;">
+                    Найти
                 </button>
             </form>
         </div>
     </div>
     
-    <div style="overflow-x: auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
+    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <table class="table" style="width: 100%; border-collapse: collapse; min-width: 800px;">
             <thead>
                 <tr>
-                    <th style="text-align: left; padding: 16px;">Товар</th>
-                    <th style="padding: 16px;">Артикул</th>
-                    <th style="padding: 16px;">QR-коды</th>
-                    <th style="padding: 16px;">Статус</th>
-                    <th style="padding: 16px; text-align: right;">Действия</th>
+                    <th style="text-align: left; padding: 16px; width: 35%;">Товар</th>
+                    <th style="text-align: left; padding: 16px; width: 15%;">Артикул</th>
+                    <th style="text-align: left; padding: 16px; width: 20%;">QR-коды</th>
+                    <th style="text-align: left; padding: 16px; width: 15%;">Статус</th>
+                    <th style="text-align: right; padding: 16px; width: 15%;">Действия</th>
                 </tr>
             </thead>
             <tbody>
@@ -77,72 +83,61 @@
                     <tr style="transition: 0.2s;" 
                         onmouseover="this.style.background='rgba(56,189,248,0.05)'" 
                         onmouseout="this.style.background='transparent'">
-                        <td style="padding: 16px;">
+                        <td style="padding: 16px; text-align: left;">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 @if($product->photo)
                                     <img src="{{ asset('storage/' . $product->photo) }}" 
-                                         style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;">
+                                         style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0;">
                                 @else
-                                    <div style="width: 48px; height: 48px; border-radius: 8px; background: linear-gradient(135deg, rgba(56,189,248,0.2), rgba(16,185,129,0.2)); display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 20px;">
+                                    <div style="width: 40px; height: 40px; border-radius: 6px; background: linear-gradient(135deg, rgba(56,189,248,0.2), rgba(16,185,129,0.2)); display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 18px; flex-shrink: 0;">
                                         <i class="bi bi-box"></i>
                                     </div>
                                 @endif
-                                <div>
-                                    <div style="font-weight: 600; color: #f1f5f9; margin-bottom: 4px;">{{ Str::limit($product->name, 50) }}</div>
-                                    <div style="font-size: 12px; color: #94a3b8;">
-                                        <i class="bi bi-grid-3x3-gap"></i> {{ $variantsCount }} вариант(-ов)
+                                <div style="min-width: 0;">
+                                    <div style="font-weight: 600; color: #f1f5f9; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $product->name }}</div>
+                                    <div style="font-size: 11px; color: #94a3b8;">
+                                        {{ $variantsCount }} вар.
                                     </div>
                                 </div>
                             </div>
                         </td>
-                        <td style="padding: 16px; color: #94a3b8; font-family: monospace; font-size: 14px;">{{ $product->article }}</td>
-                        <td style="padding: 16px;">
-                            @if($qrCount > 0)
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 13px;">
-                                        <i class="bi bi-check-circle"></i> {{ $qrCount }}
-                                    </span>
-                                    @if($printedCount > 0)
-                                        <span style="color: #94a3b8; font-size: 12px;">
-                                            ({{ $printedCount }} напечатано)
-                                        </span>
-                                    @endif
+                        <td style="padding: 16px; text-align: left; color: #94a3b8; font-family: monospace; font-size: 13px;">{{ $product->article }}</td>
+                        <td style="padding: 16px; text-align: left;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 38px; height: 38px; background: white; border-radius: 4px; padding: 2px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
+                                    @php
+                                        $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' . urlencode($product->article);
+                                    @endphp
+                                    <img src="{{ $qrUrl }}" alt="QR" style="width: 34px; height: 34px; object-fit: contain;">
                                 </div>
-                            @else
-                                <span style="color: #94a3b8; font-size: 13px;">
-                                    <i class="bi bi-x-circle"></i> Нет QR
-                                </span>
-                            @endif
+
+                                @if($qrCount > 0)
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span style="color: #10b981; font-weight: 600; font-size: 12px;">{{ $qrCount }} QR</span>
+                                        @if($printedCount > 0)
+                                            <span style="color: #94a3b8; font-size: 10px;">{{ $printedCount }} печ.</span>
+                                        @endif
+                                    </div>
+                                @else
+                                    <span style="color: #64748b; font-size: 12px;">Нет QR</span>
+                                @endif
+                            </div>
                         </td>
-                        <td style="padding: 16px;">
-                            @if($qrCount >= $variantsCount)
-                                <span class="badge badge-success">
-                                    <i class="bi bi-check-all"></i> Все готовы
-                                </span>
+                        <td style="padding: 16px; text-align: left;">
+                            @if($qrCount >= $variantsCount && $variantsCount > 0)
+                                <span class="badge badge-success" style="font-size: 11px; padding: 4px 8px;">Готов</span>
                             @elseif($qrCount > 0)
-                                <span class="badge badge-warning">
-                                    <i class="bi bi-exclamation-triangle"></i> Частично
-                                </span>
+                                <span class="badge badge-warning" style="font-size: 11px; padding: 4px 8px;">Частично</span>
                             @else
-                                <span class="badge badge-danger">
-                                    <i class="bi bi-x-lg"></i> Не готов
-                                </span>
+                                <span class="badge badge-danger" style="font-size: 11px; padding: 4px 8px;">Нет</span>
                             @endif
                         </td>
                         <td style="padding: 16px; text-align: right;">
-                            <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;">
-                                <a href="{{ route('admin.qr.manage.product', $product->id) }}" 
-                                   class="btn btn-primary btn-sm"
-                                   style="min-width: 100px;">
-                                    <i class="bi bi-grid-3x3-gap"></i> Управление
-                                </a>
-                                @if($qrCount < $variantsCount)
-                                    <a href="{{ route('admin.qr.generate.page', $product->id) }}" 
-                                       class="btn btn-outline-success btn-sm">
-                                        <i class="bi bi-plus-lg"></i>
-                                    </a>
-                                @endif
-                            </div>
+                            <a href="{{ route('admin.qr.manage.product', $product->id) }}" 
+                               class="btn btn-primary btn-sm"
+                               style="padding: 4px 8px; font-size: 12px;">
+                                <i class="bi bi-gear"></i> Управление
+                            </a>
                         </td>
                     </tr>
                 @empty
@@ -156,6 +151,24 @@
             </tbody>
         </table>
     </div>
+
+    @if($products->hasPages())
+    <div style="padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+        <div style="color: #94a3b8; font-size: 13px;">Показано {{ $products->firstItem() ?? 0 }} - {{ $products->lastItem() ?? 0 }} из {{ $products->total() }}</div>
+        <div style="display: flex; gap: 8px;">
+            @if($products->onFirstPage())
+                <span style="padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #64748b; text-decoration: none; font-size: 14px;">← Назад</span>
+            @else
+                <a href="{{ $products->previousPageUrl() }}" style="padding: 8px 14px; border-radius: 8px; background: rgba(56,189,248,0.1); color: #38bdf8; text-decoration: none; font-size: 14px;">← Назад</a>
+            @endif
+            @if($products->hasMorePages())
+                <a href="{{ $products->nextPageUrl() }}" style="padding: 8px 14px; border-radius: 8px; background: rgba(56,189,248,0.1); color: #38bdf8; text-decoration: none; font-size: 14px;">Вперёд →</a>
+            @else
+                <span style="padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #64748b; text-decoration: none; font-size: 14px;">Вперёд →</span>
+            @endif
+        </div>
+    </div>
+    @endif
 </div>
 
 {{-- Модальное окно подтверждения генерации --}}

@@ -18,11 +18,20 @@ class QrCodeController extends Controller
     /**
      * Страница управления QR-кодами
      */
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::with(['variants.qrCodes'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = Product::with(['variants.qrCodes'])
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('article', 'like', "%{$search}%");
+            });
+        }
+
+        $products = $query->paginate(20)->withQueryString();
 
         return view('admin.qr.index', compact('products'));
     }

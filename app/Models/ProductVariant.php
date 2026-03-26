@@ -6,8 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class ProductVariant extends Model
 {
-    protected $fillable = ['product_id', 'size', 'color', 'sku', 'supplier_price', 'wholesale_price', 'barcode', 'is_active'];
-    protected $casts = ['is_active' => 'boolean', 'supplier_price' => 'decimal:2', 'wholesale_price' => 'decimal:2'];
+    protected $fillable = ['product_id', 'size', 'color', 'sku', 'supplier_price', 'wholesale_price', 'barcode', 'is_active', 'expected_quantity', 'expected_at'];
+    protected $casts = ['is_active' => 'boolean', 'supplier_price' => 'decimal:2', 'wholesale_price' => 'decimal:2', 'expected_at' => 'datetime'];
 
     public function product() { return $this->belongsTo(Product::class); }
     public function stock() { return $this->hasMany(Stock::class, 'variant_id'); }

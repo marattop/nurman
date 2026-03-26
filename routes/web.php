@@ -182,7 +182,7 @@ Route::middleware(['auth', 'role:admin'])
 
         // Продажи
         Route::prefix('sales')->name('sales.')->group(function () {
-            Route::get('/', [AdminController::class, 'sales'])->name('index');
+            Route::get('/', [AdminController::class, 'salesReport'])->name('index');
             Route::get('create', [AdminController::class, 'createSale'])->name('create');
             Route::post('store', [AdminController::class, 'storeSale'])->name('store');
             Route::get('edit/{transaction}', [AdminController::class, 'editSale'])->name('edit');
@@ -201,11 +201,21 @@ Route::middleware(['auth', 'role:admin'])
         Route::prefix('customers')->name('customers.')->group(function () {
             Route::get('/', [AdminController::class, 'customers'])->name('index');
             Route::get('check-phone', [AdminController::class, 'checkPhone'])->name('check-phone');
-            Route::post('store', [AdminController::class, 'createCoupon'])->name('store');
-            Route::put('update/{coupon}', [AdminController::class, 'updateCoupon'])->name('update');
-            Route::put('toggle-block/{coupon}', [AdminController::class, 'toggleBlockCoupon'])->name('toggle-block');
-            Route::delete('delete/{coupon}', [AdminController::class, 'deleteCoupon'])->name('delete');
+            Route::post('coupon/store', [AdminController::class, 'createCoupon'])->name('coupon.create');
+            Route::post('coupon/{coupon}/update', [AdminController::class, 'updateCoupon'])->name('coupon.update');
+            Route::post('coupon/{coupon}/block', [AdminController::class, 'toggleBlockCoupon'])->name('coupon.block');
+            Route::post('coupon/{coupon}/unblock', [AdminController::class, 'unblockCoupon'])->name('coupon.unblock');
+            Route::post('coupon/{coupon}/delete', [AdminController::class, 'deleteCoupon'])->name('coupon.delete');
             Route::post('{customerId}/reset-password', [AdminController::class, 'resetPassword'])->name('reset-password');
+        });
+
+        // Закупки товаров
+        Route::prefix('purchases')->name('purchases.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\PurchaseController::class, 'index'])->name('index');
+            Route::get('/deficit', [\App\Http\Controllers\PurchaseController::class, 'deficit'])->name('deficit');
+            Route::get('/create', [\App\Http\Controllers\PurchaseController::class, 'create'])->name('create');
+            Route::get('/variant/{id}/info', [\App\Http\Controllers\PurchaseController::class, 'getVariantInfo'])->name('variant.info');
+            Route::post('/store', [\App\Http\Controllers\PurchaseController::class, 'store'])->name('store');
         });
 
         // Привязка продавцов к магазинам

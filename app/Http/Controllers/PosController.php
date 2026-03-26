@@ -72,27 +72,31 @@ class PosController extends Controller
     {
         $source = $request->get('source', 'showcase');
         $shopId = auth()->user()->shop_id;
-        
-        $query = Product::with(['variants', 'category'])
+
+        // Продавец может продавать только товары с витрины (shop_id)
+        // Товары со склада (warehouse_id) недоступны для продажи
+        $query = Product::with(['variants' => function($q) use ($shopId) {
+            // Загружаем только остатки по этому магазину (витрина)
+            $q->with(['stock' => function($qs) use ($shopId) {
+                $qs->where('shop_id', $shopId);
+            }]);
+        }, 'category'])
             ->where('is_active', true);
-        
-        // Если выбран склад и есть разрешение
-        if ($source === 'warehouse' && auth()->user()->can_sell_from_warehouse) {
-            // Фильтруем товары, которые есть на складе
-            $query->whereHas('variants', function($q) use ($shopId) {
-                $q->whereHas('stock', function($qs) use ($shopId) {
-                    $qs->where('shop_id', $shopId)
-                       ->whereRaw('quantity - reserved > 0');
-                });
+
+        // Фильтруем товары, которые есть на витрине этого магазина
+        $query->whereHas('variants', function($q) use ($shopId) {
+            $q->whereHas('stock', function($qs) use ($shopId) {
+                $qs->where('shop_id', $shopId)
+                   ->whereRaw('quantity - reserved > 0');
             });
-        }
-        
+        });
+
         $products = $query->orderBy('name')->get();
-        
+
         return response()->json([
             'success' => true,
             'products' => $products,
-            'source' => $source,
+            'source' => 'showcase', // Всегда showcase для продавца
         ]);
     }
 

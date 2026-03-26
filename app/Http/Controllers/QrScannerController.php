@@ -36,23 +36,64 @@ class QrScannerController extends Controller
     public function processScan(Request $request)
     {
         $request->validate([
-            'qr_data' => 'required|string',
+            'qr_data' => ['required', 'string', 'max:255'],
         ]);
 
         $qrData = trim($request->qr_data);
+        
+        // Логирование для отладки
+        \Log::info('QR Scan received: ' . $qrData);
+
+        // Пытаемся извлечь артикул из JSON или используем как есть
+        $article = $qrData;
+        try {
+            $parsed = json_decode($qrData, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
+                if (isset($parsed['article'])) {
+                    $article = $parsed['article'];
+                    \Log::info('Extracted article from JSON: ' . $article);
+                } elseif (isset($parsed['coupon_id'])) {
+                    // Это купонный QR
+                    return $this->processCouponScan($parsed);
+                }
+            }
+        } catch (\Exception $e) {
+            // Игнорируем ошибки парсинга, используем как есть
+            \Log::error('JSON parse error: ' . $e->getMessage());
+        }
+
+        \Log::info('Searching for product with article: ' . $article);
 
         // Ищем товар по артикулу
-        $product = Product::where('article', $qrData)->first();
+        $product = Product::where('article', $article)->first();
 
         if (!$product) {
+            \Log::warning('Product not found: ' . $article);
+            
+            // Для отладки - покажем все артикулы в базе
+            $allArticles = Product::pluck('article')->toArray();
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Товар с артикулом "' . $qrData . '" не найден',
+                'message' => 'Товар с артикулом "' . $article . '" не найден',
+                'scanned_data' => $qrData,
+                'parsed_article' => $article,
+                'available_articles' => $allArticles,
             ]);
         }
+        
+        \Log::info('Product found: ' . $product->name);
 
         // Получаем все варианты товара с полной информацией
         $variants = $this->getVariantsWithStock($product);
+
+        // "Наш" QR: проверяем, существует ли QR-код в системе для этого товара
+        $isKnownQr = QrCode::whereIn('variant_id', function ($q) use ($product) {
+            $q->select('id')->from('product_variants')->where('product_id', $product->id);
+        })->exists();
+
+        // Если QR не найден в базе, но артикул верный - всё равно показываем товар
+        // Это позволяет сканировать даже QR без is_printed
 
         // Считаем общие остатки
         $totalStock = $variants->sum('total_quantity');
@@ -62,6 +103,7 @@ class QrScannerController extends Controller
 
         return response()->json([
             'success' => true,
+            'is_known_qr' => $isKnownQr,
             'product' => [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -69,12 +111,15 @@ class QrScannerController extends Controller
                 'brand' => $product->brand,
                 'category' => $product->category?->name ?? '—',
                 'photo' => $product->photo ? asset('storage/' . $product->photo) : null,
-                'retail_price' => number_format($product->retail_price ?? 0, 2, ',', ' '),
+                'retail_price' => $product->retail_price ?? 0,
+                'supplier_price' => $product->supplier_price ?? 0,
+                'wholesale_price' => $product->wholesale_price ?? 0,
+                'variants' => $variants,
             ],
             'summary' => [
                 'total_stock' => $totalStock,
-                'showcase' => $totalShowcase,
-                'warehouse' => $totalWarehouse,
+                'shop_stock' => $totalShowcase,
+                'warehouse_stock' => $totalWarehouse,
                 'sold' => $totalSold,
                 'variants_count' => $variants->count(),
             ],
@@ -267,6 +312,37 @@ class QrScannerController extends Controller
             'warehouses' => Warehouse::where('is_active', true)
                 ->select('id', 'name')
                 ->get(),
+        ]);
+    }
+
+    /**
+     * Обработка сканирования купонного QR
+     */
+    private function processCouponScan($parsed)
+    {
+        $coupon = Coupon::find($parsed['coupon_id']);
+        
+        if (!$coupon) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Купон не найден',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'type' => 'coupon',
+            'coupon' => [
+                'id' => $coupon->id,
+                'code' => $coupon->code,
+                'discount_type' => $coupon->discount_type,
+                'discount_value' => $coupon->discount_value,
+                'is_active' => $coupon->is_active,
+                'customer' => $coupon->customer ? [
+                    'name' => $coupon->customer->full_name,
+                    'phone' => $coupon->customer->phone,
+                ] : null,
+            ],
         ]);
     }
 }

@@ -67,30 +67,32 @@
         <table class="table" style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr>
-                    <th style="text-align: left;">Дата</th>
-                    <th>№</th>
-                    <th>Кассир</th>
-                    <th>Магазин</th>
-                    <th>Сумма</th>
-                    <th>Оплата</th>
-                    <th>Товаров</th>
+                    <th style="text-align: left; padding: 12px 16px;">Дата</th>
+                    <th style="text-align: center; padding: 12px 16px;">№</th>
+                    <th style="text-align: left; padding: 12px 16px;">Кассир</th>
+                    <th style="text-align: left; padding: 12px 16px;">Магазин</th>
+                    <th style="text-align: right; padding: 12px 16px;">Сумма</th>
+                    <th style="text-align: center; padding: 12px 16px;">Оплата</th>
+                    <th style="text-align: center; padding: 12px 16px;">Товаров</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($sales as $sale)
                 <tr>
-                    <td>
-                        <div style="font-weight: 500;">{{ $sale->created_at->format('d.m.Y') }}</div>
-                        <div style="color: #94a3b8; font-size: 13px;">{{ $sale->created_at->format('H:i') }}</div>
+                    <td style="padding: 12px 16px; vertical-align: middle;">
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <span style="font-weight: 500;">{{ $sale->created_at->format('d.m.Y') }}</span>
+                            <span style="color: #94a3b8; font-size: 13px;">{{ $sale->created_at->format('H:i') }}</span>
+                        </div>
                     </td>
-                    <td style="color: #94a3b8;">{{ $sale->id }}</td>
-                    <td style="color: #94a3b8;">{{ $sale->seller?->username ?? '—' }}</td>
-                    <td style="color: #94a3b8;">{{ $sale->shop?->name ?? '—' }}</td>
-                    <td style="color: #10b981; font-weight: 600;">{{ number_format($sale->amount, 0, '.', ' ') }} сом</td>
-                    <td>
+                    <td style="padding: 12px 16px; vertical-align: middle; text-align: center; color: #94a3b8;">{{ $sale->transaction_number ?? $sale->id }}</td>
+                    <td style="padding: 12px 16px; vertical-align: middle; text-align: left; color: #94a3b8;">{{ $sale->user?->username ?? '—' }}</td>
+                    <td style="padding: 12px 16px; vertical-align: middle; text-align: left; color: #94a3b8;">{{ $sale->shop?->name ?? '—' }}</td>
+                    <td style="padding: 12px 16px; vertical-align: middle; text-align: right; color: #10b981; font-weight: 600;">{{ number_format($sale->total_amount ?? 0, 0, '.', ' ') }} сом</td>
+                    <td style="padding: 12px 16px; vertical-align: middle; text-align: center;">
                         <span class="badge badge-blue">{{ ucfirst($sale->payment_method ?? 'cash') }}</span>
                     </td>
-                    <td style="color: #94a3b8;">{{ $sale->items_count ?? 0 }}</td>
+                    <td style="padding: 12px 16px; vertical-align: middle; text-align: center; color: #94a3b8;">{{ $sale->items_count ?? ($sale->items ? $sale->items->sum('quantity') : 0) }}</td>
                 </tr>
                 @empty
                 <tr>

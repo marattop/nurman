@@ -29,7 +29,7 @@
         }
     </script>
     <style>
-        body { background-color: #1e293b; color: #f1f5f9; }
+        body { background-color: #1e293b; color: #f1f5f9; padding-bottom: 0; }
         .sidebar { width: 260px; height: 100vh; position: fixed; left: 0; top: 0; background: #0f172a; border-right: 1px solid rgba(255,255,255,0.05); overflow-y: auto; z-index: 100; }
         .sidebar::-webkit-scrollbar { width: 6px; }
         .sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
@@ -67,6 +67,13 @@
         .card-header { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .card-header-title { font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px; }
         
+        /* Bottom Navigation for Mobile */
+        .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 64px; background: #0f172a; border-top: 1px solid rgba(255,255,255,0.05); z-index: 1000; padding: 0 10px; }
+        .bottom-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; text-decoration: none; font-size: 11px; gap: 4px; transition: 0.2s; }
+        .bottom-nav-item i { font-size: 20px; }
+        .bottom-nav-item.active { color: #38bdf8; }
+        .bottom-nav-center { width: 56px; height: 56px; background: #38bdf8; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0f172a; font-size: 24px; margin-top: -24px; border: 5px solid #1e293b; box-shadow: 0 4px 12px rgba(56,189,248,0.3); }
+
         /* Modal styles */
         .modal { display: none; position: fixed; inset: 0; z-index: 1000; overflow-y: auto; }
         .modal.show { display: block; }
@@ -83,16 +90,19 @@
         .btn-close:hover { color: #f1f5f9; }
         
         @media (max-width: 768px) {
+            body { padding-bottom: 64px; }
             .sidebar { transform: translateX(-100%); transition: 0.3s; }
             .sidebar.show { transform: translateX(0); }
             .main-content { margin-left: 0; }
             .mobile-toggle { display: block !important; }
+            .bottom-nav { display: flex; }
+            .desktop-only { display: none !important; }
         }
         .mobile-toggle { display: none; }
     </style>
     <?php echo $__env->yieldPushContent('styles'); ?>
 </head>
-<body>
+<body class="<?php echo $__env->yieldContent('body-class'); ?>">
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="logo">
@@ -109,6 +119,9 @@
                 <a href="<?php echo e(route('admin.products.index')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.products.*') ? 'active' : ''); ?>">
                     <i class="bi bi-box-seam"></i> Все товары
                 </a>
+                <a href="<?php echo e(route('admin.purchases.index')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.purchases.*') ? 'active' : ''); ?>">
+                    <i class="bi bi-cart-plus"></i> Закупки
+                </a>
                 <a href="<?php echo e(route('admin.qr.scan')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.qr.*') ? 'active' : ''); ?>">
                     <i class="bi bi-qr-code-scan"></i> QR-сканер
                 </a>
@@ -119,9 +132,6 @@
                 <div class="group-title">Люди</div>
                 <a href="<?php echo e(route('admin.users.index')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.users.*') ? 'active' : ''); ?>">
                     <i class="bi bi-people"></i> Сотрудники
-                </a>
-                <a href="<?php echo e(route('admin.sellers.shops')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.sellers.*') ? 'active' : ''); ?>">
-                    <i class="bi bi-person-badge"></i> Продавцы
                 </a>
                 <a href="<?php echo e(route('admin.shops.index')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.shops.*') ? 'active' : ''); ?>">
                     <i class="bi bi-shop"></i> Магазины
@@ -148,6 +158,14 @@
                 <a href="<?php echo e(route('admin.activity-log')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.activity-log') ? 'active' : ''); ?>">
                     <i class="bi bi-journal-text"></i> Журнал
                 </a>
+                
+                
+                <div class="md:hidden border-t border-white/5 mt-4 pt-4">
+                    <button type="button" class="menu-item text-danger w-full text-left" 
+                       onclick="showLogoutModal()">
+                        <i class="bi bi-box-arrow-right"></i> Выход
+                    </button>
+                </div>
             <?php endif; ?>
         </nav>
     </aside>
@@ -163,9 +181,11 @@
                 <h1 style="margin: 0; font-size: 20px; font-weight: 600;"><?php echo $__env->yieldContent('page-title', 'NURMAN'); ?></h1>
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
-                <a href="<?php echo e(route('logout')); ?>" class="btn btn-danger" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" style="padding: 8px 16px;">
-                    <i class="bi bi-box-arrow-right"></i> Выход
-                </a>
+                <button type="button" class="btn btn-danger" 
+                   onclick="showLogoutModal()" 
+                   style="padding: 8px 16px;">
+                    <i class="bi bi-box-arrow-right"></i> <span class="desktop-only">Выход</span>
+                </button>
                 <form id="logout-form" action="<?php echo e(route('logout')); ?>" method="POST" style="display: none;"><?php echo csrf_field(); ?></form>
             </div>
         </div>
@@ -176,10 +196,80 @@
         </div>
     </div>
 
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="<?php echo e(route('admin.dashboard')); ?>" class="bottom-nav-item <?php echo e(request()->routeIs('admin.dashboard') ? 'active' : ''); ?>">
+            <i class="bi bi-speedometer2"></i>
+            <span>Главная</span>
+        </a>
+        <a href="<?php echo e(route('admin.products.index')); ?>" class="bottom-nav-item <?php echo e(request()->routeIs('admin.products.*') ? 'active' : ''); ?>">
+            <i class="bi bi-box-seam"></i>
+            <span>Товары</span>
+        </a>
+        <a href="<?php echo e(route('admin.qr.scan')); ?>" class="bottom-nav-item <?php echo e(request()->routeIs('admin.qr.scan') ? 'active' : ''); ?>">
+            <div class="bottom-nav-center">
+                <i class="bi bi-qr-code-scan"></i>
+            </div>
+        </a>
+        <a href="<?php echo e(route('admin.sales.index')); ?>" class="bottom-nav-item <?php echo e(request()->routeIs('admin.sales.*') ? 'active' : ''); ?>">
+            <i class="bi bi-cash-stack"></i>
+            <span>Продажи</span>
+        </a>
+        <a href="<?php echo e(url('admin/settings')); ?>" class="bottom-nav-item <?php echo e(request()->is('admin/settings*') ? 'active' : ''); ?>">
+            <i class="bi bi-person-gear"></i>
+            <span>Профиль</span>
+        </a>
+    </div>
+
     <!-- Overlay for mobile -->
     <div id="overlay" onclick="toggleSidebar()" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99;"></div>
 
+    
+    <div id="logoutModal" class="modal">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+            <div class="modal-content" style="border: 1px solid rgba(239, 68, 68, 0.2);">
+                <div class="modal-body" style="padding: 32px; text-align: center;">
+                    <div style="width: 64px; height: 64px; background: rgba(239, 68, 68, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 32px; margin: 0 auto 20px;">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </div>
+                    <h3 style="font-size: 20px; font-weight: 700; color: #f1f5f9; margin-bottom: 8px;">Завершение сеанса</h3>
+                    <p style="color: #94a3b8; margin-bottom: 24px;">Вы действительно хотите выйти из системы управления NURMAN?</p>
+                    
+                    <div style="display: flex; gap: 12px;">
+                        <button type="button" class="btn btn-outline" onclick="hideLogoutModal()" style="flex: 1; justify-content: center;">
+                            Отмена
+                        </button>
+                        <button type="button" class="btn btn-danger" onclick="document.getElementById('logout-form').submit()" style="flex: 1; justify-content: center; background: #ef4444; color: white;">
+                            Выйти
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        function showLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            modal.classList.add('show');
+            modal.style.display = 'block';
+            
+            // Create backdrop
+            const backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop logout-backdrop';
+            backdrop.onclick = hideLogoutModal;
+            document.body.appendChild(backdrop);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            document.querySelectorAll('.logout-backdrop').forEach(b => b.remove());
+            document.body.style.overflow = '';
+        }
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('overlay');

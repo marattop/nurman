@@ -2,51 +2,51 @@
 @section('page-title', 'Добавить товар')
 @section('content')
 
-<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.15); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 24px;">
+<div class="flex items-center gap-3 mb-6">
+    <div class="w-12 h-12 rounded-xl bg-success/15 flex items-center justify-center text-success text-2xl">
         <i class="bi bi-box-seam"></i>
     </div>
     <div>
-        <h2 style="font-size: 28px; font-weight: 700; margin: 0;">Добавить товар</h2>
-        <p style="font-size: 14px; color: #94a3b8; margin: 4px 0 0 0;">Создание нового товара</p>
+        <h2 class="text-2xl md:text-3xl font-bold m-0">Добавить товар</h2>
+        <p class="text-sm text-muted m-0">Создание нового товара в системе</p>
     </div>
 </div>
 
-<form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
+<form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
     @csrf
     
     {{-- Основная информация --}}
-    <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i class="bi bi-box-seam" style="color: #38bdf8;"></i> Основная информация
+    <div class="card !p-0 overflow-hidden border-white/5 shadow-xl">
+        <div class="px-5 py-4 border-b border-white/5 bg-white/5">
+            <h3 class="text-base font-semibold m-0 flex items-center gap-2">
+                <i class="bi bi-info-circle text-accent"></i> Основная информация
             </h3>
         </div>
-        <div style="padding: 20px;">
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
+        <div class="p-5 space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Артикул</label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" name="article" class="input" value="{{ old('article') }}" placeholder="Оставьте пустым для автогенерации">
-                        <button type="button" class="btn btn-outline" onclick="generateArticle()" title="Сгенерировать">
-                            <i class="bi bi-arrow-clockwise"></i>
+                    <label class="block font-semibold mb-2 text-text text-sm">Артикул</label>
+                    <div class="flex gap-2">
+                        <input type="text" name="article" class="input" value="{{ old('article') }}" placeholder="Автогенерация если пусто">
+                        <button type="button" class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-xl bg-accent/10 text-accent border border-accent/20 hover:bg-accent/20 transition-colors" onclick="generateArticle()" title="Сгенерировать">
+                            <i class="bi bi-arrow-clockwise text-lg"></i>
                         </button>
                     </div>
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Название <span style="color: #ef4444;">*</span></label>
+                    <label class="block font-semibold mb-2 text-text text-sm">Название <span class="text-danger">*</span></label>
                     <input type="text" name="name" class="input" value="{{ old('name') }}" required placeholder="Например: Футболка базовая">
                 </div>
             </div>
             
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Описание</label>
-                <textarea name="description" class="input" rows="4" placeholder="Описание товара...">{{ old('description') }}</textarea>
+            <div>
+                <label class="block font-semibold mb-2 text-text text-sm">Описание</label>
+                <textarea name="description" class="input min-h-[100px]" rows="3" placeholder="Краткое описание товара...">{{ old('description') }}</textarea>
             </div>
             
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px;">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Категория</label>
+                    <label class="block font-semibold mb-2 text-text text-sm">Категория</label>
                     <select name="category_id" class="input">
                         <option value="">Выберите категорию</option>
                         @foreach($categories as $cat)
@@ -55,95 +55,217 @@
                     </select>
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Бренд</label>
+                    <label class="block font-semibold mb-2 text-text text-sm">Бренд</label>
                     <input type="text" name="brand" class="input" value="{{ old('brand') }}" placeholder="Например: Zara">
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Цена продажи (сом) <span style="color: #ef4444;">*</span></label>
+                    <label class="block font-semibold mb-2 text-text text-sm">Цена продажи (сом) <span class="text-danger">*</span></label>
                     <input type="number" name="retail_price" class="input" value="{{ old('retail_price') }}" required min="0" step="0.01" placeholder="0.00">
                 </div>
             </div>
             
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px;">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Цена закупки (сом)</label>
+                    <label class="block font-semibold mb-2 text-text text-sm">Цена закупки</label>
                     <input type="number" name="supplier_price" class="input" value="{{ old('supplier_price') }}" min="0" step="0.01" placeholder="0.00">
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Оптовая цена (сом)</label>
+                    <label class="block font-semibold mb-2 text-text text-sm">Оптовая цена</label>
                     <input type="number" name="wholesale_price" class="input" value="{{ old('wholesale_price') }}" min="0" step="0.01" placeholder="0.00">
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Материал</label>
-                    <input type="text" name="material" class="input" value="{{ old('material') }}" placeholder="Например: Хлопок 100%">
+                    <label class="block font-semibold mb-2 text-text text-sm">Материал</label>
+                    <input type="text" name="material" class="input" value="{{ old('material') }}" placeholder="Напр: Хлопок">
                 </div>
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Страна производства</label>
-                    <input type="text" name="country" class="input" value="{{ old('country') }}" placeholder="Например: Кыргызстан">
+                    <label class="block font-semibold mb-2 text-text text-sm">Страна</label>
+                    <input type="text" name="country" class="input" value="{{ old('country') }}" placeholder="Напр: Кыргызстан">
                 </div>
             </div>
             
-            <div>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }} style="width: 18px; height: 18px;">
-                    <span style="color: #f1f5f9; font-weight: 500;">Активный товар</span>
+            <div class="pt-2">
+                <label class="inline-flex items-center gap-3 cursor-pointer group">
+                    <div class="relative flex items-center">
+                        <input type="checkbox" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }} class="w-5 h-5 rounded border-white/10 bg-sidebar text-accent focus:ring-accent/30 focus:ring-offset-0">
+                    </div>
+                    <span class="text-text font-medium group-hover:text-accent transition-colors">Активный товар для продажи</span>
                 </label>
             </div>
         </div>
     </div>
     
-    {{-- Фото товара --}}
-    <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <h3 style="font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i class="bi bi-image" style="color: #38bdf8;"></i> Фото товара
-            </h3>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {{-- Фото товара --}}
+        <div class="card !p-0 overflow-hidden border-white/5 flex flex-col">
+            <div class="px-5 py-4 border-b border-white/5 bg-white/5">
+                <h3 class="text-base font-semibold m-0 flex items-center gap-2">
+                    <i class="bi bi-image text-accent"></i> Фото товара
+                </h3>
+            </div>
+            <div class="p-5 flex-grow flex flex-col justify-center">
+                <div class="relative group">
+                    <div class="border-2 border-dashed border-white/10 rounded-2xl bg-white/5 p-8 text-center hover:border-accent/50 hover:bg-accent/5 transition-all cursor-pointer overflow-hidden" onclick="document.getElementById('photo').click()">
+                        <div id="upload-placeholder" class="space-y-3">
+                            <i class="bi bi-cloud-arrow-up text-4xl text-accent opacity-50 group-hover:opacity-100 transition-opacity"></i>
+                            <div class="text-text font-semibold">Выберите файл или перетащите</div>
+                            <div class="text-muted text-xs">PNG, JPG до 2MB</div>
+                        </div>
+                        <img id="preview" src="#" alt="Предпросмотр" class="hidden max-w-full max-h-[300px] rounded-xl mx-auto object-contain shadow-2xl">
+                        <input type="file" name="photo" id="photo" accept="image/*" class="hidden" onchange="previewImage(this)">
+                    </div>
+                    
+                    <div class="mt-4 flex flex-wrap gap-3 justify-center">
+                        <button type="button" class="btn btn-outline py-2 px-4 text-xs" onclick="openCameraModal()">
+                            <i class="bi bi-camera"></i> Сделать фото
+                        </button>
+                        <button type="button" id="remove-photo" class="hidden btn btn-danger py-2 px-4 text-xs" onclick="clearPhoto()">
+                            <i class="bi bi-x-circle"></i> Удалить
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div style="padding: 20px;">
-            <div style="text-align: center; padding: 3rem; border: 2px dashed rgba(56,189,248,0.3); border-radius: 12px; background: rgba(56,189,248,0.05); cursor: pointer; transition: 0.2s;" onclick="document.getElementById('photo').click()" onmouseover="this.style.background='rgba(56,189,248,0.1)'" onmouseout="this.style.background='rgba(56,189,248,0.05)'">
-                <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #38bdf8; margin-bottom: 1rem;"></i>
-                <p style="margin: 0; font-weight: 600; color: #f1f5f9;">Загрузить из устройства</p>
-                <small style="color: #94a3b8; display: block; margin-top: 4px;">PNG, JPG до 2MB</small>
-                <input type="file" name="photo" id="photo" accept="image/*" onchange="previewImage(this)" style="display: none;">
+        
+        {{-- Магазины и склады --}}
+        <div class="card !p-0 overflow-hidden border-white/5 flex flex-col">
+            <div class="px-5 py-4 border-b border-white/5 bg-white/5">
+                <h3 class="text-base font-semibold m-0 flex items-center gap-2">
+                    <i class="bi bi-geo-alt text-accent"></i> Место размещения
+                </h3>
             </div>
-            <div style="margin-top: 16px; text-align: center;">
-                <button type="button" class="btn btn-outline" onclick="openCameraModal()">
-                    <i class="bi bi-camera"></i> Сделать фото
-                </button>
+            <div class="p-5 space-y-6">
+                <div>
+                    <label class="block font-semibold mb-3 text-text text-sm">Куда поместить новый товар?</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="relative flex flex-col p-4 border rounded-xl cursor-pointer transition-all border-white/5 bg-white/5 hover:bg-white/10 has-[:checked]:border-accent/50 has-[:checked]:bg-accent/5">
+                            <input type="radio" name="location_type" value="warehouse" checked onchange="toggleLocation()" class="absolute opacity-0">
+                            <i class="bi bi-box-seam text-2xl text-accent mb-2"></i>
+                            <span class="font-bold text-sm">Склад</span>
+                            <span class="text-[10px] text-muted">Хранение и логистика</span>
+                        </label>
+                        <label class="relative flex flex-col p-4 border rounded-xl cursor-pointer transition-all border-white/5 bg-white/5 hover:bg-white/10 has-[:checked]:border-accent/50 has-[:checked]:bg-accent/5">
+                            <input type="radio" name="location_type" value="shop" onchange="toggleLocation()" class="absolute opacity-0">
+                            <i class="bi bi-shop text-2xl text-success mb-2"></i>
+                            <span class="font-bold text-sm">Витрина</span>
+                            <span class="text-[10px] text-muted">Сразу в продажу</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="warehouse-section" class="space-y-2">
+                    <label class="block font-semibold text-text text-sm">Выберите склад</label>
+                    <select name="warehouse_id" id="warehouse_id" class="input">
+                        @foreach($warehouses as $warehouse)
+                            <option value="{{ $warehouse->id }}" {{ old('warehouse_id') == $warehouse->id ? 'selected' : '' }}>{{ $warehouse->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div id="shop-section" class="hidden space-y-2">
+                    <label class="block font-semibold text-text text-sm">Выберите магазин</label>
+                    <select name="shop_id" id="shop_id" class="input" disabled>
+                        @foreach($shops as $shop)
+                            <option value="{{ $shop->id }}" {{ old('shop_id', $firstShopId ?? '') == $shop->id ? 'selected' : '' }}>{{ $shop->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
-            <img id="preview" src="#" alt="Предпросмотр" style="max-width: 300px; max-height: 300px; object-fit: cover; border-radius: 12px; display: none; margin: 16px auto 0;">
         </div>
     </div>
     
     {{-- Варианты товара --}}
-    <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i class="bi bi-layers" style="color: #38bdf8;"></i> Варианты товара (размеры/цвета)
+    <div class="card !p-0 overflow-hidden border-white/5 shadow-xl">
+        <div class="px-5 py-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
+            <h3 class="text-base font-semibold m-0 flex items-center gap-2">
+                <i class="bi bi-layers text-accent"></i> Варианты товара
             </h3>
-            <button type="button" class="btn btn-primary" onclick="addVariant()">
+            <button type="button" class="btn btn-outline py-2 px-3 text-xs" onclick="addVariant()">
                 <i class="bi bi-plus-lg"></i> Добавить
             </button>
         </div>
-        <div style="padding: 20px;">
-            <div id="variants-container">
-                <div class="variant-item">
-                    <div style="display: grid; grid-template-columns: 2fr 2fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 12px;">
+        <div class="p-5">
+            <div id="variants-container" class="space-y-4">
+                <div class="variant-item bg-white/5 p-4 rounded-xl border border-white/5 relative">
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                         <div>
-                            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Размер</label>
-                            <input type="text" name="variants[0][size]" class="input" placeholder="S, M, L..." required>
+                            <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Размер</label>
+                            <select name="variants[0][size]" class="input" required>
+                                <option value="">Выберите размер</option>
+                                <option value="XS">XS (Extra Small)</option>
+                                <option value="S">S (Small)</option>
+                                <option value="M">M (Medium)</option>
+                                <option value="L">L (Large)</option>
+                                <option value="XL">XL (Extra Large)</option>
+                                <option value="2XL">2XL (XXL)</option>
+                                <option value="3XL">3XL (XXXL)</option>
+                                <option value="4XL">4XL (XXXXL)</option>
+                                <option value="5XL">5XL (XXXXXL)</option>
+                                <option value="42">42 (EU)</option>
+                                <option value="44">44 (EU)</option>
+                                <option value="46">46 (EU)</option>
+                                <option value="48">48 (EU)</option>
+                                <option value="50">50 (EU)</option>
+                                <option value="52">52 (EU)</option>
+                                <option value="54">54 (EU)</option>
+                                <option value="56">56 (EU)</option>
+                                <option value="58">58 (EU)</option>
+                                <option value="60">60 (EU)</option>
+                                <option value="25">25 (W)</option>
+                                <option value="26">26 (W)</option>
+                                <option value="27">27 (W)</option>
+                                <option value="28">28 (W)</option>
+                                <option value="29">29 (W)</option>
+                                <option value="30">30 (W)</option>
+                                <option value="31">31 (W)</option>
+                                <option value="32">32 (W)</option>
+                                <option value="33">33 (W)</option>
+                                <option value="34">34 (W)</option>
+                                <option value="35">35 (W)</option>
+                                <option value="36">36 (W)</option>
+                                <option value="37">37 (W)</option>
+                                <option value="38">38 (W)</option>
+                                <option value="39">39 (W)</option>
+                                <option value="40">40 (W)</option>
+                                <option value="41">41 (W)</option>
+                                <option value="42">42 (W)</option>
+                                <option value="43">43 (W)</option>
+                                <option value="44">44 (W)</option>
+                                <option value="45">45 (W)</option>
+                                <option value="46">46 (W)</option>
+                                <option value="47">47 (W)</option>
+                                <option value="48">48 (W)</option>
+                                <option value="49">49 (W)</option>
+                                <option value="50">50 (W)</option>
+                                <option value="28/32">28/32 (W/L)</option>
+                                <option value="29/32">29/32 (W/L)</option>
+                                <option value="30/32">30/32 (W/L)</option>
+                                <option value="31/32">31/32 (W/L)</option>
+                                <option value="32/32">32/32 (W/L)</option>
+                                <option value="33/32">33/32 (W/L)</option>
+                                <option value="34/32">34/32 (W/L)</option>
+                                <option value="36/32">36/32 (W/L)</option>
+                                <option value="38/32">38/32 (W/L)</option>
+                                <option value="29/30">29/30 (W/L)</option>
+                                <option value="30/30">30/30 (W/L)</option>
+                                <option value="31/30">31/30 (W/L)</option>
+                                <option value="32/30">32/30 (W/L)</option>
+                                <option value="33/30">33/30 (W/L)</option>
+                                <option value="34/30">34/30 (W/L)</option>
+                                <option value="36/30">36/30 (W/L)</option>
+                                <option value="38/30">38/30 (W/L)</option>
+                            </select>
                         </div>
                         <div>
-                            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Цвет</label>
+                            <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Цвет</label>
                             <input type="text" name="variants[0][color]" class="input" placeholder="Цвет">
                         </div>
                         <div>
-                            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Кол-во</label>
-                            <input type="number" name="variants[0][quantity]" class="input" placeholder="Кол-во" required>
+                            <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Начальное кол-во</label>
+                            <input type="number" name="variants[0][quantity]" class="input" placeholder="0" required min="0">
                         </div>
-                        <div>
-                            <button type="button" class="btn btn-danger" onclick="removeVariant(this)" style="margin-top: 10px;">
-                                <i class="bi bi-trash"></i>
+                        <div class="flex items-end">
+                            <button type="button" class="btn btn-outline w-full py-2" onclick="addVariantField(this)">
+                                <i class="bi bi-pencil"></i> Свой размер
                             </button>
                         </div>
                     </div>
@@ -152,58 +274,13 @@
         </div>
     </div>
     
-    {{-- Магазины и склады --}}
-    <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);">
-            <h3 style="font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px;">
-                <i class="bi bi-shop" style="color: #38bdf8;"></i> Куда разместить товар?
-            </h3>
-        </div>
-        <div style="padding: 20px;">
-            {{-- Переключатель Склад/Витрина --}}
-            <div style="margin-bottom: 16px;">
-                <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #f1f5f9;">Место размещения</label>
-                <div style="display: flex; gap: 16px;">
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="radio" name="location_type" value="warehouse" checked onchange="toggleLocation()" style="width: 18px; height: 18px;">
-                        <span style="color: #f1f5f9; font-weight: 500;"><i class="bi bi-box-seam" style="color: #38bdf8; margin-right: 6px;"></i> Склад</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="radio" name="location_type" value="shop" onchange="toggleLocation()" style="width: 18px; height: 18px;">
-                        <span style="color: #f1f5f9; font-weight: 500;"><i class="bi bi-shop" style="color: #10b981; margin-right: 6px;"></i> Витрина (магазин)</span>
-                    </label>
-                </div>
-            </div>
-
-            {{-- Склад --}}
-            <div id="warehouse-section">
-                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Выберите склад</label>
-                <select name="warehouse_id" id="warehouse_id" class="input">
-                    @foreach($warehouses as $warehouse)
-                        <option value="{{ $warehouse->id }}" {{ old('warehouse_id') == $warehouse->id ? 'selected' : '' }}>{{ $warehouse->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- Магазин --}}
-            <div id="shop-section" style="display: none;">
-                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9;">Выберите магазин</label>
-                <select name="shop_id" id="shop_id" class="input">
-                    @foreach($shops as $shop)
-                        <option value="{{ $shop->id }}" {{ old('shop_id', $firstShopId ?? '') == $shop->id ? 'selected' : '' }}>{{ $shop->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-    </div>
-    
     {{-- Кнопки --}}
-    <div style="display: flex; gap: 12px;">
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check-lg"></i> Создать товар
+    <div class="flex flex-col sm:flex-row gap-3 pt-4">
+        <button type="submit" class="btn btn-primary px-8 py-3 justify-center shadow-lg shadow-accent/20">
+            <i class="bi bi-check2-circle text-lg"></i> <span>Создать товар</span>
         </button>
-        <a href="{{ route('admin.products.index') }}" class="btn btn-outline">
-            <i class="bi bi-x-lg"></i> Отмена
+        <a href="{{ route('admin.products.index') }}" class="btn btn-outline px-8 py-3 justify-center">
+            <i class="bi bi-arrow-left"></i> Отмена
         </a>
     </div>
 </form>
@@ -211,20 +288,24 @@
 {{-- Модальное окно камеры --}}
 <div class="modal fade" id="cameraModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-camera"></i> Сделать фото</h5>
+        <div class="modal-content overflow-hidden">
+            <div class="modal-header border-b border-white/5">
+                <h5 class="modal-title"><i class="bi bi-camera text-accent"></i> Сделать фото</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body text-center">
-                <video id="cameraVideo" autoplay playsinline style="width: 100%; max-width: 640px; border-radius: 8px; background: #000;"></video>
-                <canvas id="cameraCanvas" style="display: none;"></canvas>
-                <div style="margin-top: 16px; display: flex; gap: 8px; justify-content: center;">
-                    <button type="button" class="btn btn-primary" onclick="takePhoto()">
-                        <i class="bi bi-camera-fill"></i> Сфотографировать
+            <div class="modal-body p-0 bg-black">
+                <div class="relative aspect-video flex items-center justify-center">
+                    <video id="cameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+                    <canvas id="cameraCanvas" class="hidden"></canvas>
+                </div>
+            </div>
+            <div class="modal-footer bg-sidebar border-t border-white/5">
+                <div class="flex gap-3 w-full justify-center">
+                    <button type="button" class="btn btn-primary py-3 px-6 rounded-full" onclick="takePhoto()">
+                        <i class="bi bi-camera-fill text-xl"></i>
                     </button>
-                    <button type="button" class="btn btn-outline" onclick="stopCamera()">
-                        <i class="bi bi-x-lg"></i> Отмена
+                    <button type="button" class="btn btn-outline py-3 px-6 rounded-full" onclick="stopCamera()">
+                        <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
             </div>
@@ -235,7 +316,72 @@
 <script>
 let variantCounter = 1;
 
-// Переключение Склад/Витрина
+const sizeOptionsHtml = `
+<option value="">Выберите размер</option>
+<option value="XS">XS (Extra Small)</option>
+<option value="S">S (Small)</option>
+<option value="M">M (Medium)</option>
+<option value="L">L (Large)</option>
+<option value="XL">XL (Extra Large)</option>
+<option value="2XL">2XL (XXL)</option>
+<option value="3XL">3XL (XXXL)</option>
+<option value="4XL">4XL (XXXXL)</option>
+<option value="5XL">5XL (XXXXXL)</option>
+<option value="42">42 (EU)</option>
+<option value="44">44 (EU)</option>
+<option value="46">46 (EU)</option>
+<option value="48">48 (EU)</option>
+<option value="50">50 (EU)</option>
+<option value="52">52 (EU)</option>
+<option value="54">54 (EU)</option>
+<option value="56">56 (EU)</option>
+<option value="58">58 (EU)</option>
+<option value="60">60 (EU)</option>
+<option value="25">25 (W)</option>
+<option value="26">26 (W)</option>
+<option value="27">27 (W)</option>
+<option value="28">28 (W)</option>
+<option value="29">29 (W)</option>
+<option value="30">30 (W)</option>
+<option value="31">31 (W)</option>
+<option value="32">32 (W)</option>
+<option value="33">33 (W)</option>
+<option value="34">34 (W)</option>
+<option value="35">35 (W)</option>
+<option value="36">36 (W)</option>
+<option value="37">37 (W)</option>
+<option value="38">38 (W)</option>
+<option value="39">39 (W)</option>
+<option value="40">40 (W)</option>
+<option value="41">41 (W)</option>
+<option value="42">42 (W)</option>
+<option value="43">43 (W)</option>
+<option value="44">44 (W)</option>
+<option value="45">45 (W)</option>
+<option value="46">46 (W)</option>
+<option value="47">47 (W)</option>
+<option value="48">48 (W)</option>
+<option value="49">49 (W)</option>
+<option value="50">50 (W)</option>
+<option value="28/32">28/32 (W/L)</option>
+<option value="29/32">29/32 (W/L)</option>
+<option value="30/32">30/32 (W/L)</option>
+<option value="31/32">31/32 (W/L)</option>
+<option value="32/32">32/32 (W/L)</option>
+<option value="33/32">33/32 (W/L)</option>
+<option value="34/32">34/32 (W/L)</option>
+<option value="36/32">36/32 (W/L)</option>
+<option value="38/32">38/32 (W/L)</option>
+<option value="29/30">29/30 (W/L)</option>
+<option value="30/30">30/30 (W/L)</option>
+<option value="31/30">31/30 (W/L)</option>
+<option value="32/30">32/30 (W/L)</option>
+<option value="33/30">33/30 (W/L)</option>
+<option value="34/30">34/30 (W/L)</option>
+<option value="36/30">36/30 (W/L)</option>
+<option value="38/30">38/30 (W/L)</option>
+`;
+
 function toggleLocation() {
     const locationType = document.querySelector('input[name="location_type"]:checked').value;
     const warehouseSection = document.getElementById('warehouse-section');
@@ -244,30 +390,56 @@ function toggleLocation() {
     const shopSelect = document.getElementById('shop_id');
 
     if (locationType === 'warehouse') {
-        warehouseSection.style.display = 'block';
-        shopSection.style.display = 'none';
-        warehouseSelect.removeAttribute('disabled');
-        shopSelect.setAttribute('disabled', 'disabled');
+        warehouseSection.classList.remove('hidden');
+        shopSection.classList.add('hidden');
+        warehouseSelect.disabled = false;
+        shopSelect.disabled = true;
     } else {
-        warehouseSection.style.display = 'none';
-        shopSection.style.display = 'block';
-        warehouseSelect.setAttribute('disabled', 'disabled');
-        shopSelect.removeAttribute('disabled');
+        warehouseSection.classList.add('hidden');
+        shopSection.classList.remove('hidden');
+        warehouseSelect.disabled = true;
+        shopSelect.disabled = false;
     }
 }
-
-// Инициализация при загрузке
-document.addEventListener('DOMContentLoaded', function() {
-    toggleLocation();
-});
 
 function addVariant() {
     const container = document.getElementById('variants-container');
     const newVariant = document.createElement('div');
-    newVariant.className = 'variant-item';
-    newVariant.innerHTML = '<div style="display: grid; grid-template-columns: 2fr 2fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 12px;"><div><label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Размер</label><input type="text" name="variants[' + variantCounter + '][size]" class="input" placeholder="S, M, L..." required></div><div><label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Цвет</label><input type="text" name="variants[' + variantCounter + '][color]" class="input" placeholder="Цвет"></div><div><label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f1f5f9; font-size: 14px;">Кол-во</label><input type="number" name="variants[' + variantCounter + '][quantity]" class="input" placeholder="Кол-во" required></div><div><button type="button" class="btn btn-danger" onclick="removeVariant(this)" style="margin-top: 10px;"><i class="bi bi-trash"></i></button></div></div>';
+    newVariant.className = 'variant-item bg-white/5 p-4 rounded-xl border border-white/5 relative group animate-in fade-in slide-in-from-top-2 duration-300';
+    newVariant.innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div>
+                <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Размер</label>
+                <select name="variants[${variantCounter}][size]" class="input" required>
+                    ${sizeOptionsHtml}
+                </select>
+            </div>
+            <div>
+                <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Цвет</label>
+                <input type="text" name="variants[${variantCounter}][color]" class="input" placeholder="Цвет">
+            </div>
+            <div>
+                <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Начальное кол-во</label>
+                <input type="number" name="variants[${variantCounter}][quantity]" class="input" placeholder="0" required min="0">
+            </div>
+            <div class="flex items-end">
+                <button type="button" class="btn btn-outline w-full py-2" onclick="addVariantField(this)">
+                    <i class="bi bi-pencil"></i> Свой размер
+                </button>
+            </div>
+        </div>
+        <button type="button" class="absolute -top-2 -right-2 w-7 h-7 bg-danger text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" onclick="removeVariant(this)">
+            <i class="bi bi-x"></i>
+        </button>
+    `;
     container.appendChild(newVariant);
     variantCounter++;
+}
+
+function addVariantField(button) {
+    const sizeSelect = button.closest('.grid').querySelector('select[name^="variants"][name$="[size]"]');
+    sizeSelect.outerHTML = `<input type="text" name="${sizeSelect.name}" class="input" placeholder="Введите размер" required>`;
+    button.parentElement.outerHTML = `<div class="flex items-end"><button type="button" class="btn btn-outline w-full py-2" disabled><i class="bi bi-check"></i> Текстовое поле</button></div>`;
 }
 
 function generateArticle() {
@@ -284,24 +456,45 @@ function previewImage(input) {
         const reader = new FileReader();
         reader.onload = function(e) {
             const preview = document.getElementById('preview');
+            const placeholder = document.getElementById('upload-placeholder');
+            const removeBtn = document.getElementById('remove-photo');
+
             preview.src = e.target.result;
-            preview.style.display = 'block';
+            preview.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+            removeBtn.classList.remove('hidden');
         };
         reader.readAsDataURL(input.files[0]);
     }
 }
 
+function clearPhoto() {
+    const input = document.getElementById('photo');
+    const preview = document.getElementById('preview');
+    const placeholder = document.getElementById('upload-placeholder');
+    const removeBtn = document.getElementById('remove-photo');
+
+    input.value = '';
+    preview.src = '#';
+    preview.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+    removeBtn.classList.add('hidden');
+}
+
 let cameraStream = null;
 
 function openCameraModal() {
-    const modal = new bootstrap.Modal(document.getElementById('cameraModal'));
+    const modalElement = document.getElementById('cameraModal');
+    const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
     modal.show();
     startCamera();
 }
 
 async function startCamera() {
     try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
         document.getElementById('cameraVideo').srcObject = cameraStream;
     } catch (err) {
         alert('Ошибка доступа к камере: ' + err.message);
@@ -313,17 +506,20 @@ function stopCamera() {
         cameraStream.getTracks().forEach(track => track.stop());
         cameraStream = null;
     }
-    const modal = bootstrap.Modal.getInstance(document.getElementById('cameraModal'));
-    modal.hide();
+    const modalElement = document.getElementById('cameraModal');
+    const modal = bootstrap.Modal.getInstance(modalElement);
+    if (modal) modal.hide();
 }
 
 function takePhoto() {
     const video = document.getElementById('cameraVideo');
     const canvas = document.getElementById('cameraCanvas');
     const context = canvas.getContext('2d');
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
     canvas.toBlob(function(blob) {
         const file = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
         const input = document.getElementById('photo');
@@ -332,7 +528,9 @@ function takePhoto() {
         input.files = dataTransfer.files;
         previewImage(input);
         stopCamera();
-    }, 'image/jpeg', 0.95);
+    }, 'image/jpeg', 0.9);
 }
+
+document.addEventListener('DOMContentLoaded', toggleLocation);
 </script>
 @endsection

@@ -519,7 +519,6 @@
                     <li><a href="{{ route('admin.qr.manage') }}" class="{{ request()->routeIs('admin.qr.manage') ? 'active' : '' }}"><i class="bi bi-qr-code"></i> QR-коды</a></li>
                     <li><a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}"><i class="bi bi-person-badge"></i> Сотрудники</a></li>
                     <li><a href="{{ route('admin.shops.index') }}" class="{{ request()->routeIs('admin.shops.*') ? 'active' : '' }}"><i class="bi bi-shop"></i> Магазины</a></li>
-                    <li><a href="{{ route('admin.sellers.shops') }}" class="{{ request()->routeIs('admin.sellers.*') ? 'active' : '' }}"><i class="bi bi-person-badge"></i> Продавцы</a></li>
                     <li><a href="{{ route('admin.customers.index') }}" class="{{ request()->routeIs('admin.customers.*') ? 'active' : '' }}"><i class="bi bi-person-heart"></i> Клиенты</a></li>
                     <li><a href="{{ route('admin.reports.index') }}" class="{{ request()->routeIs('admin.reports.*') ? 'active' : '' }}"><i class="bi bi-graph-up"></i> Отчёты</a></li>
                     <li><a href="{{ url('admin/settings') }}" class="{{ request()->is('admin/settings*') ? 'active' : '' }}"><i class="bi bi-gear"></i> Настройки</a></li>

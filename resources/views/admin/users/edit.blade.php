@@ -1,234 +1,199 @@
-@extends('layouts.app')
-
-@section('title', 'Редактирование сотрудника - Администратор')
+@extends('layouts.admin')
+@section('page-title', 'Редактирование сотрудника')
 
 @section('content')
-<style>
-    .edit-card {
-        background: var(--bg-card);
-        border-radius: 12px;
-        box-shadow: var(--card-shadow);
-        border: 1px solid var(--border-color);
-    }
-    .edit-card-header {
-        padding: 1.5rem 2rem;
-        border-bottom: 1px solid var(--border-color);
-        background: var(--gradient-warm);
-        border-radius: 12px 12px 0 0;
-        color: white;
-    }
-    .edit-card-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-    .edit-card-body {
-        padding: 2rem;
-    }
-    .form-control, .form-select {
-        background: var(--bg-card);
-        border-color: var(--border-color);
-        color: var(--text-primary);
-    }
-    .form-control:focus, .form-select:focus {
-        background: var(--bg-card);
-        border-color: var(--primary);
-        color: var(--text-primary);
-        box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.25);
-    }
-    .form-control::placeholder {
-        color: var(--text-muted);
-    }
-    .form-label {
-        color: var(--text-primary);
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-    .form-text {
-        color: var(--text-muted);
-    }
-    .page-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 1.5rem;
-    }
-    .page-title-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--gradient);
-        color: white;
-    }
-    .info-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        background: var(--primary-light);
-        color: var(--primary-dark);
-        font-weight: 500;
-        margin-bottom: 1.5rem;
-    }
-</style>
+<div class="page-header">
+    <div class="page-icon"><i class="bi bi-pencil"></i></div>
+    <div>
+        <h1 class="page-title">Редактирование сотрудника</h1>
+        <p class="page-subtitle">Обновление данных и роли</p>
+    </div>
+    <div style="margin-left:auto; display:flex; gap:10px;">
+        <a href="{{ route('admin.users.index') }}" class="btn btn-outline">
+            <i class="bi bi-arrow-left"></i> Назад
+        </a>
+    </div>
+</div>
 
-<div class="container-fluid">
-    <div class="page-header">
-        <div class="page-title-icon">
-            <i class="bi bi-pencil"></i>
+@if(session('success'))
+    <div class="card" style="padding: 16px; border: 1px solid rgba(16,185,129,0.25); margin-bottom: 16px;">
+        <div style="font-weight:700; color:#10b981; margin-bottom: 6px;">
+            <i class="bi bi-check-circle"></i> Успешно
         </div>
-        <h1 class="h3 mb-0" style="color: var(--primary);">Редактирование сотрудника</h1>
-        <div class="ms-auto">
-            <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Назад
-            </a>
+        <div style="color:#f1f5f9;">{{ session('success') }}</div>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="card" style="padding: 16px; border: 1px solid rgba(239,68,68,0.25); margin-bottom: 16px;">
+        <div style="font-weight:700; color:#ef4444; margin-bottom: 6px;">
+            <i class="bi bi-x-circle"></i> Ошибка
+        </div>
+        <div style="color:#f1f5f9;">{{ session('error') }}</div>
+    </div>
+@endif
+
+@if($errors->any())
+    <div class="card" style="padding: 16px; border: 1px solid rgba(239,68,68,0.25); margin-bottom: 16px;">
+        <div style="font-weight:700; color:#ef4444; margin-bottom: 8px;">
+            <i class="bi bi-exclamation-triangle"></i> Исправьте ошибки перед сохранением
+        </div>
+        <ul style="margin:0; padding-left: 18px; color:#f1f5f9; font-size:14px;">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div class="card-header">
+        <h3 class="card-header-title">
+            <i class="bi bi-person-badge" style="color:#38bdf8;"></i> Информация о сотруднике
+        </h3>
+        <div>
+            <span class="badge badge-blue">{{ $user->full_name ?? $user->username }}</span>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="edit-card">
-                <div class="edit-card-header">
-                    <h5 class="edit-card-title">
-                        <i class="bi bi-person-badge"></i>
-                        Информация о сотруднике
-                    </h5>
-                </div>
-                <div class="edit-card-body">
-                    <div class="info-badge">
-                        <i class="bi bi-person-circle"></i>
-                        <span>{{ $user->full_name ?? $user->username }}</span>
+    <div style="padding: 24px;">
+        <div class="users-edit-grid" style="display:grid; grid-template-columns: 1fr 340px; gap:16px;">
+            <div>
+                <form action="{{ route('admin.users.update', $user) }}" method="POST">
+                    @csrf
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                        <div>
+                            <div style="font-size: 13px; color:#f1f5f9; margin-bottom: 6px; font-weight: 600;">
+                                Логин <span style="color:#ef4444;">*</span>
+                            </div>
+                            <input class="input" type="text" name="username" value="{{ old('username', $user->username) }}" required>
+                        </div>
+                        <div>
+                            <div style="font-size: 13px; color:#f1f5f9; margin-bottom: 6px; font-weight: 600;">
+                                Email
+                            </div>
+                            <input class="input" type="email" name="email" value="{{ old('email', $user->email) }}" />
+                        </div>
                     </div>
 
-                    <form action="{{ route('admin.users.update', $user) }}" method="POST">
-                        @csrf
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Логин <span class="text-danger">*</span></label>
-                                <input type="text" name="username" class="form-control" value="{{ old('username', $user->username) }}" required>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top: 12px;">
+                        <div>
+                            <div style="font-size: 13px; color:#f1f5f9; margin-bottom: 6px; font-weight: 600;">
+                                Телефон
                             </div>
+                            <input class="input" type="text" name="phone" value="{{ old('phone', $user->phone) }}">
+                        </div>
+                        <div>
+                            <div style="font-size: 13px; color:#f1f5f9; margin-bottom: 6px; font-weight: 600;">
+                                ФИО
+                            </div>
+                            <input class="input" type="text" name="full_name" value="{{ old('full_name', $user->full_name) }}">
+                        </div>
+                    </div>
 
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Телефон</label>
-                                <input type="text" name="phone" class="form-control" value="{{ old('phone', $user->phone) }}">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top: 12px;">
+                        <div>
+                            <div style="font-size: 13px; color:#f1f5f9; margin-bottom: 6px; font-weight: 600;">
+                                Роль <span style="color:#ef4444;">*</span>
+                            </div>
+                            <select name="role_id" class="input" style="appearance: none;" required>
+                                @foreach($roles as $role)
+                                    <option value="{{ $role->id }}" {{ (int)$user->role_id === (int)$role->id ? 'selected' : '' }}>
+                                        {{ $role->display_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <div style="font-size: 13px; color:#f1f5f9; margin-bottom: 6px; font-weight: 600;">
+                                Магазин
+                            </div>
+                            <select name="shop_id" class="input" style="appearance: none;">
+                                <option value="">Не выбран</option>
+                                @foreach($shops as $shop)
+                                    <option value="{{ $shop->id }}" {{ (int)($user->shop_id ?? 0) === (int)$shop->id ? 'selected' : '' }}>
+                                        {{ $shop->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div style="font-size: 12px; color:#94a3b8; margin-top: 6px;">
+                                Магазин, к которому прикреплён сотрудник
                             </div>
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">ФИО</label>
-                            <input type="text" name="full_name" class="form-control" value="{{ old('full_name', $user->full_name) }}">
+                    <div style="margin-top: 12px;">
+                        <div style="font-size: 13px; color:#f1f5f9; margin-bottom: 6px; font-weight: 600;">
+                            Новый пароль
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Роль <span class="text-danger">*</span></label>
-                                <select name="role_id" class="form-select" required>
-                                    @foreach($roles as $role)
-                                        <option value="{{ $role->id }}" {{ $user->role_id == $role->id ? 'selected' : '' }}>
-                                            {{ $role->display_name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Магазин</label>
-                                <select name="shop_id" class="form-select">
-                                    <option value="">Не выбран</option>
-                                    @foreach($shops as $shop)
-                                        <option value="{{ $shop->id }}" {{ $user->shop_id == $shop->id ? 'selected' : '' }}>
-                                            {{ $shop->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <small class="form-text text-muted">Магазин, к которому прикреплён сотрудник</small>
-                            </div>
+                        <input class="input" type="password" name="password" placeholder="Оставьте пустым, чтобы не менять">
+                        <div style="font-size: 12px; color:#94a3b8; margin-top: 6px;">
+                            Оставьте пустым, если не хотите менять пароль
                         </div>
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Новый пароль</label>
-                            <input type="password" name="password" class="form-control" placeholder="Оставьте пустым, чтобы не менять">
-                            <small class="form-text text-muted">Оставьте пустым, если не хотите менять пароль</small>
-                        </div>
+                    <div style="margin-top: 14px; display:flex; align-items:center; gap:10px;">
+                        <input type="checkbox" name="is_active" value="1" id="isActive" {{ $user->is_active ? 'checked' : '' }}>
+                        <label for="isActive" style="font-weight:700; color:#f1f5f9; cursor:pointer;">Активен</label>
+                        <span style="font-size:12px; color:#94a3b8;">Сотрудник сможет входить в систему</span>
+                    </div>
 
-                        <div class="form-check form-switch mb-4">
-                            <input type="checkbox" name="is_active" class="form-check-input" id="isActive" {{ $user->is_active ? 'checked' : '' }}>
-                            <label class="form-check-label" for="isActive">
-                                <strong>Активен</strong>
-                            </label>
-                            <div class="form-text">Сотрудник сможет входить в систему</div>
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Сохранить
-                            </button>
-                            <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-lg"></i> Отмена
-                            </a>
-                        </div>
-                    </form>
-                </div>
+                    <div style="margin-top: 18px; display:flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Сохранить
+                        </button>
+                        <a href="{{ route('admin.users.index') }}" class="btn btn-outline">
+                            <i class="bi bi-x-lg"></i> Отмена
+                        </a>
+                    </div>
+                </form>
             </div>
-        </div>
 
-        <div class="col-lg-4">
-            <div class="edit-card">
-                <div class="edit-card-header">
-                    <h5 class="edit-card-title">
-                        <i class="bi bi-info-circle"></i>
-                        Информация
-                    </h5>
-                </div>
-                <div class="edit-card-body">
-                    <table class="table table-borderless mb-0">
+            <div>
+                <div class="card" style="background: transparent; border: 1px solid rgba(255,255,255,0.05); padding: 16px;">
+                    <div style="font-weight:700; margin-bottom: 12px; display:flex; align-items:center; gap:8px;">
+                        <i class="bi bi-info-circle" style="color:#38bdf8;"></i> Информация
+                    </div>
+                    <table class="table" style="width:100%; border-collapse: collapse; margin:0;">
                         <tr>
-                            <td class="text-muted">ID:</td>
-                            <td class="fw-bold">{{ $user->id }}</td>
+                            <td style="color:#94a3b8; padding: 8px 0;">ID</td>
+                            <td style="padding: 8px 0; font-weight:700;">{{ $user->id }}</td>
                         </tr>
                         <tr>
-                            <td class="text-muted">Email:</td>
-                            <td>{{ $user->email ?? '—' }}</td>
+                            <td style="color:#94a3b8; padding: 8px 0;">Email</td>
+                            <td style="padding: 8px 0;">{{ $user->email ?? '—' }}</td>
                         </tr>
                         <tr>
-                            <td class="text-muted">Дата регистрации:</td>
-                            <td>{{ $user->created_at->format('d.m.Y H:i') }}</td>
+                            <td style="color:#94a3b8; padding: 8px 0;">Дата регистрации</td>
+                            <td style="padding: 8px 0;">{{ $user->created_at?->format('d.m.Y H:i') ?? '—' }}</td>
                         </tr>
                         <tr>
-                            <td class="text-muted">Последний вход:</td>
-                            <td>{{ $user->last_login_at ? $user->last_login_at->format('d.m.Y H:i') : '—' }}</td>
+                            <td style="color:#94a3b8; padding: 8px 0;">Последний вход</td>
+                            <td style="padding: 8px 0;">{{ $user->last_login_at?->format('d.m.Y H:i') ?? '—' }}</td>
                         </tr>
                         <tr>
-                            <td class="text-muted">Статус:</td>
-                            <td>
+                            <td style="color:#94a3b8; padding: 8px 0;">Статус</td>
+                            <td style="padding: 8px 0;">
                                 @if($user->is_active)
-                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Активен</span>
+                                    <span class="badge badge-success"><i class="bi bi-check-circle"></i> Активен</span>
                                 @else
-                                    <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Заблокирован</span>
+                                    <span class="badge badge-danger"><i class="bi bi-x-circle"></i> Заблокирован</span>
                                 @endif
                             </td>
                         </tr>
                     </table>
                 </div>
-            </div>
 
-            <div class="edit-card mt-3">
-                <div class="edit-card-body">
-                    <h6 class="fw-bold mb-3">
-                        <i class="bi bi-exclamation-triangle text-warning"></i>
-                        Опасная зона
-                    </h6>
+                <div style="height: 12px;"></div>
+
+                <div class="card" style="background: transparent; border: 1px solid rgba(255,255,255,0.05); padding: 16px;">
+                    <div style="font-weight:700; margin-bottom: 12px; display:flex; align-items:center; gap:8px;">
+                        <i class="bi bi-exclamation-triangle" style="color:#f59e0b;"></i> Опасная зона
+                    </div>
                     <form action="{{ route('admin.users.delete', $user) }}" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить сотрудника?')">
                         @csrf
-                        <button type="submit" class="btn btn-danger w-100">
+                        <button type="submit" class="btn btn-danger" style="width:100%; justify-content:center;">
                             <i class="bi bi-trash"></i> Удалить сотрудника
                         </button>
                     </form>
@@ -237,4 +202,10 @@
         </div>
     </div>
 </div>
+
+<style>
+    @media (max-width: 992px) {
+        .users-edit-grid { grid-template-columns: 1fr !important; }
+    }
+</style>
 @endsection

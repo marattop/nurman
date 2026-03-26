@@ -13,4 +13,5 @@ class Purchase extends Model
     public function shop() { return $this->belongsTo(Shop::class); }
     public function warehouse() { return $this->belongsTo(Warehouse::class); }
     public function receivedBy() { return $this->belongsTo(User::class, 'received_by'); }
+    public function supplier() { return $this->belongsTo(User::class, 'supplier_id'); }
 }
