@@ -91,8 +91,8 @@
             <a href="{{ route('seller.pos.index') }}" class="menu-item {{ request()->routeIs('seller.pos.*') ? 'active' : '' }}">
                 <i class="bi bi-cart3"></i> Продажа
             </a>
-            <a href="{{ route('seller.my-sales.index') }}" class="menu-item {{ request()->routeIs('seller.my-sales.*') ? 'active' : '' }}">
-                <i class="bi bi-receipt"></i> Мои продажи
+            <a href="{{ route('seller.my-sales.index') }}" class="menu-item {{ request()->routeIs('seller.my-sales*') ? 'active' : '' }}">
+                <i class="bi bi-receipt"></i> История продаж
             </a>
             
             <div class="group-title">Клиенты</div>

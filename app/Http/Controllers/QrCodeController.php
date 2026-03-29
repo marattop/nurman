@@ -47,6 +47,7 @@ class QrCodeController extends Controller
 
     /**
      * Генерация QR-кода для товара (только артикул)
+     * QR-код содержит JSON: {"article": "ART123"}
      */
     public function generate(Request $request)
     {
@@ -58,7 +59,7 @@ class QrCodeController extends Controller
         DB::beginTransaction();
         try {
             $product = Product::findOrFail($request->product_id);
-            
+
             // Если указан вариант, генерируем для него
             if ($request->variant_id) {
                 $variants = ProductVariant::where('id', $request->variant_id)->get();
@@ -70,8 +71,9 @@ class QrCodeController extends Controller
             $generated = [];
 
             foreach ($variants as $variant) {
-                // QR-код содержит только артикул товара
-                $qrData = $product->article;
+                // QR-код содержит только артикул товара в JSON формате
+                $qrData = ['article' => $product->article];
+                $qrDataJson = json_encode($qrData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
                 // Проверяем, есть ли уже QR-код для этого варианта
                 $existingQr = QrCode::where('variant_id', $variant->id)->first();
@@ -79,16 +81,14 @@ class QrCodeController extends Controller
                 if ($existingQr) {
                     // Обновляем существующий
                     $existingQr->update([
-                        // qr_data в модели кастится в array, поэтому НЕ json_encode
-                        'qr_data' => ['article' => $qrData],
+                        'qr_data' => $qrData, // кастится в array благодаря $casts
                     ]);
                     $generated[] = $existingQr;
                 } else {
                     // Создаем новый
                     $qrCode = QrCode::create([
                         'variant_id' => $variant->id,
-                        // qr_data в модели кастится в array, поэтому НЕ json_encode
-                        'qr_data' => ['article' => $qrData],
+                        'qr_data' => $qrData,
                         'is_printed' => false,
                     ]);
                     $generated[] = $qrCode;
@@ -102,6 +102,7 @@ class QrCodeController extends Controller
                 'message' => 'QR-коды успешно сгенерированы',
                 'qr_codes' => $generated,
                 'article' => $product->article,
+                'qr_data_example' => $qrDataJson, // Для отладки
             ]);
 
         } catch (\Exception $e) {
@@ -125,13 +126,12 @@ class QrCodeController extends Controller
 
             foreach ($products as $product) {
                 foreach ($product->variants as $variant) {
-                    $qrData = $product->article;
+                    $qrData = ['article' => $product->article];
 
                     QrCode::updateOrCreate(
                         ['variant_id' => $variant->id],
                         [
-                            // qr_data в модели кастится в array, поэтому НЕ json_encode
-                            'qr_data' => ['article' => $qrData],
+                            'qr_data' => $qrData,
                             'is_printed' => false,
                         ]
                     );
@@ -171,11 +171,11 @@ class QrCodeController extends Controller
         if (!$qrCode) {
             // Генерируем если нет
             $product = $variant->product;
-            $qrData = $product->article;
-            
+            $qrData = ['article' => $product->article];
+
             $qrCode = QrCode::create([
                 'variant_id' => $variant->id,
-                'qr_data' => ['article' => $qrData],
+                'qr_data' => $qrData,
                 'is_printed' => false,
             ]);
         }
@@ -185,7 +185,7 @@ class QrCodeController extends Controller
         // Возвращаем данные для печати
         return response()->json([
             'success' => true,
-            'qr_data' => $variant->product->article,
+            'qr_data' => json_encode(['article' => $variant->product->article], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'product_name' => $variant->product->name,
             'size' => $variant->size,
             'color' => $variant->color,

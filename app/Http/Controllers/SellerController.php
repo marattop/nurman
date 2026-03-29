@@ -6,7 +6,9 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Coupon;
 use App\Models\Product;
+use App\Models\QrCode;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class SellerController extends Controller
 {
@@ -52,37 +54,34 @@ class SellerController extends Controller
      */
     public function mySales(Request $request)
     {
-        $user = auth()->user();
+        try {
+            $user = auth()->user();
 
-        $query = Transaction::sales()
-            ->where('user_id', $user->id)
-            ->with(['items.variant.product', 'customer']);
+            $sales = Transaction::sales()
+                ->where('user_id', $user->id)
+                ->with(['items'])
+                ->orderBy('created_at', 'desc')
+                ->paginate(20);
 
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
+            $stats = [
+                'today' => Transaction::sales()
+                    ->where('user_id', $user->id)
+                    ->whereDate('created_at', today())
+                    ->sum('total_amount'),
+                'today_count' => Transaction::sales()
+                    ->where('user_id', $user->id)
+                    ->whereDate('created_at', today())
+                    ->count(),
+                'total' => Transaction::sales()
+                    ->where('user_id', $user->id)
+                    ->sum('total_amount'),
+            ];
+
+            return view('seller.pos.history', compact('sales', 'stats'));
+        } catch (\Exception $e) {
+            \Log::error('mySales error: ' . $e->getMessage());
+            return redirect()->route('seller.dashboard')->with('error', 'Ошибка: ' . $e->getMessage());
         }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
-
-        $sales = $query->orderBy('created_at', 'desc')->paginate(20);
-
-        $stats = [
-            'today' => Transaction::sales()
-                ->where('user_id', $user->id)
-                ->whereDate('created_at', today())
-                ->sum('total_amount'),
-            'today_count' => Transaction::sales()
-                ->where('user_id', $user->id)
-                ->whereDate('created_at', today())
-                ->count(),
-            'total' => Transaction::sales()
-                ->where('user_id', $user->id)
-                ->sum('total_amount'),
-        ];
-
-        return view('seller.pos.history', compact('sales', 'stats'));
     }
 
     /**
@@ -156,11 +155,103 @@ class SellerController extends Controller
      */
     public function customers()
     {
-        $coupons = Coupon::with(['customer.customerProfile', 'qrCode'])
+        $customers = User::where('role_id', 5)
+            ->with(['myCoupons' => function($q) {
+                $q->orderBy('created_at', 'desc');
+            }])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-        return view('seller.customers.index', compact('coupons'));
+        return view('seller.customers.index', compact('customers'));
+    }
+
+    /**
+     * История покупок клиента
+     */
+    public function customerHistory($customerId)
+    {
+        $sales = Transaction::where('customer_id', $customerId)
+            ->where('type', 'sale')
+            ->with(['items.variant.product'])
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'sales' => $sales
+        ]);
+    }
+
+    /**
+     * Создание купона для клиента
+     */
+    public function createCouponForCustomer(Request $request)
+    {
+        $validated = $request->validate([
+            'customer_id' => 'required|exists:users,id',
+            'discount_type' => 'required|in:percent,wholesale',
+            'discount_value' => 'nullable|numeric|min:0',
+            'validity_period' => 'nullable|numeric',
+        ]);
+
+        $customer = User::find($validated['customer_id']);
+        
+        // Проверяем, есть ли уже активный купон
+        $existingCoupon = Coupon::where('customer_id', $customer->id)
+            ->where('is_active', true)
+            ->first();
+        
+        if ($existingCoupon) {
+            return response()->json([
+                'success' => false,
+                'message' => 'У клиента уже есть активный купон'
+            ]);
+        }
+
+        // Вычисляем дату окончания действия
+        $validUntil = null;
+        if ($validated['validity_period'] == '999') {
+            $validUntil = now()->addYears(10);
+        } else {
+            $months = (int)($validated['validity_period'] ?? 12);
+            $validUntil = now()->addMonths($months);
+        }
+
+        // Создание купона
+        $coupon = Coupon::create([
+            'code' => 'CPN-' . strtoupper(Str::random(8)),
+            'customer_id' => $customer->id,
+            'discount_type' => $validated['discount_type'],
+            'discount_value' => $validated['discount_value'] ?? 0,
+            'usage_limit' => 999999,
+            'usage_count' => 0,
+            'valid_from' => now(),
+            'valid_until' => $validUntil,
+            'is_active' => true,
+            'created_by' => auth()->id(),
+        ]);
+
+        // Генерация QR-кода для купона
+        $qrData = json_encode([
+            'coupon_id' => $coupon->id,
+            'code' => $coupon->code,
+        ], JSON_UNESCAPED_UNICODE);
+
+        QrCode::create([
+            'qr_data' => $qrData,
+            'code' => $coupon->code,
+            'product_id' => null,
+            'variant_id' => null,
+            'coupon_id' => $coupon->id,
+            'is_printed' => false,
+            'printed_by' => auth()->id(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'coupon' => $coupon
+        ]);
     }
 
     /**
@@ -254,56 +345,6 @@ class SellerController extends Controller
                 'price' => $variant->product->retail_price ?? 0,
                 'quantity' => $availableStock,
             ],
-        ]);
-    }
-
-    /**
-     * Создание купона для клиента
-     */
-    public function createCoupon(Request $request)
-    {
-        $request->validate([
-            'customer_id' => 'required|exists:users,id',
-            'discount_type' => 'required|in:percent,wholesale',
-            'discount_value' => 'nullable|numeric|min:0',
-            'usage_limit' => 'nullable|integer|min:1',
-            'valid_until' => 'nullable|date|after:today',
-            'comment' => 'nullable|string',
-        ]);
-
-        $code = 'CPN-' . strtoupper(substr(uniqid(), -8));
-
-        // Для оптовой скидки discount_value = 0
-        $discountValue = $request->discount_type === 'wholesale' ? 0 : ($request->discount_value ?? 0);
-
-        $coupon = Coupon::create([
-            'code' => $code,
-            'customer_id' => $request->customer_id,
-            'discount_type' => $request->discount_type,
-            'discount_value' => $discountValue,
-            'min_purchase_amount' => $request->min_purchase_amount ?? 0,
-            'usage_limit' => $request->usage_limit ?? 1,
-            'usage_count' => 0,
-            'valid_from' => now(),
-            'valid_until' => $request->valid_until ? $request->valid_until : now()->addMonth(30),
-            'is_active' => true,
-            'created_by' => auth()->id(),
-            'comment' => $request->comment ?? null,
-        ]);
-
-        // Генерация QR-кода для купона
-        $qrData = json_encode(['coupon_id' => $coupon->id, 'code' => $coupon->code]);
-        \App\Models\QrCode::create([
-            'variant_id' => null,
-            'coupon_id' => $coupon->id,
-            'qr_data' => $qrData,
-            'is_printed' => false,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'coupon' => $coupon,
-            'message' => 'Купон создан',
         ]);
     }
 

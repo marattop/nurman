@@ -29,7 +29,7 @@ class DashboardController extends Controller
         // Последние продажи
         $recentSales = Transaction::sales()
             ->where('user_id', $user->id)
-            ->with(['items.variant.product', 'customer'])
+            ->with(['items', 'customer'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();

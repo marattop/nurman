@@ -1,38 +1,74 @@
-@extends('layouts.app')
-@section('page-title','Склад')
+@extends('layouts.warehouse')
+
+@section('page-title', 'Дашборд')
+@section('page-subtitle', 'Обзор склада и операций')
+
 @section('content')
-<style>
-.stats-card{background:var(--bg-card);border-radius:16px;padding:1.5rem;box-shadow:var(--card-shadow);transition:all 0.3s ease;border:1px solid var(--border-color);height:100%}
-.stats-card:hover{transform:translateY(-4px);box-shadow:var(--card-shadow-hover)}
-.stats-card-icon{width:64px;height:64px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:var(--gradient-warm);color:white;font-size:1.75rem;box-shadow:0 4px 16px rgba(16,185,129,0.35);margin-bottom:1rem}
-.stats-card h4{font-size:1.5rem;font-weight:700;margin:0;color:var(--text-primary)}
-.stats-card p{font-size:0.875rem;color:var(--text-secondary);margin:0.25rem 0 0 0}
-@media(max-width: 768px){.stats-card{padding:1.25rem}.stats-card-icon{width:52px;height:52px;font-size:1.4rem;margin-bottom:0.75rem}.stats-card h4{font-size:1.25rem}.stats-card p{font-size:0.8rem}}
-@media(max-width: 576px){.stats-card{padding:1rem}.stats-card-icon{width:46px;height:46px;font-size:1.2rem;margin-bottom:0.5rem}.stats-card h4{font-size:1.1rem}.stats-card p{font-size:0.75rem}.col-12,.col-12.col-md-4{flex:0 0 100%;max-width:100%}}
-</style>
-<div class="row g-3">
-    <div class="col-12 col-md-4">
-        <div class="stats-card">
-            <div class="stats-card-icon"><i class="bi bi-box"></i></div>
-            <div><h4>{{ $totalProducts }}</h4><p>Товаров</p></div>
+<div class="stats-grid">
+    <!-- Total Products -->
+    <div class="glass p-6 rounded-2xl flex items-center gap-6 group hover:bg-white/[0.02] transition-colors">
+        <div class="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center text-accent group-hover:scale-110 transition-transform shadow-lg shadow-accent/5">
+            <i class="bi bi-box text-4xl"></i>
+        </div>
+        <div>
+            <p class="text-sm font-bold text-muted uppercase tracking-widest">Всего товаров</p>
+            <h3 class="text-4xl font-black text-white mt-1">{{ number_format($totalProducts ?? 0) }}</h3>
         </div>
     </div>
-    <div class="col-12 col-md-4">
-        <div class="stats-card">
-            <div class="stats-card-icon" style="background:linear-gradient(135deg,#dc3545,#c82333)"><i class="bi bi-exclamation-triangle"></i></div>
-            <div><h4 class="text-danger">{{ $lowStock }}</h4><p>Заканчивается</p></div>
+
+    <!-- Low Stock -->
+    <div class="glass p-6 rounded-2xl flex items-center gap-6 group hover:bg-white/[0.02] transition-colors">
+        <div class="w-16 h-16 rounded-2xl bg-danger/10 flex items-center justify-center text-danger group-hover:scale-110 transition-transform shadow-lg shadow-danger/5">
+            <i class="bi bi-exclamation-triangle text-4xl"></i>
+        </div>
+        <div>
+            <p class="text-sm font-bold text-muted uppercase tracking-widest">Заканчивается</p>
+            <h3 class="text-4xl font-black text-danger mt-1">{{ number_format($lowStock ?? 0) }}</h3>
         </div>
     </div>
-    <div class="col-12 col-md-4">
-        <a href="{{ route('warehouse.purchases.index') }}" style="text-decoration:none">
-            <div class="stats-card" style="background:linear-gradient(135deg,var(--accent-blue),#2563eb);cursor:pointer">
-                <div class="stats-card-icon"><i class="bi bi-truck"></i></div>
-                <div>
-                    <h4 style="color:white">Приёмка</h4>
-                    <p style="color:rgba(255,255,255,0.9)">Оформить поступление</p>
-                </div>
-            </div>
-        </a>
+
+    <!-- Quick Action: Receive Goods -->
+    <a href="{{ route('warehouse.purchases.index') }}" class="glass p-6 rounded-2xl flex items-center gap-6 group hover:bg-white/[0.02] transition-colors no-underline">
+        <div class="w-16 h-16 rounded-2xl bg-success/10 flex items-center justify-center text-success group-hover:scale-110 transition-transform shadow-lg shadow-success/5">
+            <i class="bi bi-cart-plus text-4xl"></i>
+        </div>
+        <div>
+            <p class="text-sm font-bold text-muted uppercase tracking-widest">Приёмка товара</p>
+            <h3 class="text-xl font-black text-success mt-1">Оформить →</h3>
+        </div>
+    </a>
+</div>
+
+<!-- Recent Operations -->
+<div class="glass rounded-2xl overflow-hidden shadow-2xl">
+    <div class="px-6 py-4 border-b border-white/5 bg-white/[0.02]">
+        <h3 class="font-bold text-white flex items-center gap-2 uppercase tracking-tight text-sm">
+            <i class="bi bi-clock-history text-accent"></i>
+            Последние операции
+        </h3>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left responsive-table">
+            <thead>
+                <tr class="bg-white/[0.03] text-[10px] uppercase tracking-widest text-muted">
+                    <th class="px-6 py-4">Тип</th>
+                    <th class="px-6 py-4">Дата</th>
+                    <th class="px-6 py-4">Товар</th>
+                    <th class="px-6 py-4 text-right">Количество</th>
+                    <th class="px-6 py-4 text-right">Статус</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+                <tr>
+                    <td colspan="5" class="px-6 py-20 text-center text-muted">
+                        <div class="flex flex-col items-center">
+                            <i class="bi bi-inbox text-5xl mb-4 opacity-10"></i>
+                            <p class="text-sm font-medium">Операций пока нет</p>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 @endsection

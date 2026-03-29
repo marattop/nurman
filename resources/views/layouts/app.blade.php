@@ -527,7 +527,7 @@
                     <li><a href="{{ route('seller.dashboard') }}" class="{{ request()->routeIs('seller.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i> Дашборд</a></li>
                     <li><a href="{{ route('seller.pos.index') }}" class="{{ request()->routeIs('seller.pos.*') ? 'active' : '' }}"><i class="bi bi-cart"></i> POS-терминал</a></li>
                     <li><a href="{{ route('seller.customers.index') }}" class="{{ request()->routeIs('seller.customers.*') ? 'active' : '' }}"><i class="bi bi-people"></i> Клиенты</a></li>
-                    <li><a href="{{ route('seller.my-sales.index') }}" class="{{ request()->routeIs('seller.my-sales.*') ? 'active' : '' }}"><i class="bi bi-receipt"></i> Мои продажи</a></li>
+                    <li><a href="{{ route('seller.my-sales.index') }}" class="{{ request()->routeIs('seller.my-sales.*') ? 'active' : '' }}"><i class="bi bi-receipt"></i> История продаж</a></li>
                 @elseif(auth()->user()->isWarehouse())
                     <li><a href="{{ route('warehouse.dashboard') }}" class="{{ request()->routeIs('warehouse.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i> Дашборд</a></li>
                     <li><a href="{{ route('warehouse.purchases.index') }}" class="{{ request()->routeIs('warehouse.purchases.*') ? 'active' : '' }}"><i class="bi bi-truck"></i> Приёмка</a></li>

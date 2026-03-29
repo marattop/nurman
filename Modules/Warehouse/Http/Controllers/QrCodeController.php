@@ -5,20 +5,35 @@ namespace Modules\Warehouse\Http\Controllers;
 use Illuminate\Http\Request;
 use Modules\Warehouse\Models\QrCode as QrCodeModel;
 use Modules\Warehouse\Models\ProductVariant;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class QrCodeController extends Controller
 {
+    public function __construct()
+    {
+        // Проверка разрешения для всех методов кроме index
+        $this->middleware(function ($request, $next) {
+            if (!auth()->user()->can('warehouse.qr')) {
+                abort(403, 'Доступ ограничен. Обратитесь к администратору для получения разрешения на печать QR-кодов.');
+            }
+            return $next($request);
+        })->except([]);
+    }
+
     public function index(Request $request)
     {
-        $query = QrCodeModel::with(['variant.product', 'printedBy']);
+        // Проверка разрешения для index
+        if (!auth()->user()->can('warehouse.qr')) {
+            abort(403, 'Доступ ограничен. Обратитесь к администратору для получения разрешения на печать QR-кодов.');
+        }
         
+        $query = QrCodeModel::with(['variant.product', 'printedBy']);
+
         if ($request->get('not_printed')) {
             $query->where('is_printed', false);
         }
-        
+
         $qrCodes = $query->orderBy('created_at', 'desc')->paginate(20);
-        
+
         return view('warehouse::qrcodes.index', compact('qrCodes'));
     }
 

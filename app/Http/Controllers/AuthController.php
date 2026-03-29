@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Models\Role;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Password;
+use App\Services\SecurityLogger;
+use App\Http\Middleware\RateLimitAuth;
 
 /**
  * Контроллер аутентификации системы NURMAN.
@@ -22,11 +24,15 @@ class AuthController extends Controller
      * Максимальное количество попыток входа в минуту.
      */
     const MAX_ATTEMPTS = 5;
-    
+
     /**
      * Время блокировки в секундах (5 минут).
      */
     const DECAY_MINUTES = 5;
+
+    public function __construct(
+        protected SecurityLogger $securityLogger
+    ) {}
 
     /**
      * Отображение формы входа.
@@ -56,7 +62,9 @@ class AuthController extends Controller
         // Проверка на превышение лимита попыток
         if (RateLimiter::tooManyAttempts($throttleKey, static::MAX_ATTEMPTS)) {
             $seconds = RateLimiter::availableIn($throttleKey);
-            
+
+            $this->securityLogger->logLoginFailed($request->username, 'rate_limit');
+
             ActivityLog::create([
                 'action' => 'login_failed_rate_limit',
                 'ip_address' => $request->ip(),
@@ -72,7 +80,7 @@ class AuthController extends Controller
         // Попытка аутентификации
         if (Auth::attempt($credentials = ['username' => $request->username, 'password' => $request->password], $request->boolean('remember'))) {
             $request->session()->regenerate();
-            
+
             $user = Auth::user();
 
             // Проверка активности пользователя
@@ -80,7 +88,13 @@ class AuthController extends Controller
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
-                
+
+                $this->securityLogger->logSuspiciousActivity(
+                    $user,
+                    'Попытка входа неактивного пользователя',
+                    ['ip' => $request->ip()]
+                );
+
                 return back()->withErrors([
                     'username' => 'Ваша учётная запись деактивирована. Обратитесь к администратору.',
                 ])->onlyInput('username');
@@ -91,20 +105,14 @@ class AuthController extends Controller
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
-                
+
                 return back()->withErrors([
                     'username' => 'Роль "' . $user->role->display_name . '" деактивирована. Обратитесь к администратору.',
                 ])->onlyInput('username');
             }
 
-            // Логирование входа
-            ActivityLog::create([
-                'user_id' => $user->id,
-                'action' => 'login',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'description' => 'Вход в систему',
-            ]);
+            // Логирование входа через SecurityLogger
+            $this->securityLogger->logLoginSuccess($user, $request);
 
             // Обновление данных о последнем входе
             $user->update([
@@ -121,6 +129,9 @@ class AuthController extends Controller
 
         // Неверные учётные данные - увеличиваем счётчик попыток
         RateLimiter::hit($throttleKey, static::DECAY_MINUTES * 60);
+
+        // Логирование неудачной попытки
+        $this->securityLogger->logLoginFailed($request->username, 'invalid_credentials');
 
         ActivityLog::create([
             'action' => 'login_failed',
@@ -142,6 +153,10 @@ class AuthController extends Controller
         $user = Auth::user();
 
         if ($user) {
+            $this->securityLogger->log(\App\Services\SecurityLogger::EVENT_LOGOUT, $user, [
+                'ip' => $request->ip(),
+            ]);
+
             ActivityLog::create([
                 'user_id' => $user->id,
                 'action' => 'logout',

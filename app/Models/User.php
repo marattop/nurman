@@ -39,6 +39,8 @@ class User extends Authenticatable
         'is_active',
         'last_login_at',
         'last_login_ip',
+        'known_ips',
+        'known_devices',
     ];
 
     /**
@@ -56,6 +58,8 @@ class User extends Authenticatable
         'is_active' => 'boolean',
         'can_sell_from_warehouse' => 'boolean',
         'last_login_at' => 'datetime',
+        'known_ips' => 'array',
+        'known_devices' => 'array',
     ];
 
     /**

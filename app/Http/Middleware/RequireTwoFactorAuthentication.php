@@ -32,8 +32,11 @@ class RequireTwoFactorAuthentication
             return $next($request);
         }
 
-        // Проверяем верификацию
-        if ($this->twoFactorService->needsTwoFactorVerification($user)) {
+        // Проверяем верификацию через сессию или кэш
+        $sessionKey = '2fa_verified_' . $user->id;
+        $isVerified = session($sessionKey) || cache($sessionKey);
+        
+        if (!$isVerified) {
             // Если запрос AJAX - возвращаем JSON
             if ($request->expectsJson()) {
                 return response()->json([
@@ -42,8 +45,13 @@ class RequireTwoFactorAuthentication
                 ], 403);
             }
 
+            // Разрешаем доступ к 2FA маршрутам
+            if ($request->routeIs('auth.2fa.*')) {
+                return $next($request);
+            }
+
             // Редирект на страницу 2FA
-            return redirect()->route('auth.2fa');
+            return redirect()->route('auth.2fa.show');
         }
 
         return $next($request);

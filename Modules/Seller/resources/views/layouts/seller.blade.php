@@ -88,24 +88,16 @@
             <a href="{{ route('seller.dashboard') }}" class="menu-item {{ request()->routeIs('seller.dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2"></i> Дашборд
             </a>
-            <a href="{{ route('seller.pos.index') }}" class="menu-item {{ request()->routeIs('seller.pos.*') ? 'active' : '' }}">
-                <i class="bi bi-cart3"></i> Продажа
-            </a>
-            <a href="{{ route('seller.my-sales.index') }}" class="menu-item {{ request()->routeIs('seller.my-sales.*') ? 'active' : '' }}">
-                <i class="bi bi-receipt"></i> Мои продажи
-            </a>
-            
-            <div class="group-title">Клиенты</div>
-            <a href="{{ route('seller.customers.index') }}" class="menu-item {{ request()->routeIs('seller.customers.*') ? 'active' : '' }}">
-                <i class="bi bi-people"></i> Клиенты
-            </a>
-            
-            <div class="group-title">Инструменты</div>
-            <a href="{{ route('seller.products.scan') }}" class="menu-item {{ request()->routeIs('seller.products.scan') ? 'active' : '' }}">
-                <i class="bi bi-qr-code-scan"></i> Сканер товаров
-            </a>
             <a href="{{ route('seller.pos.index') }}" class="menu-item {{ request()->routeIs('seller.pos.index') ? 'active' : '' }}">
-                <i class="bi bi-ticket"></i> Сканер купонов
+                <i class="bi bi-cart3"></i> Продажа (POS)
+            </a>
+            <a href="{{ route('seller.my-sales.index') }}" class="menu-item {{ request()->routeIs('seller.my-sales*') ? 'active' : '' }}">
+                <i class="bi bi-receipt"></i> История продаж
+            </a>
+
+            <div class="group-title">Клиенты</div>
+            <a href="{{ route('seller.customers.index') }}" class="menu-item {{ request()->routeIs('seller.customers*') ? 'active' : '' }}">
+                <i class="bi bi-people"></i> База клиентов
             </a>
         </nav>
     </aside>

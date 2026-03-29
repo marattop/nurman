@@ -122,6 +122,9 @@
                 <a href="<?php echo e(route('admin.purchases.index')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.purchases.*') ? 'active' : ''); ?>">
                     <i class="bi bi-cart-plus"></i> Закупки
                 </a>
+                <a href="<?php echo e(route('admin.scan-product')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.scan-product*') ? 'active' : ''); ?>">
+                    <i class="bi bi-qr-code-scan"></i> Сканер товаров
+                </a>
                 <a href="<?php echo e(route('admin.qr.scan')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.qr.*') ? 'active' : ''); ?>">
                     <i class="bi bi-qr-code-scan"></i> QR-сканер
                 </a>
@@ -133,6 +136,9 @@
                 <a href="<?php echo e(route('admin.users.index')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.users.*') ? 'active' : ''); ?>">
                     <i class="bi bi-people"></i> Сотрудники
                 </a>
+                <a href="<?php echo e(route('admin.roles.index')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.roles.*') ? 'active' : ''); ?>">
+                    <i class="bi bi-shield-lock"></i> Роли и разрешения
+                </a>
                 <a href="<?php echo e(route('admin.shops.index')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.shops.*') ? 'active' : ''); ?>">
                     <i class="bi bi-shop"></i> Магазины
                 </a>
@@ -143,9 +149,6 @@
                 <div class="group-title">Отчёты</div>
                 <a href="<?php echo e(route('admin.reports.index')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.reports.*') ? 'active' : ''); ?>">
                     <i class="bi bi-graph-up"></i> Все отчёты
-                </a>
-                <a href="<?php echo e(route('admin.reports.sales')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.reports.sales') ? 'active' : ''); ?>">
-                    <i class="bi bi-cash"></i> Продажи
                 </a>
                 <a href="<?php echo e(route('admin.reports.stock')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.reports.stock') ? 'active' : ''); ?>">
                     <i class="bi bi-box"></i> Остатки
@@ -210,10 +213,6 @@
             <div class="bottom-nav-center">
                 <i class="bi bi-qr-code-scan"></i>
             </div>
-        </a>
-        <a href="<?php echo e(route('admin.sales.index')); ?>" class="bottom-nav-item <?php echo e(request()->routeIs('admin.sales.*') ? 'active' : ''); ?>">
-            <i class="bi bi-cash-stack"></i>
-            <span>Продажи</span>
         </a>
         <a href="<?php echo e(url('admin/settings')); ?>" class="bottom-nav-item <?php echo e(request()->is('admin/settings*') ? 'active' : ''); ?>">
             <i class="bi bi-person-gear"></i>

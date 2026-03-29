@@ -49,8 +49,8 @@ class StockController extends Controller
         $stock = Stock::whereColumn('quantity', '<=', 'min_stock')
             ->with(['variant.product', 'shop', 'warehouse'])
             ->get();
-        
-        return view('warehouse::stock.low-stock', compact('stock'));
+
+        return view('warehouse::stock.low', compact('stock'));
     }
 
     public function add(Request $request)

@@ -52,7 +52,7 @@ class Transaction extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(\Modules\Core\Models\User::class);
+        return $this->belongsTo(\App\Models\User::class);
     }
 
     /**
@@ -60,7 +60,7 @@ class Transaction extends Model
      */
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(\Modules\Core\Models\User::class, 'customer_id');
+        return $this->belongsTo(\App\Models\User::class, 'customer_id');
     }
 
     /**

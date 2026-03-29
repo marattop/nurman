@@ -150,15 +150,47 @@ class PosController extends Controller
 
         try {
             $qrData = json_decode($request->qr_data, true);
+            $customerId = null;
+            $phone = null;
+            $couponId = null;
+            $couponCode = null;
+            $customer = null;
 
-            if (!$qrData || !isset($qrData['customer_id'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Неверный формат QR-кода клиента'
-                ]);
+            \Log::info('scanCustomer - Входные данные:', [
+                'qr_data' => $request->qr_data,
+                'decoded' => $qrData
+            ]);
+
+            // Формат QR: coupon_id:code (например, "5:CPN-12345")
+            if (is_string($request->qr_data) && strpos($request->qr_data, ':') !== false) {
+                $parts = explode(':', $request->qr_data);
+                if (count($parts) === 2 && is_numeric($parts[0])) {
+                    $couponId = (int) $parts[0];
+                    $couponCode = $parts[1];
+                    \Log::info('scanCustomer - Обнаружен формат coupon_id:code', [
+                        'couponId' => $couponId,
+                        'couponCode' => $couponCode
+                    ]);
+                }
             }
 
-            $customer = User::with(['customerProfile', 'myCoupons' => function($q) {
+            if (is_array($qrData)) {
+                $customerId = $qrData['customer_id'] ?? null;
+                $phone = $qrData['phone'] ?? null;
+                $couponCode = $couponCode ?? ($qrData['code'] ?? null);
+                $couponId = $couponId ?? ($qrData['coupon_id'] ?? null);
+            } else {
+                // Если не JSON, возможно это номер телефона или ID напрямую
+                if (is_numeric($request->qr_data)) {
+                    if (strlen($request->qr_data) >= 9) {
+                        $phone = $request->qr_data;
+                    } else {
+                        $customerId = $request->qr_data;
+                    }
+                }
+            }
+
+            $query = User::with(['customerProfile', 'myCoupons' => function($q) {
                 $q->where('is_active', true)
                   ->where(function($query) {
                       $query->whereNull('valid_from')
@@ -166,16 +198,71 @@ class PosController extends Controller
                       $query->whereNull('valid_until')
                             ->orWhere('valid_until', '>=', now());
                   });
-            }])->find($qrData['customer_id']);
+            }]);
+
+            \Log::info('scanCustomer - Поиск:', [
+                'customerId' => $customerId,
+                'phone' => $phone,
+                'couponId' => $couponId,
+                'couponCode' => $couponCode
+            ]);
+
+            // Поиск по coupon_id:code формату
+            if ($couponId && $couponCode) {
+                $coupon = Coupon::where('id', $couponId)
+                    ->where('code', $couponCode)
+                    ->where('is_active', true)
+                    ->first();
+                \Log::info('scanCustomer - Поиск по coupon_id:code', [
+                    'found' => $coupon ? true : false,
+                    'couponId' => $couponId,
+                    'couponCode' => $couponCode
+                ]);
+                if ($coupon && $coupon->customer_id) {
+                    $customer = $query->find($coupon->customer_id);
+                    \Log::info('scanCustomer - Клиент найден по coupon_id:code', ['customerId' => $customer->id]);
+                }
+            }
+
+            // Поиск по ID клиента
+            if (!$customer && $customerId) {
+                $customer = $query->find($customerId);
+                \Log::info('scanCustomer - Поиск по ID:', ['found' => $customer ? true : false]);
+            }
+
+            // Поиск по телефону
+            if (!$customer && $phone) {
+                // Очистка телефона от лишних символов
+                $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+                $customer = $query->where('phone', 'like', "%{$cleanPhone}%")->first();
+                \Log::info('scanCustomer - Поиск по телефону:', ['cleanPhone' => $cleanPhone, 'found' => $customer ? true : false]);
+            }
+
+            // Поиск по коду купона (если только код)
+            if (!$customer && $couponCode) {
+                $coupon = Coupon::where('code', $couponCode)
+                    ->where('is_active', true)
+                    ->first();
+                if ($coupon && $coupon->customer_id) {
+                    $customer = $query->find($coupon->customer_id);
+                }
+                \Log::info('scanCustomer - Поиск по коду купона:', ['found' => $customer ? true : false]);
+            }
 
             if (!$customer) {
+                // Логируем всех клиентов для отладки
+                $allCustomers = User::where('role_id', 5)->get(['id', 'full_name', 'phone']);
+                \Log::error('scanCustomer - Клиент не найден. Все клиенты в БД:', [
+                    'customers' => $allCustomers->toArray()
+                ]);
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Клиент не найден'
                 ]);
             }
 
-            // Получаем активный купон клиента (через myCoupons, а не coupons)
+            // Получаем активный купон клиента
             $activeCoupon = $customer->myCoupons->first();
 
             // Получаем процент лояльности клиента
@@ -202,7 +289,7 @@ class PosController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Ошибка при сканировании: ' . $e->getMessage()
+                'message' => 'Ошибка при поиске клиента: ' . $e->getMessage()
             ]);
         }
     }
@@ -464,13 +551,13 @@ class PosController extends Controller
             // Считаем общую сумму
             $totalAmount = 0;
             $totalSupplierPrice = 0;
-            $isWholesale = false;
-
-            // Проверяем, является ли купон оптовым
+            
+            // Проверяем, есть ли купон с оптовой ценой
+            $useWholesalePrice = false;
             if ($couponId) {
                 $coupon = Coupon::find($couponId);
-                if ($coupon && $coupon->discount_type === 'wholesale') {
-                    $isWholesale = true;
+                if ($coupon && $coupon->discount_type === 'wholesale' && $coupon->isValid()) {
+                    $useWholesalePrice = true;
                 }
             }
 
@@ -480,9 +567,9 @@ class PosController extends Controller
                     throw new \Exception("Товар не найден: {$item['variant_id']}");
                 }
 
-                // Если оптовый купон, используем оптовую цену
-                if ($isWholesale) {
-                    $price = $variant->wholesale_price ?: $variant->supplier_price ?: 0;
+                // Если оптовый купон — продаём по цене закупки, иначе — розничная цена
+                if ($useWholesalePrice) {
+                    $price = $variant->supplier_price ?? 0;
                 } else {
                     $price = $variant->product->retail_price ?? 0;
                 }
@@ -505,11 +592,11 @@ class PosController extends Controller
                 $stock->decrement('quantity', $item['quantity']);
             }
 
-            // Применяем скидку купона
+            // Применяем скидку купона (только процентную)
             $discountAmount = 0;
-            if ($couponId) {
+            if ($couponId && !$useWholesalePrice) {
                 $coupon = Coupon::find($couponId);
-                if ($coupon && $coupon->isValid()) {
+                if ($coupon && $coupon->isValid() && $coupon->discount_type === 'percent') {
                     $discountAmount = $coupon->calculateDiscount($totalAmount);
                     $coupon->use();
                 }
@@ -597,10 +684,12 @@ class PosController extends Controller
     public function printReceipt($transactionId)
     {
         $transaction = Transaction::with(['items.variant.product', 'customer', 'shop', 'user'])
-            ->find($transactionId);
+            ->where('id', $transactionId)
+            ->where('user_id', auth()->id())
+            ->first();
 
         if (!$transaction) {
-            abort(404);
+            abort(404, 'Чек не найден или у вас нет доступа');
         }
 
         return view('seller.pos.receipt', compact('transaction'));
@@ -718,6 +807,17 @@ class PosController extends Controller
                     'success' => false,
                     'message' => 'Продажа не найдена'
                 ]);
+            }
+
+            // Проверяем, что продавец имеет право оформлять возврат по этой транзакции
+            // (транзакция должна быть из его магазина)
+            $currentUser = auth()->user();
+            if ($transaction->shop_id !== $currentUser->shop_id) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Нет доступа к этой транзакции'
+                ], 403);
             }
 
             // Проверяем, не был ли уже возврат

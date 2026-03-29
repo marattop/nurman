@@ -12,6 +12,7 @@ use App\Models\Warehouse;
 use App\Models\QrCode;
 use App\Models\TransactionItem;
 use App\Models\ActivityLog;
+use App\Models\Coupon;
 
 /**
  * Контроллер сканера QR-кодов
@@ -29,7 +30,7 @@ class QrScannerController extends Controller
     }
 
     /**
-     * Обработка отсканированного QR-кода
+     * Обработка отсканированного QR-кода или штрих-кода
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
@@ -40,49 +41,87 @@ class QrScannerController extends Controller
         ]);
 
         $qrData = trim($request->qr_data);
-        
-        // Логирование для отладки
-        \Log::info('QR Scan received: ' . $qrData);
 
-        // Пытаемся извлечь артикул из JSON или используем как есть
-        $article = $qrData;
+        // Логирование для отладки
+        \Log::info('QR/Barcode Scan received: ' . $qrData);
+
+        $product = null;
+        $foundBy = null; // 'article', 'barcode', или 'json_article'
+
+        // Пытаемся извлечь данные из JSON или используем как есть
         try {
             $parsed = json_decode($qrData, true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
-                if (isset($parsed['article'])) {
-                    $article = $parsed['article'];
-                    \Log::info('Extracted article from JSON: ' . $article);
-                } elseif (isset($parsed['coupon_id'])) {
+                // Это JSON данные (из QR-кода)
+                if (isset($parsed['coupon_id'])) {
                     // Это купонный QR
                     return $this->processCouponScan($parsed);
                 }
+                
+                if (isset($parsed['article'])) {
+                    $article = $parsed['article'];
+                    \Log::info('Extracted article from JSON: ' . $article);
+                    $product = Product::where('article', $article)->first();
+                    $foundBy = 'json_article';
+                }
+                
+                // Если в JSON есть barcode, пробуем найти по нему
+                if (!$product && isset($parsed['barcode'])) {
+                    $barcode = $parsed['barcode'];
+                    \Log::info('Trying barcode from JSON: ' . $barcode);
+                    $variant = ProductVariant::where('barcode', $barcode)->first();
+                    if ($variant) {
+                        $product = $variant->product;
+                        $foundBy = 'json_barcode';
+                    }
+                }
+            } else {
+                // Не JSON - пробуем найти напрямую
+                // Сначала ищем по артикулу
+                $product = Product::where('article', $qrData)->first();
+                if ($product) {
+                    $foundBy = 'article';
+                    \Log::info('Found by article: ' . $qrData);
+                } else {
+                    // Если не нашли по артикулу, пробуем найти по штрих-коду (barcode)
+                    // Сканеры штрих-кодов часто передают просто число/строку
+                    $variant = ProductVariant::where('barcode', $qrData)->first();
+                    if ($variant) {
+                        $product = $variant->product;
+                        $foundBy = 'barcode';
+                        \Log::info('Found by barcode: ' . $qrData);
+                    }
+                }
             }
         } catch (\Exception $e) {
-            // Игнорируем ошибки парсинга, используем как есть
+            // Игнорируем ошибки парсинга, пробуем простой поиск
             \Log::error('JSON parse error: ' . $e->getMessage());
+            
+            // Пробуем найти по артикулу или barcode как строку
+            $product = Product::where('article', $qrData)->first();
+            if ($product) {
+                $foundBy = 'article';
+            } else {
+                $variant = ProductVariant::where('barcode', $qrData)->first();
+                if ($variant) {
+                    $product = $variant->product;
+                    $foundBy = 'barcode';
+                }
+            }
         }
 
-        \Log::info('Searching for product with article: ' . $article);
-
-        // Ищем товар по артикулу
-        $product = Product::where('article', $article)->first();
-
         if (!$product) {
-            \Log::warning('Product not found: ' . $article);
-            
-            // Для отладки - покажем все артикулы в базе
-            $allArticles = Product::pluck('article')->toArray();
-            
+            \Log::warning('Product not found by: ' . $qrData);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Товар с артикулом "' . $article . '" не найден',
+                'message' => 'Товар не найден',
                 'scanned_data' => $qrData,
-                'parsed_article' => $article,
-                'available_articles' => $allArticles,
+                'searched_by' => $foundBy,
             ]);
         }
         
-        \Log::info('Product found: ' . $product->name);
+        \Log::info('Product found: ' . $product->name . ' (found by: ' . $foundBy . ')');
 
         // Получаем все варианты товара с полной информацией
         $variants = $this->getVariantsWithStock($product);
@@ -91,9 +130,6 @@ class QrScannerController extends Controller
         $isKnownQr = QrCode::whereIn('variant_id', function ($q) use ($product) {
             $q->select('id')->from('product_variants')->where('product_id', $product->id);
         })->exists();
-
-        // Если QR не найден в базе, но артикул верный - всё равно показываем товар
-        // Это позволяет сканировать даже QR без is_printed
 
         // Считаем общие остатки
         $totalStock = $variants->sum('total_quantity');
@@ -104,6 +140,7 @@ class QrScannerController extends Controller
         return response()->json([
             'success' => true,
             'is_known_qr' => $isKnownQr,
+            'found_by' => $foundBy, // Как нашли: article, barcode, json_article, json_barcode
             'product' => [
                 'id' => $product->id,
                 'name' => $product->name,

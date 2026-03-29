@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Permission;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Category;
@@ -20,6 +21,9 @@ use App\Models\Coupon;
 use App\Models\QrCode;
 use App\Models\ActivityLog;
 use App\Models\Setting;
+use App\Models\AdminAuditLog;
+use App\Services\AdminSecurityService;
+use App\Services\SecurityLogger;
 
 /**
  * Контроллер Администратора.
@@ -39,6 +43,14 @@ use App\Models\Setting;
  */
 class AdminController extends Controller
 {
+    /**
+     * Конструктор с внедрением зависимостей.
+     */
+    public function __construct(
+        protected AdminSecurityService $securityService,
+        protected SecurityLogger $securityLogger
+    ) {}
+
     // ========================================================================
     // 🏠 ДАШБОРД
     // ========================================================================
@@ -211,6 +223,11 @@ class AdminController extends Controller
      */
     public function storeProduct(Request $request)
     {
+        // Проверка rate limiting
+        if (!$this->securityService->checkRateLimit(auth()->user(), 'product.delete')) {
+            return back()->withErrors(['error' => 'Слишком много операций с товарами. Попробуйте позже.']);
+        }
+
         $validated = $request->validate([
             'article' => 'nullable|string|max:100|unique:products,article',
             'name' => 'required|string|max:255',
@@ -309,6 +326,27 @@ class AdminController extends Controller
             'model_id' => $product->id,
         ]);
 
+        // Audit Log
+        AdminAuditLog::logAction(
+            auth()->user(),
+            AdminAuditLog::ACTION_PRODUCT_CREATE,
+            $product,
+            null,
+            [
+                'name' => $product->name,
+                'article' => $product->article,
+                'retail_price' => $product->retail_price,
+            ]
+        );
+
+        // Security Log
+        $this->securityLogger->logAdminProductEdit(
+            auth()->user(),
+            $product->id,
+            $product->name,
+            ['action' => 'create']
+        );
+
         return redirect()->route('admin.products.index')->with('success', 'Товар успешно добавлен');
     }
 
@@ -342,6 +380,18 @@ class AdminController extends Controller
      */
     public function updateProduct(Request $request, Product $product)
     {
+        // Проверка прав
+        if (!$this->securityService->canEditProduct(auth()->user(), $product)) {
+            abort(403, 'Доступ запрещён');
+        }
+
+        // Проверка rate limiting для изменения цен
+        if ($request->filled('retail_price') || $request->filled('supplier_price')) {
+            if (!$this->securityService->checkRateLimit(auth()->user(), 'price.change')) {
+                return back()->withErrors(['error' => 'Слишком много изменений цен. Попробуйте позже.']);
+            }
+        }
+
         $validated = $request->validate([
             'article' => 'required|string|max:100|unique:products,article,' . $product->id,
             'name' => 'required|string|max:255',
@@ -492,6 +542,23 @@ class AdminController extends Controller
             'model_id' => $product->id,
         ]);
 
+        // Audit Log
+        AdminAuditLog::logAction(
+            auth()->user(),
+            AdminAuditLog::ACTION_PRODUCT_UPDATE,
+            $product,
+            ['name' => $oldName],
+            ['name' => $product->name, 'article' => $product->article]
+        );
+
+        // Security Log
+        $this->securityLogger->logAdminProductEdit(
+            auth()->user(),
+            $product->id,
+            $product->name,
+            ['action' => 'update', 'old_name' => $oldName]
+        );
+
         return redirect()->route('admin.products.index')->with('success', 'Товар обновлён');
     }
 
@@ -500,6 +567,11 @@ class AdminController extends Controller
      */
     public function deleteProduct(Product $product)
     {
+        // Проверка прав
+        if (!$this->securityService->canDeleteProduct(auth()->user(), $product)) {
+            abort(403, 'Доступ запрещён');
+        }
+
         // Проверка: есть ли продажи
         $hasSales = DB::table('transaction_items')
             ->join('product_variants', 'transaction_items.variant_id', '=', 'product_variants.id')
@@ -510,9 +582,11 @@ class AdminController extends Controller
             // Деактивация вместо удаления
             $product->update(['is_active' => false]);
             $message = "Товар деактивирован (есть история продаж)";
+            $deactivated = true;
         } else {
             $product->delete();
             $message = "Товар удалён";
+            $deactivated = false;
         }
 
         ActivityLog::create([
@@ -522,6 +596,23 @@ class AdminController extends Controller
             'model_type' => Product::class,
             'model_id' => $product->id,
         ]);
+
+        // Audit Log
+        AdminAuditLog::logAction(
+            auth()->user(),
+            AdminAuditLog::ACTION_PRODUCT_DELETE,
+            $product,
+            ['name' => $product->name, 'article' => $product->article],
+            ['deleted' => true, 'deactivated' => $deactivated]
+        );
+
+        // Security Log
+        $this->securityLogger->logAdminProductDelete(
+            auth()->user(),
+            $product->id,
+            $product->name,
+            $deactivated
+        );
 
         return back()->with('success', $message);
     }
@@ -670,10 +761,90 @@ class AdminController extends Controller
     }
 
     /**
+     * Список ролей.
+     */
+    public function roles()
+    {
+        // Показываем только роль кладовщика
+        $roles = Role::where('name', 'warehouse')->withCount('users')->get();
+        return view('admin.roles.index', compact('roles'));
+    }
+
+    /**
+     * Управление разрешениями роли.
+     */
+    public function rolePermissions(Role $role)
+    {
+        // Разрешаем только для роли кладовщика
+        if ($role->name !== 'warehouse') {
+            abort(403, 'Доступно только для роли Кладовщика');
+        }
+
+        // Получаем только разрешения склада
+        $warehousePermissions = Permission::where('group', 'warehouse')
+            ->orderBy('name')
+            ->get(['id', 'name', 'display_name', 'description'])
+            ->toArray();
+
+        $rolePermissions = $role->getAllPermissions();
+        $rolePermissions = is_array($rolePermissions) ? $rolePermissions : $rolePermissions->pluck('name')->toArray();
+
+        // Формируем структуру как в getGroupedPermissions
+        $permissions = [
+            'warehouse' => [
+                'label' => 'Склад',
+                'permissions' => $warehousePermissions,
+            ],
+        ];
+
+        return view('admin.roles.permissions', compact('role', 'permissions', 'rolePermissions'));
+    }
+
+    /**
+     * Обновление разрешений роли.
+     */
+    public function updateRolePermissions(Request $request, Role $role)
+    {
+        // Разрешаем только для роли кладовщика
+        if ($role->name !== 'warehouse') {
+            abort(403, 'Доступно только для роли Кладовщика');
+        }
+
+        $validated = $request->validate([
+            'permissions' => 'array',
+        ]);
+
+        $allOldPermissions = $role->getAllPermissions();
+        $oldPermissions = is_array($allOldPermissions) ? $allOldPermissions : $allOldPermissions->pluck('name')->toArray();
+        $newPermissions = $validated['permissions'] ?? [];
+
+        $role->syncPermissions($newPermissions);
+
+        // Логирование
+        AdminAuditLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'role_permissions_update',
+            'description' => "Обновлены разрешения для роли '{$role->display_name}'",
+            'model_type' => Role::class,
+            'model_id' => $role->id,
+            'old_values' => ['permissions' => $oldPermissions],
+            'new_values' => ['permissions' => $newPermissions],
+        ]);
+
+        return redirect()->route('admin.roles.permissions', $role)
+            ->with('success', 'Разрешения успешно обновлены');
+    }
+
+    /**
      * Создание сотрудника.
      */
     public function createUser(Request $request)
     {
+        // Проверка прав
+        if (!$this->securityService->canCreateUser(auth()->user())) {
+            abort(403, 'Доступ запрещён');
+        }
+
         $validated = $request->validate([
             'username' => 'required|string|max:50|unique:users,username',
             'email' => 'nullable|email|max:255|unique:users,email',
@@ -709,6 +880,28 @@ class AdminController extends Controller
             'model_type' => User::class,
             'model_id' => $user->id,
         ]);
+
+        // Audit Log
+        AdminAuditLog::logAction(
+            auth()->user(),
+            AdminAuditLog::ACTION_USER_CREATE,
+            $user,
+            null,
+            [
+                'username' => $user->username,
+                'email' => $user->email,
+                'role_id' => $user->role_id,
+            ]
+        );
+
+        // Security Log
+        $role = Role::find($user->role_id);
+        $this->securityLogger->logAdminUserCreate(
+            auth()->user(),
+            $user->id,
+            $user->username,
+            $role?->name ?? 'unknown'
+        );
 
         return redirect()->route('admin.users.index')->with('success', 'Сотрудник создан');
     }
@@ -781,6 +974,11 @@ class AdminController extends Controller
      */
     public function deleteUser(User $user)
     {
+        // Проверка прав
+        if (!$this->securityService->canDeleteUser(auth()->user(), $user)) {
+            abort(403, 'Доступ запрещён');
+        }
+
         if ($user->id === auth()->id()) {
             return redirect()->route('admin.users.index')->with('error', 'Нельзя удалить самого себя');
         }
@@ -803,6 +1001,27 @@ class AdminController extends Controller
             'model_type' => User::class,
             'model_id' => $user->id,
         ]);
+
+        // Audit Log
+        AdminAuditLog::logAction(
+            auth()->user(),
+            AdminAuditLog::ACTION_USER_DELETE,
+            $user,
+            [
+                'username' => $user->username,
+                'email' => $user->email,
+                'role_id' => $user->role_id,
+            ],
+            ['deleted' => true]
+        );
+
+        // Security Log
+        $this->securityLogger->logAdminUserDelete(
+            auth()->user(),
+            $user->id,
+            $user->username,
+            $user->role?->name ?? 'unknown'
+        );
 
         return redirect()->route('admin.users.index')->with('success', $message);
     }
@@ -842,6 +1061,11 @@ class AdminController extends Controller
     public function createShop(Request $request)
     {
         try {
+            // Проверка прав
+            if (!$this->securityService->canManageShops(auth()->user())) {
+                abort(403, 'Доступ запрещён');
+            }
+
             // Сначала обрабатываем is_active вручную до валидации
             $isActive = false;
             if ($request->has('is_active')) {
@@ -866,6 +1090,23 @@ class AdminController extends Controller
                 'model_type' => Shop::class,
                 'model_id' => $shop->id,
             ]);
+
+            // Audit Log
+            AdminAuditLog::logAction(
+                auth()->user(),
+                AdminAuditLog::ACTION_SHOP_CREATE,
+                $shop,
+                null,
+                ['name' => $shop->name, 'code' => $shop->code]
+            );
+
+            // Security Log
+            $this->securityLogger->logAdminShopManage(
+                auth()->user(),
+                $shop->id,
+                $shop->name,
+                'create'
+            );
 
             return redirect()->route('admin.shops.index')->with('success', 'Магазин создан');
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -919,6 +1160,11 @@ class AdminController extends Controller
      */
     public function deleteShop(Request $request, Shop $shop)
     {
+        // Проверка прав
+        if (!$this->securityService->canManageShops(auth()->user())) {
+            abort(403, 'Доступ запрещён');
+        }
+
         $mainShop = Shop::where('code', 'KARAKOL_MAIN')->first()
             ?? Shop::where('code', 'like', '%_MAIN')->first();
 
@@ -1045,6 +1291,23 @@ class AdminController extends Controller
             'model_type' => Shop::class,
             'model_id' => $shop->id,
         ]);
+
+        // Audit Log
+        AdminAuditLog::logAction(
+            auth()->user(),
+            AdminAuditLog::ACTION_SHOP_DELETE,
+            $shop,
+            ['name' => $shop->name, 'code' => $shop->code],
+            ['deleted' => true]
+        );
+
+        // Security Log
+        $this->securityLogger->logAdminShopManage(
+            auth()->user(),
+            $shop->id,
+            $shop->name,
+            'delete'
+        );
 
         return redirect()->route('admin.shops.index')->with('success', $message);
     }
@@ -1460,5 +1723,207 @@ class AdminController extends Controller
         $actions = ActivityLog::select('action')->distinct()->pluck('action');
 
         return view('admin.activity-log', compact('logs', 'users', 'actions'));
+    }
+
+    // ========================================================================
+    // 🔒 AUDIT LOG - ЖУРНАЛ АУДИТА АДМИНИСТРАТОРА
+    // ========================================================================
+
+    /**
+     * Просмотр журнала аудита действий администратора.
+     */
+    public function auditLog(Request $request)
+    {
+        $query = AdminAuditLog::with(['user', 'user.role'])
+            ->orderBy('created_at', 'desc');
+
+        // Фильтр по пользователю
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // Фильтр по действию
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
+
+        // Фильтр по модели
+        if ($request->filled('model_type')) {
+            $query->where('model_type', $request->model_type);
+        }
+
+        // Фильтр по дате
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // Фильтр по IP
+        if ($request->filled('ip_address')) {
+            $query->where('ip_address', $request->ip_address);
+        }
+
+        $auditLogs = $query->paginate(50);
+
+        // Статистика
+        $stats = [
+            'total' => AdminAuditLog::count(),
+            'today' => AdminAuditLog::whereDate('created_at', today())->count(),
+            'this_week' => AdminAuditLog::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+            'this_month' => AdminAuditLog::whereMonth('created_at', now()->month)->count(),
+        ];
+
+        // Уникальные действия для фильтра
+        $actions = AdminAuditLog::select('action')->distinct()->pluck('action');
+
+        // Пользователи для фильтра
+        $users = User::whereIn('role_id', [2, 3, 4])->get();
+
+        // Типы моделей
+        $modelTypes = AdminAuditLog::select('model_type')
+            ->distinct()
+            ->whereNotNull('model_type')
+            ->pluck('model_type');
+
+        return view('admin.audit-log', compact('auditLogs', 'stats', 'actions', 'users', 'modelTypes'));
+    }
+
+    /**
+     * Страница сканера товаров (QR/Штрих-коды)
+     */
+    public function scanProduct()
+    {
+        return view('admin.scan-product');
+    }
+
+    /**
+     * Обработка сканирования QR-кода или штрих-кода товара
+     */
+    public function processProductScan(Request $request)
+    {
+        $request->validate([
+            'qr_data' => ['required', 'string', 'max:255'],
+        ]);
+
+        $qrData = trim($request->qr_data);
+
+        \Log::info('Admin QR/Barcode Scan received: ' . $qrData);
+
+        $product = null;
+        $foundBy = null;
+
+        try {
+            $parsed = json_decode($qrData, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
+                if (isset($parsed['article'])) {
+                    $article = $parsed['article'];
+                    \Log::info('Extracted article from JSON: ' . $article);
+                    $product = Product::where('article', $article)->first();
+                    $foundBy = 'json_article';
+                }
+
+                if (!$product && isset($parsed['barcode'])) {
+                    $barcode = $parsed['barcode'];
+                    \Log::info('Trying barcode from JSON: ' . $barcode);
+                    $variant = ProductVariant::where('barcode', $barcode)->first();
+                    if ($variant) {
+                        $product = $variant->product;
+                        $foundBy = 'json_barcode';
+                    }
+                }
+            } else {
+                $product = Product::where('article', $qrData)->first();
+                if ($product) {
+                    $foundBy = 'article';
+                    \Log::info('Found by article: ' . $qrData);
+                } else {
+                    $variant = ProductVariant::where('barcode', $qrData)->first();
+                    if ($variant) {
+                        $product = $variant->product;
+                        $foundBy = 'barcode';
+                        \Log::info('Found by barcode: ' . $qrData);
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('JSON parse error: ' . $e->getMessage());
+
+            $product = Product::where('article', $qrData)->first();
+            if ($product) {
+                $foundBy = 'article';
+            } else {
+                $variant = ProductVariant::where('barcode', $qrData)->first();
+                if ($variant) {
+                    $product = $variant->product;
+                    $foundBy = 'barcode';
+                }
+            }
+        }
+
+        if (!$product) {
+            \Log::warning('Product not found by: ' . $qrData);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Товар не найден',
+                'scanned_data' => $qrData,
+                'searched_by' => $foundBy,
+            ]);
+        }
+
+        \Log::info('Product found: ' . $product->name . ' (found by: ' . $foundBy . ')');
+
+        // Получаем варианты с остатками
+        $variants = $product->variants()->with(['stock'])->get()->map(function ($variant) {
+            $totalStock = $variant->stock->sum('quantity');
+            $shopStock = $variant->stock->filter(fn($s) => $s->shop_id)->sum('quantity');
+            $warehouseStock = $variant->stock->filter(fn($s) => $s->warehouse_id)->sum('quantity');
+
+            return [
+                'id' => $variant->id,
+                'size' => $variant->size,
+                'color' => $variant->color,
+                'barcode' => $variant->barcode,
+                'total_stock' => $totalStock,
+                'shop_stock' => $shopStock,
+                'warehouse_stock' => $warehouseStock,
+            ];
+        });
+
+        // Проверяем есть ли QR в системе
+        $variantIds = $product->variants()->pluck('id');
+        $isKnownQr = QrCode::whereIn('variant_id', $variantIds)->exists();
+
+        // Считаем остатки
+        $totalStock = $variants->sum('total_stock');
+        $shopStock = $variants->sum('shop_stock');
+        $warehouseStock = $variants->sum('warehouse_stock');
+
+        // Считаем проданные
+        $totalSold = TransactionItem::whereIn('variant_id', $variantIds)->sum('quantity');
+
+        return response()->json([
+            'success' => true,
+            'is_known_qr' => $isKnownQr,
+            'found_by' => $foundBy,
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'article' => $product->article,
+                'photo' => $product->photo,
+                'retail_price' => $product->retail_price,
+                'wholesale_price' => $product->wholesale_price,
+                'supplier_price' => $product->supplier_price,
+                'variants' => $variants,
+            ],
+            'summary' => [
+                'total_stock' => $totalStock,
+                'shop_stock' => $shopStock,
+                'warehouse_stock' => $warehouseStock,
+                'total_sold' => $totalSold,
+            ],
+        ]);
     }
 }

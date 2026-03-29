@@ -83,14 +83,16 @@
         </a>
     </div>
     
-    <div class="col-12 col-md-6 col-lg-2">
-        <a href="{{ route('warehouse.qrcodes') }}" class="text-decoration-none">
-            <div class="card h-100 text-center p-3">
-                <i class="bi bi-qr-code fs-1 text-warning mb-2"></i>
-                <h6>QR-коды</h6>
-            </div>
-        </a>
-    </div>
+    @if(auth()->user()->can('warehouse.qr'))
+        <div class="col-12 col-md-6 col-lg-2">
+            <a href="{{ route('warehouse.qrcodes.index') }}" class="text-decoration-none">
+                <div class="card h-100 text-center p-3">
+                    <i class="bi bi-printer fs-1 text-warning mb-2"></i>
+                    <h6>Печать QR</h6>
+                </div>
+            </a>
+        </div>
+    @endif
     
     <div class="col-12 col-md-6 col-lg-2">
         <a href="{{ route('warehouse.inventory') }}" class="text-decoration-none">

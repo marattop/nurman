@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\TwoFactorService;
+use App\Services\SecurityLogger;
 use PragmaRX\Google2FA\Google2FA;
 
 /**
@@ -12,7 +13,8 @@ use PragmaRX\Google2FA\Google2FA;
 class TwoFactorController extends Controller
 {
     public function __construct(
-        protected TwoFactorService $twoFactorService
+        protected TwoFactorService $twoFactorService,
+        protected SecurityLogger $securityLogger
     ) {}
 
     /**
@@ -39,6 +41,16 @@ class TwoFactorController extends Controller
         if ($this->twoFactorService->verifyUserCode($user, $code)) {
             $this->twoFactorService->markAsVerified($user);
             
+            // Устанавливаем сессию для middleware
+            $sessionKey = '2fa_verified_' . $user->id;
+            session([$sessionKey => true]);
+            
+            // Логирование успешной 2FA верификации
+            $this->securityLogger->log(\App\Services\SecurityLogger::EVENT_2FA_ENABLED, $user, [
+                'event' => '2fa_verified',
+                'ip' => $request->ip(),
+            ]);
+
             return redirect()->intended($user->getRedirectPath());
         }
 
@@ -46,9 +58,23 @@ class TwoFactorController extends Controller
         if ($this->twoFactorService->useRecoveryCode($user, $code)) {
             $this->twoFactorService->markAsVerified($user);
             
+            // Устанавливаем сессию для middleware
+            $sessionKey = '2fa_verified_' . $user->id;
+            session([$sessionKey => true]);
+            
+            // Логирование использования кода восстановления
+            $this->securityLogger->logSuspiciousActivity($user, 'Использован код восстановления 2FA', [
+                'ip' => $request->ip(),
+            ]);
+
             return redirect()->intended($user->getRedirectPath())
                 ->with('success', 'Использован код восстановления. Сгенерируйте новые коды!');
         }
+
+        // Логирование неудачной попытки 2FA
+        $this->securityLogger->logSuspiciousActivity($user, 'Неудачная попытка 2FA верификации', [
+            'ip' => $request->ip(),
+        ]);
 
         return back()->withErrors([
             'code' => 'Неверный код. Попробуйте ещё раз.',
@@ -61,7 +87,7 @@ class TwoFactorController extends Controller
     public function enable()
     {
         $user = request()->user();
-        
+
         if ($user->two_factor_secret) {
             return back()->with('error', '2FA уже включен');
         }
@@ -83,12 +109,15 @@ class TwoFactorController extends Controller
         ]);
 
         $user = $request->user();
-        
+
         if (!$this->twoFactorService->verifyUserCode($user, $request->code)) {
             return back()->withErrors(['code' => 'Неверный код']);
         }
 
         $this->twoFactorService->disableTwoFactorAuthentication($user);
+        
+        // Логирование отключения 2FA
+        $this->securityLogger->log2faDisabled($user);
 
         return back()->with('success', '2FA отключен');
     }

@@ -1,299 +1,236 @@
 @extends('layouts.admin')
-@section('page-title', 'QR-сканер')
-@section('body-class', 'qr-scan-page')
+
+@section('page-title', 'Сканер товаров')
+@section('page-subtitle', 'Мгновенный поиск товаров по QR и штрих-кодам')
+
 @section('content')
+<div class="max-w-5xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-{{-- Mobile-first full screen scanner --}}
-<style>
-/* Fullscreen scanner on phones */
-@media (max-width: 768px) {
-    body.qr-scan-page { padding-bottom: 0 !important; }
-    body.qr-scan-page .bottom-nav { display: none !important; }
-    body.qr-scan-page .sidebar { display: none !important; }
-    body.qr-scan-page .main-content { margin-left: 0 !important; }
-    body.qr-scan-page .main-content > div:first-child { display: none !important; } /* topbar */
-    body.qr-scan-page .main-content > div:nth-child(2) { padding: 0 !important; }   /* page padding */
+        <!-- Scanner Column -->
+        <div class="lg:col-span-7 space-y-6">
+            <div class="glass overflow-hidden rounded-[2rem] relative aspect-[4/5] md:aspect-square bg-black shadow-2xl border-white/10">
+                <!-- Camera Viewport -->
+                <div id="scanner-container" class="absolute inset-0"></div>
 
-    body.qr-scan-page .qr-scan-header { display: none !important; }
-    body.qr-scan-page .card { border-radius: 0 !important; border-left: 0; border-right: 0; border-top: 0; }
-    body.qr-scan-page .card > div { display: block !important; } /* remove 2 columns */
-    body.qr-scan-page #desktop-result-panel { display: none !important; }
+                <!-- Overlay Gradients -->
+                <div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-black/30"></div>
 
-    body.qr-scan-page #camera-container {
-        position: fixed !important;
-        inset: 0 !important;
-        height: 100dvh !important;
-        width: 100% !important;
-        margin: 0 !important;
-    }
-}
+                <!-- Scanning Frame -->
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div class="w-64 h-64 md:w-80 md:h-80 border-2 border-white/20 rounded-[2rem] relative">
+                        <!-- Corners -->
+                        <div class="absolute -top-1 -left-1 w-12 h-12 border-t-4 border-l-4 border-accent rounded-tl-3xl"></div>
+                        <div class="absolute -top-1 -right-1 w-12 h-12 border-t-4 border-r-4 border-accent rounded-tr-3xl"></div>
+                        <div class="absolute -bottom-1 -left-1 w-12 h-12 border-b-4 border-l-4 border-accent rounded-bl-3xl"></div>
+                        <div class="absolute -bottom-1 -right-1 w-12 h-12 border-b-4 border-r-4 border-accent rounded-br-3xl"></div>
 
-/* Use dynamic viewport units where supported */
-.qr-camera-fullscreen {
-    height: 100dvh;
-}
+                        <!-- Scanning Line -->
+                        <div class="absolute left-4 right-4 h-1 bg-accent/50 shadow-[0_0_15px_rgba(168,85,247,0.8)] animate-[scan_2s_ease-in-out_infinite] top-0 opacity-0"></div>
+                    </div>
+                </div>
 
-/* Make html5-qrcode video fill container */
-#scanner-container video {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-}
-
-/* Result overlay (mobile) */
-#mobile-result-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.96);
-    z-index: 2000;
-    display: none;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-}
-</style>
-
-<div class="qr-scan-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(56,189,248,0.15); display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 24px;">
-        <i class="bi bi-qr-code-scan"></i>
-    </div>
-    <div>
-        <h2 style="font-size: 28px; font-weight: 700; margin: 0;">QR-сканер</h2>
-        <p style="font-size: 14px; color: #94a3b8; margin: 4px 0 0 0;">Быстрое сканирование товаров</p>
-    </div>
-</div>
-
-{{-- Основная зона сканирования --}}
-<div class="card" style="padding: 0; overflow: hidden; margin-bottom: 20px;">
-    <div style="display: grid; grid-template-columns: 1fr 400px; gap: 0;">
-        {{-- Камера --}}
-        <div id="camera-container" class="qr-camera-fullscreen" style="background: #0f172a; position: relative; height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center;">
-            <div id="scanner-container" style="position: absolute; inset: 0; width: 100%; height: 100%;"></div>
-            
-            {{-- Ручной ввод артикула --}}
-            <div style="position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; z-index: 100;">
-                <div style="background: rgba(15,23,42,0.95); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #94a3b8; font-size: 13px;">
-                        <i class="bi bi-keyboard"></i> Или введите артикул:
-                    </label>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="manual-article" class="input" placeholder="ART123456" 
-                            style="flex: 1; background: rgba(148,163,184,0.1); border: 1px solid rgba(148,163,184,0.2); color: #f1f5f9; padding: 10px; border-radius: 8px; font-size: 14px;"
+                <!-- Manual Input (Floating) -->
+                <div class="absolute bottom-24 left-6 right-6 z-10">
+                    <div class="glass p-2 rounded-2xl flex items-center gap-2 border-white/20 shadow-xl">
+                        <input type="text" id="manual-article" placeholder="Введите артикул вручную..."
+                            class="flex-1 bg-transparent border-none text-white placeholder-white/40 px-4 py-2 focus:ring-0 text-sm"
                             onkeypress="if(event.key==='Enter') lookupManualArticle()">
-                        <button class="btn btn-primary" onclick="lookupManualArticle()" style="padding: 10px 16px;">
+                        <button onclick="lookupManualArticle()" class="w-10 h-10 rounded-xl bg-accent text-bg flex items-center justify-center hover:scale-95 transition-transform">
                             <i class="bi bi-search"></i>
                         </button>
                     </div>
                 </div>
-            </div>
 
-            {{-- Рамка сканирования --}}
-            {{-- Adjusted styles for centering within a full-screen context --}}
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 280px; height: 280px; border: 3px solid rgba(56,189,248,0.8); border-radius: 16px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.7); z-index: 10;">
-                <div style="position: absolute; top: -3px; left: -3px; width: 40px; height: 40px; border-top: 4px solid #10b981; border-left: 4px solid #10b981; border-top-left-radius: 16px;"></div>
-                <div style="position: absolute; top: -3px; right: -3px; width: 40px; height: 40px; border-top: 4px solid #10b981; border-right: 4px solid #10b981; border-top-right-radius: 16px;"></div>
-                <div style="position: absolute; bottom: -3px; left: -3px; width: 40px; height: 40px; border-bottom: 4px solid #10b981; border-left: 4px solid #10b981; border-bottom-left-radius: 16px;"></div>
-                <div style="position: absolute; bottom: -3px; right: -3px; width: 40px; height: 40px; border-bottom: 4px solid #10b981; border-right: 4px solid #10b981; border-bottom-right-radius: 16px;"></div>
-                
-                {{-- Линия сканирования --}}
-                <div style="position: absolute; left: 10px; right: 10px; height: 2px; background: linear-gradient(90deg, transparent, #10b981, transparent); animation: scan-line 2s ease-in-out infinite;"></div>
-            </div>
-
-            {{-- Кнопки управления --}}
-            <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 10;">
-                <button id="start-scan" class="btn btn-primary" style="padding: 14px 28px; font-size: 16px;">
-                    <i class="bi bi-camera"></i> Начать сканирование
-                </button>
-                <button id="stop-scan" class="btn btn-danger" style="display: none; padding: 14px 28px; font-size: 16px;">
-                    <i class="bi bi-stop-circle"></i> Остановить
-                </button>
-            </div>
-
-            {{-- Индикатор сканирования --}}
-            <div id="scan-indicator" style="position: absolute; top: 20px; right: 20px; display: none; z-index: 10;">
-                <div style="background: rgba(16,185,129,0.9); color: #fff; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px;">
-                    <i class="bi bi-check-circle"></i> Сканирование...
-                </div>
-            </div>
-        </div>
-
-        {{-- Результат --}}
-        <div id="desktop-result-panel" style="background: #f1f5f9; padding: 24px; overflow-y: auto; max-height: 100vh; color: #0f172a;">
-            <div id="no-result" style="text-align: center; padding: 60px 20px; color: #64748b;">
-                <i class="bi bi-qr-code" style="font-size: 64px; margin-bottom: 16px; opacity: 0.3;"></i>
-                <p style="font-size: 16px;">Наведите камеру на QR-код</p>
-                <p style="font-size: 13px; margin-top: 8px;">Товар отобразится здесь автоматически</p>
-            </div>
-
-            <div id="scan-result" style="display: none;">
-                <div id="known-qr-badge" style="display:none; margin-bottom: 12px;">
-                    <span class="badge badge-success">✓ Наш QR</span>
-                </div>
-                
-                {{-- Фото товара --}}
-                <div style="text-align: center; margin-bottom: 20px;">
-                    <img id="product-photo" src="" alt="Товар" style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 12px; border: 3px solid #38bdf8; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                </div>
-
-                {{-- Информация о товаре --}}
-                <div style="background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                    <h3 id="product-name" style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 8px 0;"></h3>
-                    <div style="color: #64748b; font-size: 14px; margin-bottom: 12px;">
-                        <span style="color: #38bdf8; font-weight: 600;">Артикул:</span> <span id="product-article" style="color: #0f172a; font-weight: 500;"></span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                        <span style="font-size: 32px; font-weight: 700; color: #10b981;" id="product-price"></span>
-                        <span style="color: #64748b; font-size: 14px;">розница</span>
-                    </div>
-                    
-                    {{-- Дополнительная информация --}}
-                    <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; margin-top: 16px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                            <div>
-                                <div style="font-size: 12px; color: #64748b; text-transform: uppercase;">Закупочная</div>
-                                <div style="font-size: 18px; font-weight: 600; color: #0f172a;" id="supplier-price">—</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 12px; color: #64748b; text-transform: uppercase;">Оптовая</div>
-                                <div style="font-size: 18px; font-weight: 600; color: #0f172a;" id="wholesale-price">—</div>
-                            </div>
-                        </div>
-                        <div style="margin-top: 12px;">
-                            <div style="font-size: 12px; color: #64748b; text-transform: uppercase;">Прибыль с 1 шт</div>
-                            <div style="font-size: 18px; font-weight: 600; color: #10b981;" id="profit-per-item">—</div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Остатки --}}
-                <div style="background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                    <h4 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0;">📦 Остатки на складах</h4>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-                        <div style="background: rgba(56,189,248,0.1); border-radius: 12px; padding: 16px; text-align: center;">
-                            <div style="font-size: 24px; font-weight: 700; color: #38bdf8;" id="total-stock">0</div>
-                            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-top: 4px;">Всего</div>
-                        </div>
-                        <div style="background: rgba(16,185,129,0.1); border-radius: 12px; padding: 16px; text-align: center;">
-                            <div style="font-size: 24px; font-weight: 700; color: #10b981;" id="showcase-stock">0</div>
-                            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-top: 4px;">Витрина</div>
-                        </div>
-                        <div style="background: rgba(245,158,11,0.1); border-radius: 12px; padding: 16px; text-align: center;">
-                            <div style="font-size: 24px; font-weight: 700; color: #f59e0b;" id="warehouse-stock">0</div>
-                            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-top: 4px;">Склад</div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Варианты --}}
-                <div style="background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                    <h4 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0;">📋 Варианты товара</h4>
-                    <div id="variants-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
-                </div>
-
-                {{-- Кнопки действий --}}
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <a id="edit-product-btn" href="#" class="btn btn-primary" style="justify-content: center; background: #38bdf8; color: #0f172a;">
-                        <i class="bi bi-pencil"></i> Редактировать
-                    </a>
-                    <button onclick="clearResult()" class="btn btn-outline" style="justify-content: center; border-color: #38bdf8; color: #38bdf8;">
-                        <i class="bi bi-arrow-clockwise"></i> Ещё раз
+                <!-- Scanner Controls -->
+                <div class="absolute bottom-6 left-0 right-0 flex justify-center gap-4 z-10 px-6">
+                    <button id="start-scan" class="flex-1 glass py-4 rounded-2xl flex items-center justify-center gap-3 font-bold text-white hover:bg-white/10 transition-all border-white/20">
+                        <i class="bi bi-camera-fill text-xl text-accent"></i> Запустить камеру
+                    </button>
+                    <button id="stop-scan" class="hidden flex-1 glass py-4 rounded-2xl flex items-center justify-center gap-3 font-bold text-danger hover:bg-danger/10 transition-all border-danger/20">
+                        <i class="bi bi-stop-circle-fill text-xl"></i> Остановить
                     </button>
                 </div>
+
+                <!-- Status Badge -->
+                <div id="scan-indicator" class="hidden absolute top-6 right-6 z-10">
+                    <div class="bg-success text-bg px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg animate-pulse">
+                        <span class="w-2 h-2 bg-bg rounded-full animate-ping"></span> Активно
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hint Card -->
+            <div class="glass p-6 rounded-3xl border-white/5 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-accent">
+                    <i class="bi bi-info-circle text-xl"></i>
+                </div>
+                <p class="text-xs text-muted leading-relaxed">
+                    Наведите камеру на QR-код или штрих-код товара. Система автоматически распознает его и отобразит информацию о цене, остатках и характеристиках.
+                </p>
+            </div>
+        </div>
+
+        <!-- Result Column -->
+        <div class="lg:col-span-5">
+            <div id="result-placeholder" class="glass p-12 rounded-[2rem] text-center border-dashed border-white/10 flex flex-col items-center justify-center h-full min-h-[400px]">
+                <div class="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center text-muted/30 mb-6">
+                    <i class="bi bi-qr-code text-5xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-2">Ожидание сканирования</h3>
+                <p class="text-muted text-sm max-w-[200px] mx-auto leading-relaxed">
+                    Данные товара появятся здесь сразу после успешного считывания
+                </p>
+            </div>
+
+            <div id="scan-result" class="hidden space-y-4">
+                <!-- Product Card -->
+                <div class="glass rounded-[2rem] overflow-hidden shadow-2xl border-white/10">
+                    <div class="relative h-48 bg-white/5 flex items-center justify-center">
+                        <img id="product-photo" src="" class="absolute inset-0 w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent"></div>
+                        <div class="absolute top-4 left-4 flex gap-2" id="badges-container">
+                            <!-- Badges injected here -->
+                        </div>
+                    </div>
+
+                    <div class="p-6">
+                        <h2 id="product-name" class="text-2xl font-black text-white leading-tight mb-1 truncate"></h2>
+                        <div class="flex items-center gap-2 text-muted text-xs mb-6">
+                            <span class="font-bold text-accent uppercase tracking-tighter">Артикул:</span>
+                            <span id="product-article" class="font-mono"></span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 mb-8">
+                            <div class="glass p-4 rounded-2xl border-white/5">
+                                <p class="text-[10px] font-bold text-muted uppercase tracking-widest mb-1">Розница</p>
+                                <p id="product-retail-price" class="text-xl font-black text-success"></p>
+                            </div>
+                            <div class="glass p-4 rounded-2xl border-white/5">
+                                <p class="text-[10px] font-bold text-muted uppercase tracking-widest mb-1">Прибыль</p>
+                                <p id="product-profit" class="text-xl font-black text-accent"></p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 mb-8">
+                            <div class="flex items-center justify-between px-2">
+                                <div class="flex items-center gap-2">
+                                    <i class="bi bi-box-seam text-muted"></i>
+                                    <span class="text-sm font-bold text-text">Общий остаток</span>
+                                </div>
+                                <span id="total-stock" class="text-lg font-black text-white"></span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                                    <span class="text-[10px] font-bold text-muted uppercase">Витрина</span>
+                                    <span id="showcase-stock" class="font-bold text-white"></span>
+                                </div>
+                                <div class="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5">
+                                    <span class="text-[10px] font-bold text-muted uppercase">Склад</span>
+                                    <span id="warehouse-stock" class="font-bold text-white"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <a id="edit-product-btn" href="#" class="flex-1 bg-accent hover:bg-accent-hover text-bg py-4 rounded-2xl flex items-center justify-center gap-2 font-black transition-all">
+                                <i class="bi bi-pencil-square"></i> Изменить
+                            </a>
+                            <button onclick="clearResult()" class="w-14 h-14 glass rounded-2xl flex items-center justify-center text-muted hover:text-white transition-colors border-white/10">
+                                <i class="bi bi-arrow-clockwise text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Variants Card -->
+                <div class="glass p-6 rounded-[2rem] border-white/5">
+                    <h3 class="text-sm font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i class="bi bi-layers text-accent"></i> Варианты и штрих-коды
+                    </h3>
+                    <div id="variants-list" class="space-y-3">
+                        <!-- Variants injected here -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-{{-- Mobile result overlay (shown after scan, camera stops) --}}
-<div id="mobile-result-overlay">
-    <div style="padding: 18px 16px; position: sticky; top: 0; background: rgba(15,23,42,0.98); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <i class="bi bi-qr-code-scan" style="color:#38bdf8; font-size: 20px;"></i>
-            <div style="font-weight:700; color:#f1f5f9;">Результат сканирования</div>
-        </div>
-        <button class="btn btn-outline" style="padding: 8px 12px;" onclick="closeMobileResult()">
-            <i class="bi bi-x-lg"></i>
-        </button>
-    </div>
-    <div style="padding: 16px;">
+<!-- Mobile Drawer Result Overlay -->
+<div id="mobile-result-overlay" class="fixed inset-0 z-[100] hidden">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeMobileResult()"></div>
+    <div class="absolute bottom-0 left-0 right-0 glass rounded-t-[2.5rem] border-t border-white/20 p-6 transform translate-y-full transition-transform duration-300 ease-out max-h-[90vh] overflow-y-auto" id="mobile-drawer">
+        <div class="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-8"></div>
         <div id="mobile-result-content"></div>
-        <div style="margin-top: 14px; display:flex; gap:10px;">
-            <button class="btn btn-primary" style="flex:1; justify-content:center;" onclick="scanAgainMobile()">
-                <i class="bi bi-camera"></i> Сканировать ещё раз
-            </button>
-        </div>
     </div>
 </div>
 
-{{-- Звуковой сигнал --}}
+<style>
+@keyframes scan {
+    0% { top: 0; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Mobile Adaptation */
+@media (max-width: 768px) {
+    body { padding-bottom: 0 !important; }
+    .sidebar { display: none !important; }
+    .bottom-nav { display: none !important; }
+    .main-content { margin-left: 0 !important; padding-top: 0 !important; }
+    
+    /* Hide page header on mobile */
+    .qr-scan-header { display: none !important; }
+    
+    /* Full width container */
+    .max-w-5xl { max-width: 100% !important; padding: 0 !important; }
+    .grid { gap: 0 !important; }
+    
+    /* Scanner full screen */
+    .lg\\:col-span-7 { grid-column: span 12 !important; }
+    .lg\\:col-span-5 { display: none !important; }
+    
+    /* Result overlay for mobile */
+    #mobile-result-overlay { display: block !important; }
+    
+    /* Camera container full viewport */
+    #scanner-container {
+        height: 100dvh !important;
+        width: 100% !important;
+    }
+    
+    /* Manual input positioned at bottom */
+    .absolute.bottom-24 { bottom: 80px !important; }
+    
+    /* Scanner controls at very bottom */
+    .absolute.bottom-6 { bottom: 16px !important; }
+}
+
+/* Desktop hides mobile overlay */
+@media (min-width: 769px) {
+    #mobile-result-overlay { display: none !important; }
+}
+</style>
+
 <audio id="scan-sound" preload="auto">
     <source src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU" type="audio/wav">
 </audio>
-
-<style>
-@keyframes scan-line {
-    0%, 100% { top: 10px; opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { top: 270px; opacity: 0; }
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #38bdf8, #0284c7);
-    color: #0f172a;
-    border: none;
-    font-weight: 600;
-}
-
-.btn-primary:hover {
-    background: linear-gradient(135deg, #0ea5e9, #0369a1);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(56,189,248,0.3);
-}
-
-.variant-item {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 10px;
-    padding: 12px;
-    transition: 0.2s;
-}
-
-.variant-item:hover {
-    background: rgba(255,255,255,0.05);
-    border-color: rgba(56,189,248,0.3);
-}
-</style>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 let html5QrCode = null;
 let isScanning = false;
 let lastScanTime = 0;
-const SCAN_COOLDOWN = 800; // быстрее, но с защитой от дублей
+let lastScannedCode = '';
+const SCAN_COOLDOWN = 1500; // Увеличено до 1.5 сек
 let scanInFlight = false;
 
 function isMobile() {
-    return window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
-}
-
-function openMobileResult(html) {
-    const overlay = document.getElementById('mobile-result-overlay');
-    const content = document.getElementById('mobile-result-content');
-    content.innerHTML = html;
-    overlay.style.display = 'block';
-    document.body.style.overflow = 'hidden';
-}
-
-function closeMobileResult() {
-    const overlay = document.getElementById('mobile-result-overlay');
-    overlay.style.display = 'none';
-    document.body.style.overflow = '';
-}
-
-function scanAgainMobile() {
-    closeMobileResult();
-    clearResult();
-    startScanning();
+    return window.matchMedia('(max-width: 1024px)').matches;
 }
 
 function startScanning() {
@@ -301,149 +238,80 @@ function startScanning() {
     isScanning = true;
     scanInFlight = false;
 
-    document.getElementById('start-scan').style.display = 'none';
-    document.getElementById('stop-scan').style.display = 'inline-flex';
-    document.getElementById('scan-indicator').style.display = 'block';
+    document.getElementById('start-scan').classList.add('hidden');
+    document.getElementById('stop-scan').classList.remove('hidden');
+    document.getElementById('scan-indicator').classList.remove('hidden');
 
-    // Html5Qrcode сам создаёт/крутит видео внутри контейнера
     html5QrCode = new Html5Qrcode('scanner-container');
 
-    // Меньше qrbox => скан быстрее и ловит при приближении; больше => удобнее держать. Баланс.
-    const qrBoxSize = Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.62);
+    const qrBoxSize = Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.7);
 
     html5QrCode.start(
         { facingMode: 'environment' },
         {
-            fps: 20,
+            fps: 24,
             qrbox: { width: qrBoxSize, height: qrBoxSize },
-            aspectRatio: 1.7777778,
+            aspectRatio: 1,
             disableFlip: false
         },
         onScanSuccess,
         onScanError
     ).catch(err => {
-        console.error('Ошибка запуска сканера:', err);
-        isScanning = false;
-        document.getElementById('start-scan').style.display = 'inline-flex';
-        document.getElementById('stop-scan').style.display = 'none';
-        document.getElementById('scan-indicator').style.display = 'none';
-        alert('Не удалось запустить сканер. Проверьте разрешения камеры.');
+        console.error('Scanner error:', err);
+        resetScannerUI();
+        alert('Не удалось получить доступ к камере');
     });
 }
 
-// Запуск сканирования
-document.getElementById('start-scan').addEventListener('click', startScanning);
-
-// Остановка сканирования
-document.getElementById('stop-scan').addEventListener('click', stopScanning);
+function resetScannerUI() {
+    isScanning = false;
+    document.getElementById('start-scan').classList.remove('hidden');
+    document.getElementById('stop-scan').classList.add('hidden');
+    document.getElementById('scan-indicator').classList.add('hidden');
+}
 
 function stopScanning() {
     if (!html5QrCode) return;
-
     return html5QrCode.stop()
         .then(() => html5QrCode.clear())
-        .catch(err => console.error('Ошибка остановки:', err))
-        .finally(() => {
-            isScanning = false;
-            document.getElementById('start-scan').style.display = 'inline-flex';
-            document.getElementById('stop-scan').style.display = 'none';
-            document.getElementById('scan-indicator').style.display = 'none';
-        });
+        .finally(resetScannerUI);
 }
 
-// Успешное сканирование
+document.getElementById('start-scan').addEventListener('click', startScanning);
+document.getElementById('stop-scan').addEventListener('click', stopScanning);
+
 async function onScanSuccess(decodedText) {
     const now = Date.now();
-    if (now - lastScanTime < SCAN_COOLDOWN) return;
+    
+    // Защита от повторного сканирования того же кода
+    if (decodedText === lastScannedCode && now - lastScanTime < 3000) {
+        return; // Игнорируем тот же код в течение 3 секунд
+    }
+    
+    if (now - lastScanTime < SCAN_COOLDOWN || scanInFlight) return;
+
     lastScanTime = now;
-    if (scanInFlight) return;
+    lastScannedCode = decodedText;
     scanInFlight = true;
 
-    // Звуковой сигнал
     playBeep();
+    if (navigator.vibrate) navigator.vibrate(100);
 
-    // Вибрация (если поддерживается)
-    if (navigator.vibrate) navigator.vibrate(200);
-
-    console.log('Отсканировано (сырые данные):', decodedText);
-    // Сразу останавливаем камеру после первого удачного скана
-    try { await stopScanning(); } catch (e) {}
-    await fetchProductInfo(decodedText);
-}
-
-function onScanError(error) {
-    // Игнорируем ошибки сканирования
-    // console.error('Ошибка сканирования:', error); // Uncomment for debugging if needed
-}
-
-// Получение информации о товаре
-async function fetchProductInfo(qrDataFromScan) {
-    let article = qrDataFromScan; // Default to raw data
-
-    // Проверяем, является ли отсканированные данные JSON строкой
     try {
-        const parsedData = JSON.parse(qrDataFromScan);
-        if (parsedData && typeof parsedData === 'object') {
-            if (parsedData.article) {
-                article = parsedData.article;
-                console.log('Обнаружен JSON. Извлечен артикул:', article);
-            } else if (parsedData.coupon_id) {
-                // Это купонный QR - обработка будет на сервере
-                console.log('Обнаружен купонный QR');
-            }
-        }
+        await stopScanning();
+        await fetchProductInfo(decodedText);
     } catch (e) {
-        // Если парсинг не удался, предполагаем, что это просто строка артикула
-        console.log('Данные QR-кода не являются JSON. Используем как есть.');
-        article = qrDataFromScan;
-    }
-
-    try {
-        const response = await fetch('{{ route('admin.qr.process') }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({ qr_data: qrDataFromScan }) // Отправляем оригинальные данные
-        });
-
-        const data = await response.json().catch(() => ({}));
-
-        if (data.success) {
-            if (data.type === 'coupon') {
-                // Показываем информацию о купоне
-                displayCoupon(data.coupon);
-            } else {
-                // Показываем информацию о товаре
-                displayProduct(data);
-            }
-        } else {
-            // Если товар не найден, показываем сообщение об ошибке
-            showNotFound(qrDataFromScan);
-        }
-    } catch (err) {
-        console.error('Ошибка при получении информации о товаре:', err);
-        showNotFound(qrDataFromScan);
+        console.error(e);
+    } finally {
+        scanInFlight = false;
+        // Очищаем последний код через 5 секунд
+        setTimeout(() => { lastScannedCode = ''; }, 5000);
     }
 }
 
-// Ручной поиск по артикулу
-async function lookupManualArticle() {
-    const article = document.getElementById('manual-article').value.trim();
-    if (!article) {
-        alert('Введите артикул');
-        return;
-    }
-    
-    // Останавливаем сканирование если идет
-    if (isScanning) {
-        stopScanning();
-    }
-    
-    // Показываем индикатор загрузки
-    document.getElementById('manual-article').disabled = true;
-    
+function onScanError(error) {}
+
+async function fetchProductInfo(qrData) {
     try {
         const response = await fetch('{{ route('admin.qr.process') }}', {
             method: 'POST',
@@ -451,216 +319,186 @@ async function lookupManualArticle() {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             },
-            body: JSON.stringify({ qr_data: article })
+            body: JSON.stringify({ qr_data: qrData })
         });
-        
-        const data = await response.json().catch(() => ({}));
-        
+
+        const data = await response.json();
         if (data.success) {
             displayProduct(data);
         } else {
-            showNotFound(article);
+            showNotFound(qrData);
         }
     } catch (err) {
-        console.error('Ошибка при поиске:', err);
-        showNotFound(article);
-    } finally {
-        document.getElementById('manual-article').disabled = false;
+        showNotFound(qrData);
     }
 }
 
-// Отображение товара
+async function lookupManualArticle() {
+    const article = document.getElementById('manual-article').value.trim();
+    if (!article) return;
+
+    if (isScanning) await stopScanning();
+    await fetchProductInfo(article);
+}
+
 function displayProduct(data) {
-    document.getElementById('no-result').style.display = 'none';
-    document.getElementById('scan-result').style.display = 'block';
-    document.getElementById('known-qr-badge').style.display = data.is_known_qr ? 'block' : 'none';
+    const p = data.product;
+    const s = data.summary;
 
-    const product = data.product;
-    const summary = data.summary;
-
-    // Фото
-    const photoEl = document.getElementById('product-photo');
-    if (product.photo) {
-        photoEl.src = product.photo;
-        photoEl.style.display = 'inline-block';
-    } else {
-        photoEl.style.display = 'inline-block';
-        photoEl.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"%3E%3Crect fill="%23e2e8f0" width="200" height="200"/%3E%3Ctext fill="%2394a3b8" font-family="Arial" font-size="14" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3EНет фото%3C/text%3E%3C/svg%3E';
-    }
-
-    // Основная информация
-    document.getElementById('product-name').textContent = product.name || '—';
-    document.getElementById('product-article').textContent = product.article || '—';
-    document.getElementById('product-price').textContent = (product.retail_price || 0) + ' сом';
-    document.getElementById('edit-product-btn').href = '/admin/products/edit/' + product.id;
-    
-    // Дополнительная информация
-    document.getElementById('supplier-price').textContent = (product.supplier_price || 0) + ' сом';
-    document.getElementById('wholesale-price').textContent = (product.wholesale_price || 0) + ' сом';
-    
-    // Прибыль
-    const profit = (product.retail_price || 0) - (product.supplier_price || 0);
-    document.getElementById('profit-per-item').textContent = (profit > 0 ? '+' : '') + profit.toFixed(2) + ' сом';
-
-    // Остатки
-    document.getElementById('total-stock').textContent = summary.total_stock || 0;
-    document.getElementById('showcase-stock').textContent = summary.shop_stock || 0;
-    document.getElementById('warehouse-stock').textContent = summary.warehouse_stock || 0;
-
-    // Варианты
-    const variantsList = document.getElementById('variants-list');
-    variantsList.innerHTML = '';
-    
-    if (product.variants && product.variants.length > 0) {
-        product.variants.forEach(v => {
-            const variantEl = document.createElement('div');
-            variantEl.style.cssText = 'background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; display: flex; justify-content: space-between; align-items: center;';
-            
-            const sizeColor = [v.size, v.color].filter(Boolean).join(' • ') || '—';
-            const variantTotal = v.stock?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0;
-            const shopQty = v.stock?.filter(s => s.shop_id)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0;
-            const warehouseQty = v.stock?.filter(s => s.warehouse_id)?.reduce((sum, s) => sum + (s.quantity || 0), 0) || 0;
-            
-            variantEl.innerHTML = `
-                <div>
-                    <div style="font-weight: 600; color: #0f172a; font-size: 15px;">${sizeColor}</div>
-                    <div style="font-size: 13px; color: #64748b; margin-top: 4px;">
-                        Витрина: <strong style="color: #10b981;">${shopQty}</strong> | 
-                        Склад: <strong style="color: #f59e0b;">${warehouseQty}</strong>
-                    </div>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 18px; font-weight: 700; color: #38bdf8;">${variantTotal} шт</div>
-                </div>
-            `;
-            variantsList.appendChild(variantEl);
-        });
-    } else {
-        variantsList.innerHTML = '<div style="text-align: center; color: #64748b; padding: 20px;">Нет вариантов</div>';
-    }
+    // Always use mobile overlay for consistency
+    const content = document.getElementById('mobile-result-content');
+    content.innerHTML = buildProductHTML(p, s, data);
+    document.getElementById('mobile-result-overlay').style.display = 'block';
+    setTimeout(() => document.getElementById('mobile-drawer').classList.remove('translate-y-full'), 10);
 }
 
-// Отображение купона
-function displayCoupon(coupon) {
-    document.getElementById('no-result').style.display = 'none';
-    document.getElementById('scan-result').style.display = 'block';
-    document.getElementById('known-qr-badge').style.display = 'block';
-    document.getElementById('known-qr-badge').innerHTML = '<span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">🎫 Купон</span>';
-
-    const panel = document.getElementById('desktop-result-panel');
-    const resultDiv = document.getElementById('scan-result');
-
-    resultDiv.innerHTML = `
-        <div style="background: white; border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-            <div style="font-size: 64px; margin-bottom: 16px;">🎫</div>
-            <h3 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 8px 0;">Купонная карта</h3>
-            <div style="color: #64748b; font-size: 14px; margin-bottom: 16px;">${coupon.code || '—'}</div>
-            
-            <div style="background: ${coupon.is_active ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; 
-                        border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-                <div style="font-size: 24px; font-weight: 700; color: ${coupon.is_active ? '#10b981' : '#ef4444'};">
-                    ${coupon.is_active ? '✓ Активен' : '✗ Неактивен'}
-                </div>
-            </div>
-            
-            ${coupon.customer ? `
-                <div style="text-align: left; background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 16px;">
-                    <div style="font-size: 12px; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">Владелец</div>
-                    <div style="font-weight: 600; color: #0f172a; font-size: 16px;">${coupon.customer.name || '—'}</div>
-                    <div style="color: #64748b; font-size: 14px; margin-top: 4px;">${coupon.customer.phone || '—'}</div>
-                </div>
-            ` : ''}
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div style="background: rgba(56, 189, 248, 0.1); border-radius: 12px; padding: 16px;">
-                    <div style="font-size: 12px; color: #64748b; text-transform: uppercase;">Тип скидки</div>
-                    <div style="font-weight: 700; color: #38bdf8; font-size: 16px; margin-top: 4px;">
-                        ${coupon.discount_type === 'percent' ? 'Процентная' : 'Оптовая'}
-                    </div>
-                </div>
-                <div style="background: rgba(16, 185, 129, 0.1); border-radius: 12px; padding: 16px;">
-                    <div style="font-size: 12px; color: #64748b; text-transform: uppercase;">Размер</div>
-                    <div style="font-weight: 700; color: #10b981; font-size: 16px; margin-top: 4px;">
-                        ${coupon.discount_type === 'percent' ? coupon.discount_value + '%' : 'Закупочная цена'}
-                    </div>
-                </div>
-            </div>
+function buildProductHTML(p, s, data) {
+    const profit = (p.retail_price || 0) - (p.supplier_price || 0);
+    const badges = data ? `
+        <div class="flex gap-2 mb-3">
+            <span class="px-3 py-1 bg-success/20 text-success text-[10px] font-black uppercase rounded-lg border border-success/30">
+                ${data.is_known_qr ? '✓ Наш QR' : '⚠ Товар из базы'}
+            </span>
+            <span class="px-3 py-1 bg-white/10 text-white/70 text-[10px] font-bold uppercase rounded-lg">
+                ${getFoundByText(data.found_by)}
+            </span>
         </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <button onclick="clearResult()" class="btn btn-outline" style="justify-content: center; border-color: #38bdf8; color: #38bdf8;">
-                <i class="bi bi-arrow-clockwise"></i> Ещё раз
-            </button>
-            <a href="/admin/customers" class="btn btn-primary" style="justify-content: center; background: #38bdf8; color: #0f172a;">
-                <i class="bi bi-people"></i> Клиенты
+    ` : '';
+    
+    const variantsHTML = p.variants && p.variants.length > 0 ? `
+        <div class="glass p-4 rounded-xl mb-4">
+            <div class="text-[10px] text-muted uppercase font-bold mb-2">Варианты (${p.variants.length})</div>
+            ${p.variants.slice(0, 3).map(v => `
+                <div class="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                    <div class="text-xs text-white">
+                        ${[v.size, v.color].filter(Boolean).join(' • ') || '—'}
+                    </div>
+                    <div class="text-xs font-bold text-accent">${v.total_stock} шт</div>
+                </div>
+            `).join('')}
+            ${p.variants.length > 3 ? `<div class="text-[10px] text-muted text-center mt-2">+ ещё ${p.variants.length - 3}</div>` : ''}
+        </div>
+    ` : '';
+
+    return `
+        <div class="space-y-4 pb-8">
+            ${badges}
+            
+            <div class="text-center">
+                <img src="${p.photo || 'data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"200\" viewBox=\"0 0 200 200\"%3E%3Crect fill=\"%23e2e8f0\" width=\"200\" height=\"200\"/%3E%3Ctext fill=\"%2394a3b8\" font-family=\"Arial\" font-size=\"14\" x=\"50%25\" y=\"50%25\" text-anchor=\"middle\" dominant-baseline=\"middle\"%3EНет фото%3C/text%3E%3C/svg%3E'}" 
+                     class="w-48 h-48 object-cover rounded-2xl mx-auto mb-4 border-2 border-white/10">
+                <h3 class="text-lg font-black text-white mb-1">${p.name}</h3>
+                <p class="text-xs text-muted">Артикул: <span class="font-mono text-accent">${p.article}</span></p>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-2">
+                <div class="glass p-3 rounded-xl text-center">
+                    <div class="text-[9px] text-muted uppercase">Розница</div>
+                    <div class="text-sm font-black text-success">${formatPrice(p.retail_price)}</div>
+                </div>
+                <div class="glass p-3 rounded-xl text-center">
+                    <div class="text-[9px] text-muted uppercase">Опт</div>
+                    <div class="text-sm font-black text-warning">${formatPrice(p.wholesale_price)}</div>
+                </div>
+                <div class="glass p-3 rounded-xl text-center">
+                    <div class="text-[9px] text-muted uppercase">Прибыль</div>
+                    <div class="text-sm font-black text-accent">${(profit > 0 ? '+' : '') + formatPrice(profit)}</div>
+                </div>
+            </div>
+            
+            <div class="glass p-4 rounded-xl">
+                <div class="text-[9px] text-muted uppercase mb-2">Остатки</div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs text-muted">Всего:</span>
+                    <span class="text-lg font-black text-white">${s.total_stock || 0} шт</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="glass p-2 rounded-lg text-center">
+                        <div class="text-[9px] text-muted">Витрина</div>
+                        <div class="text-sm font-bold text-success">${s.shop_stock || 0}</div>
+                    </div>
+                    <div class="glass p-2 rounded-lg text-center">
+                        <div class="text-[9px] text-muted">Склад</div>
+                        <div class="text-sm font-bold text-warning">${s.warehouse_stock || 0}</div>
+                    </div>
+                </div>
+            </div>
+            
+            ${variantsHTML}
+            
+            <a href="/admin/products/edit/${p.id}" class="block w-full bg-accent hover:bg-accent-hover text-bg text-center py-4 rounded-2xl font-black transition-all">
+                <i class="bi bi-pencil-square"></i> Изменить товар
             </a>
+            
+            <button onclick="closeMobileResult()" class="w-full glass py-4 rounded-2xl font-bold text-white transition-all">
+                <i class="bi bi-arrow-clockwise"></i> Сканировать снова
+            </button>
         </div>
     `;
 }
 
-function clearResult() {
-    // На телефоне показываем результат поверх камеры (камера уже остановлена)
-    if (isMobile()) {
-        const desktopPanel = document.getElementById('desktop-result-panel');
-        const html = desktopPanel.innerHTML;
-        openMobileResult(html);
-    }
+function getFoundByText(foundBy) {
+    const texts = {
+        'article': '📝 Артикул',
+        'barcode': '📊 Штрих-код',
+        'json_article': '📱 QR (артикул)',
+        'json_barcode': '📱 QR (штрих-код)'
+    };
+    return texts[foundBy] || '🔍 Поиск';
 }
 
-// Товар не найден
-function showNotFound(scannedData) { // Added scannedData parameter for context
-    document.getElementById('no-result').style.display = 'block';
-    document.getElementById('scan-result').style.display = 'none';
-    // Displaying scanned data in the "not found" message for debugging.
-    document.getElementById('no-result').innerHTML = `
-        <i class="bi bi-x-circle" style="font-size: 64px; margin-bottom: 16px; opacity: 0.3; color: #ef4444;"></i>
-        <p style="font-size: 16px; color: #ef4444;">Товар не найден</p>
-        <p style="font-size: 13px; color: #94a3b8; margin-top: 8px;">Отсканировано: ${scannedData}</p>
+function formatPrice(price) {
+    return (price || 0).toFixed(2) + ' сом';
+}
+
+function showNotFound(qrData) {
+    const content = document.getElementById('mobile-result-content');
+    content.innerHTML = `
+        <div class="text-center py-12">
+            <div class="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center text-muted/30 mx-auto mb-4">
+                <i class="bi bi-x-circle text-5xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">Товар не найден</h3>
+            <p class="text-sm text-muted mb-4">
+                Отсканированные данные:<br>
+                <code class="text-xs bg-white/5 px-2 py-1 rounded mt-1 block">${qrData}</code>
+            </p>
+            <button onclick="closeMobileResult(); resetScannerUI(); startScanning();" 
+                    class="bg-accent hover:bg-accent-hover text-bg px-6 py-3 rounded-xl font-bold w-full">
+                <i class="bi bi-camera"></i> Сканировать снова
+            </button>
+        </div>
     `;
-
-    if (isMobile()) {
-        openMobileResult(document.getElementById('desktop-result-panel').innerHTML);
-    }
+    document.getElementById('mobile-result-overlay').style.display = 'block';
+    setTimeout(() => document.getElementById('mobile-drawer').classList.remove('translate-y-full'), 10);
 }
 
-// Очистка результата
 function clearResult() {
-    document.getElementById('no-result').style.display = 'block';
-    document.getElementById('no-result').innerHTML = `
-        <i class="bi bi-qr-code" style="font-size: 64px; margin-bottom: 16px; opacity: 0.3;"></i>
-        <p style="font-size: 16px;">Наведите камеру на QR-код</p>
-        <p style="font-size: 13px; margin-top: 8px;">Товар отобразится здесь автоматически</p>
-    `;
-    document.getElementById('scan-result').style.display = 'none';
-    document.getElementById('known-qr-badge').style.display = 'none';
-    scanInFlight = false;
+    document.getElementById('scan-result').classList.add('hidden');
+    document.getElementById('result-placeholder').classList.remove('hidden');
+    resetScannerUI();
+    startScanning();
 }
 
-// Звуковой сигнал
+function closeMobileResult() {
+    document.getElementById('mobile-drawer').classList.add('translate-y-full');
+    setTimeout(() => {
+        document.getElementById('mobile-result-overlay').style.display = 'none';
+        // Очищаем последний код чтобы можно было сканировать снова
+        lastScannedCode = '';
+        resetScannerUI();
+        // Небольшая задержка перед запуском камеры
+        setTimeout(() => {
+            if (!isScanning) startScanning();
+        }, 500);
+    }, 300);
+}
+
 function playBeep() {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-
-    oscillator.frequency.value = 880;
-    oscillator.type = 'sine';
-    
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.15);
+    const audio = document.getElementById('scan-sound');
+    if (audio) {
+        audio.play().catch(() => {});
+    }
 }
-
-// Остановка при уходе со страницы
-window.addEventListener('beforeunload', stopScanning);
-
-// Mobile layout: make scan fullscreen automatically (start on tap only, due to iOS/Android rules)
-window.addEventListener('resize', () => {
-    // re-calc box on restart only; keep simple
-});
 </script>
 @endsection

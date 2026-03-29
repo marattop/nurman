@@ -344,7 +344,9 @@
                 <li><a href="{{ route('warehouse.products') }}" class="{{ request()->routeIs('warehouse.products*') ? 'active' : '' }}"><i class="bi bi-box"></i> Товары</a></li>
                 <li><a href="{{ route('warehouse.stock') }}" class="{{ request()->routeIs('warehouse.stock*') ? 'active' : '' }}"><i class="bi bi-layers"></i> Остатки</a></li>
                 <li><a href="{{ route('warehouse.purchases') }}" class="{{ request()->routeIs('warehouse.purchases*') ? 'active' : '' }}"><i class="bi bi-truck"></i> Закупки</a></li>
-                <li><a href="{{ route('warehouse.qrcodes') }}" class="{{ request()->routeIs('warehouse.qrcodes*') ? 'active' : '' }}"><i class="bi bi-qr-code"></i> QR-коды</a></li>
+                @if(auth()->user()->can('warehouse.qr'))
+                    <li><a href="{{ route('warehouse.qrcodes.index') }}" class="{{ request()->routeIs('warehouse.qrcodes*') ? 'active' : '' }}"><i class="bi bi-printer"></i> Печать QR</a></li>
+                @endif
                 <li><a href="{{ route('warehouse.inventory') }}" class="{{ request()->routeIs('warehouse.inventory*') ? 'active' : '' }}"><i class="bi bi-clipboard-check"></i> Инвентаризация</a></li>
             @elseif(auth()->user()->isClient())
                 <li><a href="{{ route('client.dashboard') }}" class="{{ request()->routeIs('client.dashboard') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i> Главная</a></li>

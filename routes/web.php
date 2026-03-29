@@ -22,44 +22,9 @@ Route::get('/', function () {
     if (auth()->check()) {
         return redirect(auth()->user()->getRedirectPath());
     }
-    return redirect()->route('login');
+    return view('welcome');
 })->name('home');
 
-// Тест фото товаров (временный маршрут)
-Route::get('/test-photo', function() {
-    $products = App\Models\Product::all();
-    
-    echo "<h2>Проверка фото товаров</h2>";
-    echo "<h3>Всего товаров: " . $products->count() . "</h3>";
-    echo "<table border='1' cellpadding='10'>";
-    echo "<tr><th>ID</th><th>Название</th><th>Артикул</th><th>Фото (путь в БД)</th><th>Файл существует</th><th>URL</th></tr>";
-
-    foreach ($products as $product) {
-        $hasPhoto = !empty($product->photo);
-        $fullPath = storage_path('app/public/' . $product->photo);
-        $fileExists = $hasPhoto && file_exists($fullPath);
-        $url = $hasPhoto ? asset('storage/' . $product->photo) : '—';
-        
-        echo "<tr>";
-        echo "<td>{$product->id}</td>";
-        echo "<td>{$product->name}</td>";
-        echo "<td>{$product->article}</td>";
-        echo "<td>" . ($hasPhoto ? $product->photo : '<span style="color:red">НЕТ ФОТО</span>') . "</td>";
-        echo "<td>" . ($fileExists ? '<span style="color:green">✓ ДА</span>' : '<span style="color:red">✗ НЕТ</span>') . "</td>";
-        echo "<td>" . ($hasPhoto ? "<a href='{$url}' target='_blank'>Открыть</a><br><img src='{$url}' style='max-width:100px;'>" : '—') . "</td>";
-        echo "</tr>";
-    }
-
-    echo "</table>";
-
-    echo "<h3>Проверка symlink</h3>";
-    $publicPath = public_path('storage');
-    echo "Путь: {$publicPath}<br>";
-    echo "Существует: " . (file_exists($publicPath) ? '✓ ДА' : '✗ НЕТ') . "<br>";
-    echo "Ссылка: " . (is_link($publicPath) ? '✓ ДА' : '✗ НЕТ') . "<br>";
-    
-    return;
-});
 
 // ============================================================================
 // АУТЕНТИФИКАЦИЯ
@@ -92,14 +57,16 @@ Route::middleware('auth')->prefix('2fa')->name('auth.2fa.')->group(function () {
 // ============================================================================
 // ВЛАДЕЛЕЦ (OWNER) - Уровень 100
 // Полный доступ ко всем функциям системы
+// Защита: auth + role:owner + ensure.owner + session.activity
 // ============================================================================
 
-Route::middleware(['auth', 'role:owner'])
+Route::middleware(['auth', 'role:owner', 'ensure.owner', 'session.activity'])
     ->prefix('owner')
     ->name('owner.')
     ->group(function () {
         // Дашборд
         Route::get('/', [OwnerController::class, 'dashboard'])->name('dashboard');
+        Route::get('module/dashboard', [OwnerController::class, 'dashboard'])->name('module.dashboard');
 
         // Финансы
         Route::prefix('finance')->name('finance.')->group(function () {
@@ -136,6 +103,17 @@ Route::middleware(['auth', 'role:owner'])
             Route::get('/', [OwnerController::class, 'activityLog'])->name('index');
             Route::get('export', [OwnerController::class, 'exportLogs'])->name('export');
         });
+        Route::get('activity-log', [OwnerController::class, 'activityLog'])->name('activity-log');
+
+        // QR-сканер товаров
+        Route::get('scan-product', [OwnerController::class, 'scanQr'])->name('scan-product');
+        Route::post('scan-product/process', [OwnerController::class, 'processProductScan'])->name('scan-product.process');
+
+        // Управление товарами (для владельца)
+        Route::prefix('products')->name('products.')->group(function () {
+            Route::get('{product}/edit', [OwnerController::class, 'editProduct'])->name('edit');
+            Route::post('{product}/update', [OwnerController::class, 'updateProduct'])->name('update');
+        });
 
         // Отчёты
         Route::prefix('reports')->name('reports.')->group(function () {
@@ -143,6 +121,9 @@ Route::middleware(['auth', 'role:owner'])
             Route::get('sales', [OwnerController::class, 'salesReport'])->name('sales');
             Route::get('products', [OwnerController::class, 'productsReport'])->name('products');
             Route::get('finance', [OwnerController::class, 'financeReport'])->name('finance');
+            Route::get('purchases', [OwnerController::class, 'purchasesReport'])->name('purchases');
+            Route::get('profit', [OwnerController::class, 'profitReport'])->name('profit');
+            Route::get('expenses', [OwnerController::class, 'expensesReport'])->name('expenses');
         });
     });
 
@@ -150,14 +131,18 @@ Route::middleware(['auth', 'role:owner'])
 // АДМИНИСТРАТОР (ADMIN) - Уровень 80
 // Управление магазином, товарами, продажами, клиентами
 // БЕЗ доступа к себестоимости и чистой прибыли
+// Защита: auth + role:admin + ensure.admin + session.activity + 2fa.verified
 // ============================================================================
 
-Route::middleware(['auth', 'role:admin'])
+Route::middleware(['auth', 'role:admin', 'ensure.admin', 'session.activity', '2fa.verified'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
         // Дашборд
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+
+        // Audit Log - просмотр действий администратора
+        Route::get('audit-log', [AdminController::class, 'auditLog'])->name('audit-log');
 
         // Управление пользователями
         Route::prefix('users')->name('users.')->group(function () {
@@ -166,6 +151,13 @@ Route::middleware(['auth', 'role:admin'])
             Route::get('edit/{user}', [AdminController::class, 'editUser'])->name('edit');
             Route::post('update/{user}', [AdminController::class, 'updateUser'])->name('update');
             Route::post('delete/{user}', [AdminController::class, 'deleteUser'])->name('delete');
+        });
+
+        // Управление ролями и разрешениями
+        Route::prefix('roles')->name('roles.')->group(function () {
+            Route::get('/', [AdminController::class, 'roles'])->name('index');
+            Route::get('{role}/permissions', [AdminController::class, 'rolePermissions'])->name('permissions');
+            Route::post('{role}/permissions', [AdminController::class, 'updateRolePermissions'])->name('permissions.update');
         });
 
         // Управление товарами
@@ -178,24 +170,17 @@ Route::middleware(['auth', 'role:admin'])
             Route::post('copy/{product}', [AdminController::class, 'copyProduct'])->name('copy');
             Route::get('edit/{product}', [AdminController::class, 'editProduct'])->name('edit');
             Route::post('update/{product}', [AdminController::class, 'updateProduct'])->name('update');
+            
+            // Альтернативные маршруты через ProductController (для QR-кодов)
+            Route::get('scan-qr', [ProductController::class, 'scanQr'])->name('scan-qr');
+            Route::post('scan-page', [ProductController::class, 'scanPage'])->name('scan-page');
+            Route::get('{product}/download-qr', [ProductController::class, 'downloadQr'])->name('download-qr');
+            Route::post('{product}/print-qr', [ProductController::class, 'printQr'])->name('print-qr');
         });
 
-        // Продажи
-        Route::prefix('sales')->name('sales.')->group(function () {
-            Route::get('/', [AdminController::class, 'salesReport'])->name('index');
-            Route::get('create', [AdminController::class, 'createSale'])->name('create');
-            Route::post('store', [AdminController::class, 'storeSale'])->name('store');
-            Route::get('edit/{transaction}', [AdminController::class, 'editSale'])->name('edit');
-            Route::post('update/{transaction}', [AdminController::class, 'updateSale'])->name('update');
-        });
-
-        // Возвраты
-        Route::prefix('returns')->name('returns.')->group(function () {
-            Route::get('/', [AdminController::class, 'returns'])->name('index');
-            Route::get('pending', [AdminController::class, 'pendingReturns'])->name('pending');
-            Route::post('approve/{return}', [AdminController::class, 'approveReturn'])->name('approve');
-            Route::post('reject/{return}', [AdminController::class, 'rejectReturn'])->name('reject');
-        });
+        // Сканер товаров (QR/Штрих-коды)
+        Route::get('scan-product', [AdminController::class, 'scanProduct'])->name('scan-product');
+        Route::post('scan-product/process', [AdminController::class, 'processProductScan'])->name('scan-product.process');
 
         // Клиенты (CRM)
         Route::prefix('customers')->name('customers.')->group(function () {
@@ -258,7 +243,7 @@ Route::middleware(['auth', 'role:admin'])
             Route::post('process', [QrScannerController::class, 'processScan'])->name('process');
             Route::post('move-stock', [QrScannerController::class, 'moveStock'])->name('move-stock');
             Route::get('locations', [QrScannerController::class, 'getLocations'])->name('locations');
-            
+
             // Управление QR-кодами
             Route::get('manage', [QrCodeController::class, 'index'])->name('manage');
             Route::get('manage/product/{product}', [QrCodeController::class, 'manageProduct'])->name('manage.product');
@@ -309,9 +294,10 @@ Route::middleware(['auth', 'role:seller'])
         // Клиенты
         Route::prefix('customers')->name('customers.')->group(function () {
             Route::get('/', [SellerController::class, 'customers'])->name('index');
+            Route::get('{customerId}/history', [SellerController::class, 'customerHistory'])->name('history');
+            Route::post('create-coupon', [SellerController::class, 'createCouponForCustomer'])->name('create-coupon');
             Route::post('store', [SellerController::class, 'storeCustomer'])->name('store');
             Route::get('find', [SellerController::class, 'findCustomer'])->name('find');
-            Route::post('create-coupon', [SellerController::class, 'createCoupon'])->name('create-coupon');
             Route::post('register', [SellerController::class, 'registerCustomer'])->name('register');
             Route::get('{customerId}/coupons', [SellerController::class, 'customerCoupons'])->name('coupons');
         });
@@ -342,34 +328,35 @@ Route::middleware(['auth', 'role:warehouse'])
         // Дашборд
         Route::get('/', [WarehouseController::class, 'dashboard'])->name('dashboard');
 
-        // Приёмка товара
+        // Приёмка товара - используем модульный контроллер
         Route::prefix('purchases')->name('purchases.')->group(function () {
-            Route::get('/', [WarehouseController::class, 'purchases'])->name('index');
-            Route::get('create', [WarehouseController::class, 'createPurchase'])->name('create');
-            Route::post('store', [WarehouseController::class, 'storePurchase'])->name('store');
-            Route::get('edit/{purchase}', [WarehouseController::class, 'editPurchase'])->name('edit');
-            Route::put('update/{purchase}', [WarehouseController::class, 'updatePurchase'])->name('update');
+            Route::get('/', [\Modules\Warehouse\Http\Controllers\PurchasesController::class, 'index'])->name('index');
+            Route::get('create', [\Modules\Warehouse\Http\Controllers\PurchasesController::class, 'create'])->name('create');
+            Route::post('store', [\Modules\Warehouse\Http\Controllers\PurchasesController::class, 'store'])->name('store');
+            Route::get('edit/{purchase}', [\Modules\Warehouse\Http\Controllers\PurchasesController::class, 'edit'])->name('edit');
+            Route::put('update/{purchase}', [\Modules\Warehouse\Http\Controllers\PurchasesController::class, 'update'])->name('update');
         });
 
-        // Остатки
+        // Остатки - используем модульный контроллер
         Route::prefix('stock')->name('stock.')->group(function () {
-            Route::get('/', [WarehouseController::class, 'stock'])->name('index');
-            Route::get('low', [WarehouseController::class, 'lowStock'])->name('low');
-            Route::post('adjust', [WarehouseController::class, 'adjustStock'])->name('adjust');
+            Route::get('/', [\Modules\Warehouse\Http\Controllers\StockController::class, 'index'])->name('index');
+            Route::get('low', [\Modules\Warehouse\Http\Controllers\StockController::class, 'lowStock'])->name('low');
+            Route::post('adjust', [\Modules\Warehouse\Http\Controllers\StockController::class, 'adjust'])->name('adjust');
         });
 
-        // Инвентаризация
+        // Инвентаризация - используем модульный контроллер
         Route::prefix('inventory')->name('inventory.')->group(function () {
-            Route::get('/', [WarehouseController::class, 'inventory'])->name('index');
-            Route::post('start', [WarehouseController::class, 'startInventory'])->name('start');
-            Route::post('complete', [WarehouseController::class, 'completeInventory'])->name('complete');
+            Route::get('/', [\Modules\Warehouse\Http\Controllers\InventoryController::class, 'index'])->name('index');
+            Route::post('start', [\Modules\Warehouse\Http\Controllers\InventoryController::class, 'start'])->name('start');
+            Route::post('complete', [\Modules\Warehouse\Http\Controllers\InventoryController::class, 'complete'])->name('complete');
         });
 
-        // QR-коды
-        Route::prefix('qr-codes')->name('qr.')->group(function () {
-            Route::get('/', [WarehouseController::class, 'qrCodes'])->name('index');
-            Route::post('generate', [WarehouseController::class, 'generateQr'])->name('generate');
-            Route::post('print', [WarehouseController::class, 'printQr'])->name('print');
+        // Печать QR - модульный контроллер
+        Route::prefix('qrcodes')->name('qrcodes.')->group(function () {
+            Route::get('/', [\Modules\Warehouse\Http\Controllers\QrCodeController::class, 'index'])->name('index');
+            Route::get('batch-print', [\Modules\Warehouse\Http\Controllers\QrCodeController::class, 'batchPrint'])->name('batch-print');
+            Route::post('generate', [\Modules\Warehouse\Http\Controllers\QrCodeController::class, 'generate'])->name('generate');
+            Route::get('{qrCode}/print', [\Modules\Warehouse\Http\Controllers\QrCodeController::class, 'print'])->name('print');
         });
 
         // Списание товара
@@ -383,6 +370,21 @@ Route::middleware(['auth', 'role:warehouse'])
         Route::prefix('transfers')->name('transfers.')->group(function () {
             Route::get('/', [WarehouseController::class, 'transfers'])->name('index');
             Route::post('create', [WarehouseController::class, 'createTransfer'])->name('create');
+        });
+
+        // Товары - модульный контроллер
+        Route::prefix('products')->name('products.')->group(function () {
+            Route::get('/', [\Modules\Warehouse\Http\Controllers\ProductsController::class, 'index'])->name('index');
+            Route::post('/', [\Modules\Warehouse\Http\Controllers\ProductsController::class, 'store'])->name('store');
+            Route::get('create', [\Modules\Warehouse\Http\Controllers\ProductsController::class, 'create'])->name('create');
+            Route::get('{product}/edit', [\Modules\Warehouse\Http\Controllers\ProductsController::class, 'edit'])->name('edit');
+            Route::put('{product}', [\Modules\Warehouse\Http\Controllers\ProductsController::class, 'update'])->name('update');
+        });
+
+        // Магазины - модульный контроллер
+        Route::prefix('shops')->name('shops.')->group(function () {
+            Route::get('/', [\Modules\Warehouse\Http\Controllers\ShopsController::class, 'index'])->name('index');
+            Route::get('{shop}', [\Modules\Warehouse\Http\Controllers\ShopsController::class, 'show'])->name('show');
         });
     });
 
@@ -401,14 +403,14 @@ Route::middleware(['auth', 'role:client'])
         // Профиль
         Route::prefix('profile')->name('profile.')->group(function () {
             Route::get('/', [ClientController::class, 'profile'])->name('index');
-            Route::put('update', [ClientController::class, 'updateProfile'])->name('update');
+            Route::put('update', [ClientController::class, 'updateProfile'])->name('update-profile');
             Route::post('password', [ClientController::class, 'changePassword'])->name('password');
         });
 
         // Покупки
         Route::prefix('purchases')->name('purchases.')->group(function () {
             Route::get('/', [ClientController::class, 'purchases'])->name('index');
-            Route::get('{purchase}', [ClientController::class, 'purchaseDetail'])->name('show');
+            Route::get('{purchase}', [ClientController::class, 'purchaseDetail'])->name('view');
             Route::get('{purchase}/receipt', [ClientController::class, 'printReceipt'])->name('receipt');
         });
 

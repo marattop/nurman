@@ -70,7 +70,7 @@
         </div>
     </a>
 
-    <a href="{{ route('seller.products.scan') }}" style="text-decoration: none;">
+    <a href="{{ route('seller.pos.index') }}" style="text-decoration: none;">
         <div class="card" style="text-align: center; transition: 0.2s;">
             <div style="width: 56px; height: 56px; margin: 0 auto 12px; background: rgba(129,140,248,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #818cf8; font-size: 28px;">
                 <i class="bi bi-qr-code-scan"></i>

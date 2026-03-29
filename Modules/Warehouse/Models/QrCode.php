@@ -5,11 +5,13 @@ namespace Modules\Warehouse\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use BaconQrCode\Writer;
 
 class QrCode extends Model
 {
     use HasFactory;
+
+    protected $table = 'qr_codes';
 
     protected $fillable = [
         'variant_id',
@@ -70,18 +72,22 @@ class QrCode extends Model
         ];
 
         // Генерируем уникальный filename
-        $filename = 'qr_' . $variant->sku . '_' . time() . '.svg';
+        $filename = 'qr_' . $variant->sku . '_' . time() . '.png';
         $filepath = $directory . '/' . $filename;
-        
+
         // Создаем директорию если не существует
         if (!file_exists(public_path($directory))) {
             mkdir(public_path($directory), 0755, true);
         }
 
-        // Генерируем QR-код
-        $qrCodeContent = json_encode($qrData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        $qrCodeImage = QrCode::format('svg')->size(300)->generate($qrCodeContent);
-        
+        // Генерируем QR-код (используем SKU для совместимости)
+        $qrCodeContent = $variant->sku;
+
+        // Используем GDLibRenderer (bacon/bacon-qr-code v3)
+        $renderer = new \BaconQrCode\Renderer\GDLibRenderer(300);
+        $writer = new Writer($renderer);
+        $qrCodeImage = $writer->writeString($qrCodeContent, 'UTF-8', \BaconQrCode\Common\ErrorCorrectionLevel::M());
+
         // Сохраняем файл
         file_put_contents(public_path($filepath), $qrCodeImage);
 

@@ -12,16 +12,16 @@
 {{-- Статистика --}}
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
     <div class="stat-card">
-        <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Всего продаж</div>
-        <div style="font-size: 28px; font-weight: 700; color: #10b981;">{{ $stats['total_sales'] ?? 0 }}</div>
+        <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Сегодня</div>
+        <div style="font-size: 28px; font-weight: 700; color: #10b981;">{{ $stats['today_count'] ?? 0 }}</div>
     </div>
     <div class="stat-card">
-        <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Сумма</div>
-        <div style="font-size: 28px; font-weight: 700; color: #38bdf8;">{{ number_format($stats['total_amount'] ?? 0, 0, '.', ' ') }} сом</div>
+        <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Сумма сегодня</div>
+        <div style="font-size: 28px; font-weight: 700; color: #38bdf8;">{{ number_format($stats['today'] ?? 0, 0, '.', ' ') }} сом</div>
     </div>
     <div class="stat-card">
-        <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Средний чек</div>
-        <div style="font-size: 28px; font-weight: 700; color: #f59e0b;">{{ number_format($stats['average_check'] ?? 0, 0, '.', ' ') }} сом</div>
+        <div style="color: #94a3b8; font-size: 13px; text-transform: uppercase; margin-bottom: 8px;">Всего</div>
+        <div style="font-size: 28px; font-weight: 700; color: #f59e0b;">{{ number_format($stats['total'] ?? 0, 0, '.', ' ') }} сом</div>
     </div>
 </div>
 
@@ -49,16 +49,16 @@
                         <div style="font-weight: 500;">{{ $sale->created_at->format('d.m.Y') }}</div>
                         <div style="color: #94a3b8; font-size: 13px;">{{ $sale->created_at->format('H:i') }}</div>
                     </td>
-                    <td style="color: #94a3b8;">#{{ $sale->id }}</td>
-                    <td style="color: #10b981; font-weight: 600;">{{ number_format($sale->amount, 0, '.', ' ') }} сом</td>
+                    <td style="color: #94a3b8;">{{ $sale->transaction_number }}</td>
+                    <td style="color: #10b981; font-weight: 600;">{{ number_format($sale->total_amount, 0, '.', ' ') }} сом</td>
                     <td>
                         <span class="badge badge-blue">{{ ucfirst($sale->payment_method ?? 'cash') }}</span>
                     </td>
-                    <td style="color: #94a3b8;">{{ $sale->items_count ?? 0 }}</td>
+                    <td style="color: #94a3b8;">{{ $sale->items->count() }}</td>
                     <td>
-                        <button class="btn btn-outline" onclick="alert('Функция просмотра будет доступна позже')">
-                            <i class="bi bi-eye"></i>
-                        </button>
+                        <a href="/seller/pos/receipt/{{ $sale->id }}" target="_blank" class="btn btn-outline">
+                            <i class="bi bi-printer"></i> Чек
+                        </a>
                     </td>
                 </tr>
                 @empty
@@ -72,5 +72,23 @@
             </tbody>
         </table>
     </div>
+
+    @if($sales->hasPages())
+    <div style="padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+        <div style="color: #94a3b8; font-size: 13px;">Показано {{ $sales->firstItem() ?? 0 }} - {{ $sales->lastItem() ?? 0 }} из {{ $sales->total() }}</div>
+        <div style="display: flex; gap: 8px;">
+            @if($sales->onFirstPage())
+                <span style="padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #64748b; text-decoration: none; font-size: 14px;">← Назад</span>
+            @else
+                <a href="{{ $sales->previousPageUrl() }}" style="padding: 8px 14px; border-radius: 8px; background: rgba(16,185,129,0.1); color: #10b981; text-decoration: none; font-size: 14px;">← Назад</a>
+            @endif
+            @if($sales->hasMorePages())
+                <a href="{{ $sales->nextPageUrl() }}" style="padding: 8px 14px; border-radius: 8px; background: rgba(16,185,129,0.1); color: #10b981; text-decoration: none; font-size: 14px;">Вперёд →</a>
+            @else
+                <span style="padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #64748b; text-decoration: none; font-size: 14px;">Вперёд →</span>
+            @endif
+        </div>
+    </div>
+    @endif
 </div>
 @endsection

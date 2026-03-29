@@ -1,80 +1,69 @@
 @extends('seller::layouts.seller')
 @section('page-title', 'Клиенты')
 @section('content')
-<div class="page-header">
-    <div class="page-icon"><i class="bi bi-people"></i></div>
-    <div>
-        <h1 class="page-title">Клиенты</h1>
-        <p class="page-subtitle">База клиентов</p>
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <div class="page-icon"><i class="bi bi-people"></i></div>
+        <div>
+            <h1 class="page-title">Клиенты</h1>
+            <p class="page-subtitle">База клиентов магазина</p>
+        </div>
     </div>
 </div>
 
 <div class="card" style="padding: 0; overflow: hidden;">
-    <div class="card-header">
-        <h3 class="card-header-title"><i class="bi bi-list-ul" style="color: #10b981;"></i> Список клиентов</h3>
-        <button class="btn btn-outline"><i class="bi bi-plus-lg"></i> Добавить</button>
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <form action="{{ route('seller.customers') }}" method="GET" style="flex: 1; max-width: 400px; position: relative;">
+            <i class="bi bi-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #64748b;"></i>
+            <input type="text" name="search" value="{{ request('search') }}" class="input" placeholder="Поиск по имени или телефону..." style="padding-left: 40px; height: 40px;">
+        </form>
     </div>
     <div style="overflow-x: auto;">
         <table class="table" style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr>
-                    <th style="text-align: left;">Имя</th>
-                    <th>Телефон</th>
-                    <th>Баланс</th>
-                    <th>Статус</th>
-                    <th>Действия</th>
+                    <th style="text-align: left; padding: 12px 20px;">Клиент</th>
+                    <th style="text-align: left; padding: 12px 20px;">Телефон</th>
+                    <th style="text-align: center; padding: 12px 20px;">Скидка (%)</th>
+                    <th style="text-align: center; padding: 12px 20px;">Бонусы</th>
+                    <th style="text-align: right; padding: 12px 20px;">Действия</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($customers as $customer)
-                <tr>
-                    <td>
-                        <div style="font-weight: 500;">{{ $customer->full_name ?? '—' }}</div>
-                        <div style="color: #94a3b8; font-size: 13px;">{{ $customer->email ?? '' }}</div>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.02);">
+                    <td style="padding: 12px 20px;">
+                        <div style="font-weight: 600; color: #f1f5f9;">{{ $customer->full_name }}</div>
+                        <div style="font-size: 12px; color: #64748b;">{{ $customer->email }}</div>
                     </td>
-                    <td style="color: #94a3b8;">{{ $customer->phone ?? '—' }}</td>
-                    <td>
-                        @if(($customer->balance ?? 0) > 0)
-                            <span style="color: #10b981; font-weight: 600;">{{ number_format($customer->balance, 2) }} сом</span>
-                        @else
-                            <span style="color: #94a3b8;">0 сом</span>
-                        @endif
+                    <td style="padding: 12px 20px; color: #94a3b8;">{{ $customer->phone }}</td>
+                    <td style="padding: 12px 20px; text-align: center;">
+                        <span class="badge-success">{{ $customer->customerProfile->loyalty_discount_percent ?? 0 }}%</span>
                     </td>
-                    <td>
-                        @if(($customer->is_gold ?? false))
-                            <span class="badge badge-warning"><i class="bi bi-star-fill"></i> Gold</span>
-                        @else
-                            <span class="badge" style="background: rgba(148,163,184,0.15); color: #94a3b8;">Обычный</span>
-                        @endif
+                    <td style="padding: 12px 20px; text-align: center; color: #38bdf8; font-weight: 600;">
+                        {{ number_format($customer->customerProfile->bonus_points ?? 0, 0) }}
                     </td>
-                    <td>
-                        <button class="btn btn-outline" onclick="alert('Функция просмотра будет доступна позже')">
+                    <td style="padding: 12px 20px; text-align: right;">
+                        <a href="{{ route('seller.customers.show', $customer->id) }}" class="btn btn-outline" style="padding: 6px 12px; font-size: 13px;">
                             <i class="bi bi-eye"></i> Просмотр
-                        </button>
+                        </a>
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="5" style="text-align: center; padding: 3rem; color: #64748b;">Клиенты не найдены</td></tr>
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 48px; color: #64748b;">
+                        <i class="bi bi-people" style="font-size: 48px; opacity: 0.1; display: block; margin-bottom: 16px;"></i>
+                        Клиенты не найдены
+                    </td>
+                </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
     
     @if($customers->hasPages())
-    <div style="padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
-        <div style="color: #94a3b8; font-size: 13px;">Показано {{ $customers->firstItem() ?? 0 }} - {{ $customers->lastItem() ?? 0 }} из {{ $customers->total() }}</div>
-        <div style="display: flex; gap: 8px;">
-            @if($customers->onFirstPage())
-                <span style="padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #64748b; text-decoration: none; font-size: 14px;">← Назад</span>
-            @else
-                <a href="{{ $customers->previousPageUrl() }}" style="padding: 8px 14px; border-radius: 8px; background: rgba(16,185,129,0.1); color: #10b981; text-decoration: none; font-size: 14px;">← Назад</a>
-            @endif
-            @if($customers->hasMorePages())
-                <a href="{{ $customers->nextPageUrl() }}" style="padding: 8px 14px; border-radius: 8px; background: rgba(16,185,129,0.1); color: #10b981; text-decoration: none; font-size: 14px;">Вперёд →</a>
-            @else
-                <span style="padding: 8px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #64748b; text-decoration: none; font-size: 14px;">Вперёд →</span>
-            @endif
-        </div>
+    <div style="padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.05);">
+        {{ $customers->links() }}
     </div>
     @endif
 </div>

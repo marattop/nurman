@@ -1,320 +1,133 @@
-@extends('layouts.app')
+@extends('layouts.owner')
+
 @section('page-title', 'Отчёт по прибыли')
+@section('page-subtitle', 'Анализ прибыли и маржинальности за выбранный период')
+
 @section('content')
 
-<style>
-    /* === БАЗОВЫЕ ПЕРЕМЕННЫЕ === */
-    :root {
-        --accent-blue: #007AFF;
-        --accent-green: #34C759;
-        --accent-orange: #FF9500;
-        --accent-red: #FF3B30;
-        --accent-purple: #AF52DE;
-        --accent-cyan: #5AC8FA;
-        --radius-lg: 24px;
-        --radius-xl: 32px;
-        --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.08);
-        --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.12);
-    }
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="glass p-6 rounded-2xl relative overflow-hidden group hover:border-accent/30 transition-all duration-300">
+        <div class="w-12 h-12 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-500 text-2xl mb-4">
+            <i class="bi bi-currency-dollar"></i>
+        </div>
+        <p class="text-muted text-[10px] font-bold uppercase tracking-widest">Выручка</p>
+        <h3 class="text-2xl font-extrabold mt-1 truncate">{{ number_format($revenue, 0, '.', ' ') }} <span class="text-xs font-normal opacity-60">сом</span></h3>
+        <p class="text-[10px] text-muted mt-1 italic">За период</p>
+    </div>
 
-    :root, [data-theme="light"] {
-        --bg-color: #F2F2F7;
-        --text-main: #1C1C1E;
-        --text-muted: #8E8E93;
-        --border-color: rgba(0, 0, 0, 0.08);
-        --glass-bg: rgba(255, 255, 255, 0.75);
-        --glass-border: rgba(0, 0, 0, 0.05);
-        --card-hover: rgba(255, 255, 255, 0.85);
-    }
+    <div class="glass p-6 rounded-2xl relative overflow-hidden group hover:border-accent/30 transition-all duration-300">
+        <div class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 text-2xl mb-4">
+            <i class="bi bi-box-seam"></i>
+        </div>
+        <p class="text-muted text-[10px] font-bold uppercase tracking-widest">Себестоимость</p>
+        <h3 class="text-2xl font-extrabold mt-1 truncate">{{ number_format($costOfGoods, 0, '.', ' ') }} <span class="text-xs font-normal opacity-60">сом</span></h3>
+        <p class="text-[10px] text-muted mt-1 italic">Закупки товаров</p>
+    </div>
 
-    [data-theme="dark"] {
-        --bg-color: #000000;
-        --text-main: #FFFFFF;
-        --text-muted: rgba(255, 255, 255, 0.85);
-        --border-color: rgba(255, 255, 255, 0.08);
-        --glass-bg: rgba(28, 28, 30, 0.6);
-        --glass-border: rgba(255, 255, 255, 0.06);
-        --card-hover: rgba(28, 28, 30, 0.75);
-    }
+    <div class="glass p-6 rounded-2xl relative overflow-hidden group hover:border-accent/30 transition-all duration-300 border-l-4 border-l-emerald-500/50">
+        <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 text-2xl mb-4">
+            <i class="bi bi-graph-up-arrow"></i>
+        </div>
+        <p class="text-muted text-[10px] font-bold uppercase tracking-widest">Вал. прибыль</p>
+        <h3 class="text-2xl font-extrabold mt-1 truncate text-emerald-500">{{ number_format($grossProfit, 0, '.', ' ') }} <span class="text-xs font-normal opacity-60 text-white">сом</span></h3>
+        <p class="text-[10px] text-muted mt-1 font-bold">{{ number_format($grossMargin, 1) }}% маржинальность</p>
+    </div>
 
-    body {
-        background-color: var(--bg-color);
-        color: var(--text-main);
-        transition: background-color 0.3s ease, color 0.3s ease;
-    }
+    <div class="glass p-6 rounded-2xl relative overflow-hidden group hover:border-accent/30 transition-all duration-300 border-l-4 border-l-accent/50">
+        <div class="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent text-2xl mb-4">
+            <i class="bi bi-piggy-bank"></i>
+        </div>
+        <p class="text-muted text-[10px] font-bold uppercase tracking-widest">Чистая прибыль</p>
+        <h3 class="text-2xl font-extrabold mt-1 truncate text-accent">{{ number_format($netProfit, 0, '.', ' ') }} <span class="text-xs font-normal opacity-60 text-white">сом</span></h3>
+        <p class="text-[10px] text-muted mt-1 font-bold">{{ number_format($netMargin, 1) }}% рентабельность</p>
+    </div>
+</div>
 
-    .page-header {
-        background: var(--glass-bg);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-xl);
-        padding: 40px;
-        color: var(--text-main);
-        margin-bottom: 32px;
-        box-shadow: var(--shadow-lg);
-    }
-
-    .page-header h2 {
-        font-size: 32px;
-        font-weight: 700;
-        color: var(--text-main);
-        margin-bottom: 8px;
-    }
-
-    .page-header p {
-        font-size: 15px;
-        color: var(--text-muted);
-    }
-
-    .metric-card {
-        background: var(--glass-bg);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-radius: var(--radius-lg);
-        padding: 28px;
-        box-shadow: var(--shadow-md);
-        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-        border: 1px solid var(--glass-border);
-        height: 100%;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .metric-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, var(--card-accent) 0%, transparent 100%);
-    }
-
-    .metric-card:hover {
-        transform: translateY(-8px) scale(1.02);
-        box-shadow: var(--shadow-lg);
-        background: var(--card-hover);
-    }
-
-    .metric-card.blue { --card-accent: var(--accent-blue); }
-    .metric-card.red { --card-accent: var(--accent-red); }
-    .metric-card.green { --card-accent: var(--accent-green); }
-    .metric-card.cyan { --card-accent: var(--accent-cyan); }
-
-    .metric-icon {
-        width: 64px;
-        height: 64px;
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 30px;
-        margin-bottom: 20px;
-        background: var(--glass-bg);
-        border: 1px solid var(--glass-border);
-    }
-
-    .metric-icon.blue { background: rgba(0, 122, 255, 0.15); color: var(--accent-blue); border-color: rgba(0, 122, 255, 0.3); }
-    .metric-icon.red { background: rgba(255, 59, 48, 0.15); color: var(--accent-red); border-color: rgba(255, 59, 48, 0.3); }
-    .metric-icon.green { background: rgba(52, 199, 89, 0.15); color: var(--accent-green); border-color: rgba(52, 199, 89, 0.3); }
-    .metric-icon.cyan { background: rgba(90, 200, 250, 0.15); color: var(--accent-cyan); border-color: rgba(90, 200, 250, 0.3); }
-
-    .metric-label {
-        font-size: 14px;
-        color: var(--text-muted);
-        font-weight: 500;
-        margin-bottom: 10px;
-    }
-
-    .metric-value {
-        font-size: 30px;
-        font-weight: 700;
-        color: var(--text-main);
-        margin-bottom: 6px;
-    }
-
-    .metric-sub {
-        font-size: 13px;
-        color: var(--text-muted);
-    }
-
-    .data-card {
-        background: var(--glass-bg);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--glass-border);
-        overflow: hidden;
-    }
-
-    .data-header {
-        padding: 24px 28px;
-        border-bottom: 1px solid var(--glass-border);
-        font-weight: 700;
-        color: var(--text-main);
-        background: rgba(0, 122, 255, 0.08);
-    }
-
-    .table-custom {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-    }
-
-    .table-custom th {
-        padding: 14px 20px;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .table-custom td {
-        padding: 16px 20px;
-        border-bottom: 1px solid var(--border-color);
-        color: var(--text-main);
-    }
-
-    .table-custom tr:hover {
-        background: var(--glass-border);
-    }
-
-    small, .small {
-        color: var(--text-muted) !important;
-    }
-
-    strong {
-        color: var(--text-main);
-    }
-
-    @media (max-width: 768px) {
-        .page-header { padding: 24px 20px; }
-        .page-header h2 { font-size: 24px; }
-        .metric-card { padding: 20px 18px; }
-        .metric-icon { width: 52px; height: 52px; font-size: 24px; }
-        .metric-value { font-size: 24px; }
-    }
-</style>
-
-<div class="container-fluid py-4">
-    <!-- Заголовок -->
-    <div class="page-header">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <div>
-                <h2 class="mb-2"><i class="bi bi-graph-up me-2"></i>Отчёт по прибыли</h2>
-                <p class="mb-0">Анализ прибыли и маржинальности</p>
-            </div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Expenses By Category -->
+    <div class="glass rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
+            <h3 class="text-sm font-bold flex items-center gap-2">
+                <i class="bi bi-pie-chart text-rose-500"></i> Расходы по категориям
+            </h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left responsive-table">
+                <thead>
+                    <tr class="text-[10px] uppercase tracking-wider text-muted border-b border-white/5">
+                        <th class="px-6 py-3 font-bold">Категория</th>
+                        <th class="px-6 py-3 font-bold text-right">Сумма</th>
+                        <th class="px-6 py-3 font-bold text-center">%</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    @php $totalExp = $expensesByCategory->sum('total') ?? 1; @endphp
+                    @forelse($expensesByCategory as $cat)
+                    <tr class="hover:bg-white/[0.02] transition-colors group">
+                        <td class="px-6 py-4 text-sm font-semibold capitalize flex items-center gap-3" data-label="Категория">
+                            @if($cat->category === 'rent') <i class="bi bi-house-door text-orange-400"></i> Аренда
+                            @elseif($cat->category === 'utilities') <i class="bi bi-lightning text-sky-400"></i> Коммуналка
+                            @elseif($cat->category === 'salary') <i class="bi bi-people text-emerald-400"></i> Зарплата
+                            @elseif($cat->category === 'taxes') <i class="bi bi-bank text-rose-400"></i> Налоги
+                            @elseif($cat->category === 'marketing') <i class="bi bi-megaphone text-accent"></i> Маркетинг
+                            @else <i class="bi bi-three-dots text-muted"></i> {{ ucfirst($cat->category) }}
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 text-right text-sm font-bold text-rose-400" data-label="Сумма">{{ number_format($cat->total, 0, '.', ' ') }} сом</td>
+                        <td class="px-6 py-4 text-center text-[10px] font-bold text-muted" data-label="%">{{ number_format(($cat->total / ($totalExp ?: 1)) * 100, 1) }}%</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="3" class="px-6 py-12 text-center text-muted italic">Нет расходов</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Основные метрики -->
-    <div class="row g-4 mb-4">
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="metric-card blue">
-                <div class="metric-icon blue"><i class="bi bi-currency-dollar"></i></div>
-                <div class="metric-label">Выручка</div>
-                <div class="metric-value">{{ number_format($revenue, 0, '.', ' ') }} сом</div>
-                <div class="metric-sub">За выбранный период</div>
-            </div>
+    <!-- Top Products -->
+    <div class="glass rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
+            <h3 class="text-sm font-bold flex items-center gap-2">
+                <i class="bi bi-trophy text-amber-500"></i> Топ товаров по прибыли
+            </h3>
         </div>
-
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="metric-card red">
-                <div class="metric-icon red"><i class="bi bi-box-seam"></i></div>
-                <div class="metric-label">Себестоимость</div>
-                <div class="metric-value">{{ number_format($costOfGoods, 0, '.', ' ') }} сом</div>
-                <div class="metric-sub">Закупки товаров</div>
-            </div>
-        </div>
-
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="metric-card green">
-                <div class="metric-icon green"><i class="bi bi-graph-up-arrow"></i></div>
-                <div class="metric-label">Валовая прибыль</div>
-                <div class="metric-value">{{ number_format($grossProfit, 0, '.', ' ') }} сом</div>
-                <div class="metric-sub">{{ number_format($grossMargin, 1) }}% маржинальность</div>
-            </div>
-        </div>
-
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="metric-card cyan">
-                <div class="metric-icon cyan"><i class="bi bi-piggy-bank"></i></div>
-                <div class="metric-label">Чистая прибыль</div>
-                <div class="metric-value">{{ number_format($netProfit, 0, '.', ' ') }} сом</div>
-                <div class="metric-sub">{{ number_format($netMargin, 1) }}% рентабельность</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Детализация по категориям -->
-    <div class="row g-4">
-        <div class="col-12 col-lg-6">
-            <div class="data-card">
-                <div class="data-header"><i class="bi bi-receipt me-2"></i>Расходы по категориям</div>
-                <div class="table-responsive">
-                    <table class="table-custom">
-                        <thead>
-                            <tr>
-                                <th>Категория</th>
-                                <th class="text-end">Сумма</th>
-                                <th class="text-center">%</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @php $totalExp = $expensesByCategory->sum('total') ?? 1; @endphp
-                            @foreach($expensesByCategory as $cat)
-                            <tr>
-                                <td>
-                                    @if($cat->category === 'rent') <i class="bi bi-house-door" style="color: var(--accent-orange);"></i> Аренда
-                                    @elseif($cat->category === 'utilities') <i class="bi bi-lightning" style="color: var(--accent-cyan);"></i> Коммуналка
-                                    @elseif($cat->category === 'salary') <i class="bi bi-people" style="color: var(--accent-green);"></i> Зарплата
-                                    @elseif($cat->category === 'taxes') <i class="bi bi-bank" style="color: var(--accent-red);"></i> Налоги
-                                    @elseif($cat->category === 'marketing') <i class="bi bi-megaphone" style="color: var(--accent-blue);"></i> Маркетинг
-                                    @else <i class="bi bi-three-dots" style="color: var(--text-muted);"></i> {{ ucfirst($cat->category) }}
-                                    @endif
-                                </td>
-                                <td class="text-end"><strong>{{ number_format($cat->total, 0, '.', ' ') }} сом</strong></td>
-                                <td class="text-center"><small>{{ number_format(($cat->total / $totalExp) * 100, 1) }}%</small></td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-12 col-lg-6">
-            <div class="data-card">
-                <div class="data-header"><i class="bi bi-trophy me-2"></i>Топ товаров по прибыли</div>
-                <div class="table-responsive">
-                    <table class="table-custom">
-                        <thead>
-                            <tr>
-                                <th>Товар</th>
-                                <th class="text-center">Продано</th>
-                                <th class="text-end">Прибыль</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($productsProfit as $p)
-                            <tr>
-                                <td>
-                                    <strong>{{ Str::limit($p->name, 35) }}</strong>
-                                    <br><small>{{ $p->article }}</small>
-                                </td>
-                                <td class="text-center"><small>{{ $p->sold_qty }} шт</small></td>
-                                <td class="text-end"><strong style="color: var(--accent-green);">+{{ number_format($p->profit, 0, '.', ' ') }} сом</strong></td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left responsive-table">
+                <thead>
+                    <tr class="text-[10px] uppercase tracking-wider text-muted border-b border-white/5">
+                        <th class="px-6 py-3 font-bold">Товар</th>
+                        <th class="px-6 py-3 font-bold text-center">Продано</th>
+                        <th class="px-6 py-3 font-bold text-right">Прибыль</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                    @forelse($productsProfit as $p)
+                    <tr class="hover:bg-white/[0.02] transition-colors group">
+                        <td class="px-6 py-4" data-label="Товар">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold">{{ Str::limit($p->name, 40) }}</span>
+                                <span class="text-[10px] text-muted">{{ $p->article }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-center text-sm" data-label="Продано">
+                            <span class="px-2 py-0.5 rounded-lg bg-white/5 text-muted font-bold text-xs">{{ $p->sold_qty }} шт</span>
+                        </td>
+                        <td class="px-6 py-4 text-right" data-label="Прибыль">
+                            <span class="text-sm font-bold text-emerald-500">+{{ number_format($p->profit, 0, '.', ' ') }} сом</span>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="3" class="px-6 py-12 text-center text-muted italic">Нет данных</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
+
 @endsection
