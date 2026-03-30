@@ -235,6 +235,34 @@
             color: var(--text-secondary);
             opacity: 0.5;
         }
+
+        /* Адаптация под телефон */
+        @media (max-width: 480px) {
+            body {
+                padding: 20px 16px;
+            }
+            .register-card {
+                padding: 30px 20px;
+            }
+            .brand-logo {
+                font-size: 1.8rem;
+            }
+            .register-title {
+                font-size: 0.65rem;
+            }
+            input {
+                padding: 14px 16px 14px 40px;
+                font-size: 1rem;
+            }
+            .input-icon {
+                left: 12px;
+                font-size: 1rem;
+            }
+            .btn-submit {
+                padding: 14px;
+                font-size: 0.85rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -262,16 +290,13 @@
 
                 <div class="form-group">
                     <label class="form-label">Ваше имя</label>
-                    <div class="input-wrapper">
-                        <input 
-                            type="text" 
-                            name="full_name" 
-                            value="<?php echo e(old('full_name')); ?>"
-                            placeholder="Напр. Александр Иванов"
-                            required
-                        >
-                        <i class="fas fa-user input-icon"></i>
-                    </div>
+                    <input
+                        type="text"
+                        name="full_name"
+                        value="<?php echo e(old('full_name')); ?>"
+                        placeholder="Напр. Александр Иванов"
+                        required
+                    >
                     <?php $__errorArgs = ['full_name'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -284,18 +309,15 @@ unset($__errorArgs, $__bag); ?>
 
                 <div class="form-group">
                     <label class="form-label">Номер телефона</label>
-                    <div class="input-wrapper">
-                        <input 
-                            type="text" 
-                            id="phone"
-                            name="phone" 
-                            value="<?php echo e(old('phone')); ?>"
-                            placeholder="+996XXXXXXXXX"
-                            required
-                            oninput="checkPhoneAvailability()"
-                        >
-                        <i class="fas fa-phone input-icon"></i>
-                    </div>
+                    <input
+                        type="text"
+                        id="phone"
+                        name="phone"
+                        value="<?php echo e(old('phone')); ?>"
+                        placeholder="+996XXXXXXXXX"
+                        required
+                        oninput="checkPhoneAvailability()"
+                    >
                     <div id="phoneCheckResult" class="phone-status"></div>
                     <?php $__errorArgs = ['phone'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
@@ -309,16 +331,13 @@ unset($__errorArgs, $__bag); ?>
 
                 <div class="form-group">
                     <label class="form-label">Пароль</label>
-                    <div class="input-wrapper">
-                        <input 
-                            type="password" 
-                            name="password" 
-                            placeholder="Минимум 6 символов"
-                            required
-                            minlength="6"
-                        >
-                        <i class="fas fa-lock input-icon"></i>
-                    </div>
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="Минимум 6 символов"
+                        required
+                        minlength="6"
+                    >
                     <?php $__errorArgs = ['password'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -331,20 +350,24 @@ unset($__errorArgs, $__bag); ?>
 
                 <div class="form-group">
                     <label class="form-label">Подтверждение пароля</label>
-                    <div class="input-wrapper">
-                        <input 
-                            type="password" 
-                            name="password_confirmation" 
-                            placeholder="Повторите пароль"
-                            required
-                        >
-                        <i class="fas fa-check-double input-icon"></i>
-                    </div>
+                    <input
+                        type="password"
+                        name="password_confirmation"
+                        placeholder="Повторите пароль"
+                        required
+                    >
+                    <?php $__errorArgs = ['password_confirmation'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?><span class="text-danger text-[10px]"><?php echo e($message); ?></span><?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                 </div>
 
                 <button type="submit" class="btn-submit" id="submitBtn">
                     <span>Создать профиль</span>
-                    <i class="fas fa-user-plus"></i>
                 </button>
             </form>
 

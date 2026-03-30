@@ -117,18 +117,14 @@
             font-weight: 600;
         }
 
-        .input-wrapper {
-            position: relative;
-        }
-
         input {
             width: 100%;
-            padding: 12px 16px 12px 42px;
+            padding: 14px 16px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border-color);
             border-radius: 2px;
             color: var(--text-primary);
-            font-size: 0.9rem;
+            font-size: 1rem;
             transition: var(--transition);
         }
 
@@ -136,20 +132,6 @@
             outline: none;
             border-color: var(--accent-color);
             background: rgba(255, 255, 255, 0.07);
-        }
-
-        .input-icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            transition: var(--transition);
-        }
-
-        input:focus + .input-icon {
-            color: var(--accent-color);
         }
 
         .btn-submit {
@@ -251,15 +233,11 @@
                 font-size: 0.65rem;
             }
             input {
-                padding: 14px 16px 14px 40px;
-                font-size: 1rem;
-            }
-            .input-icon {
-                left: 12px;
+                padding: 16px;
                 font-size: 1rem;
             }
             .btn-submit {
-                padding: 14px;
+                padding: 16px;
                 font-size: 0.85rem;
             }
         }
@@ -290,68 +268,56 @@
 
                 <div class="form-group">
                     <label class="form-label">Ваше имя</label>
-                    <div class="input-wrapper">
-                        <input 
-                            type="text" 
-                            name="full_name" 
-                            value="{{ old('full_name') }}"
-                            placeholder="Напр. Александр Иванов"
-                            required
-                        >
-                        <i class="fas fa-user input-icon"></i>
-                    </div>
+                    <input
+                        type="text"
+                        name="full_name"
+                        value="{{ old('full_name') }}"
+                        placeholder="Напр. Александр Иванов"
+                        required
+                    >
                     @error('full_name')<span class="text-danger text-[10px]">{{ $message }}</span>@enderror
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Номер телефона</label>
-                    <div class="input-wrapper">
-                        <input 
-                            type="text" 
-                            id="phone"
-                            name="phone" 
-                            value="{{ old('phone') }}"
-                            placeholder="+996XXXXXXXXX"
-                            required
-                            oninput="checkPhoneAvailability()"
-                        >
-                        <i class="fas fa-phone input-icon"></i>
-                    </div>
+                    <input
+                        type="text"
+                        id="phone"
+                        name="phone"
+                        value="{{ old('phone') }}"
+                        placeholder="+996XXXXXXXXX"
+                        required
+                        oninput="checkPhoneAvailability()"
+                    >
                     <div id="phoneCheckResult" class="phone-status"></div>
                     @error('phone')<span class="text-danger text-[10px]">{{ $message }}</span>@enderror
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Пароль</label>
-                    <div class="input-wrapper">
-                        <input 
-                            type="password" 
-                            name="password" 
-                            placeholder="Минимум 6 символов"
-                            required
-                            minlength="6"
-                        >
-                        <i class="fas fa-lock input-icon"></i>
-                    </div>
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="Минимум 6 символов"
+                        required
+                        minlength="6"
+                    >
                     @error('password')<span class="text-danger text-[10px]">{{ $message }}</span>@enderror
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Подтверждение пароля</label>
-                    <div class="input-wrapper">
-                        <input 
-                            type="password" 
-                            name="password_confirmation" 
-                            placeholder="Повторите пароль"
-                            required
-                        >
-                        <i class="fas fa-check-double input-icon"></i>
-                    </div>
+                    <input
+                        type="password"
+                        name="password_confirmation"
+                        placeholder="Повторите пароль"
+                        required
+                    >
+                    @error('password_confirmation')<span class="text-danger text-[10px]">{{ $message }}</span>@enderror
                 </div>
 
                 <button type="submit" class="btn-submit" id="submitBtn">
                     <span>Создать профиль</span>
-                    <i class="fas fa-user-plus"></i>
                 </button>
             </form>
 
