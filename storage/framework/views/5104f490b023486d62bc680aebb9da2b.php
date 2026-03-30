@@ -1,8 +1,43 @@
 <?php $__env->startSection('title', 'Профиль - NURMAN'); ?>
 
 <?php $__env->startSection('content'); ?>
-<div class="container py-4" style="max-width: 800px;">
-    <h1 class="mb-4">👤 Профиль</h1>
+<style>
+    .profile-page { max-width: 800px; margin: 0 auto; padding: 2rem; }
+    .profile-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        margin-bottom: 1.5rem;
+    }
+    .profile-card-header {
+        background: var(--bg-secondary);
+        border-bottom: 1px solid var(--border-color);
+        padding: 1rem 1.5rem;
+        border-radius: 16px 16px 0 0;
+    }
+    .profile-card-body { padding: 1.5rem; }
+    .form-label {
+        color: var(--text-primary);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .form-control, .form-select {
+        background: var(--bg-input, var(--bg-secondary));
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.25);
+    }
+    .form-text {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+</style>
+
+<div class="profile-page">
+    <h1 class="mb-4" style="color: var(--text-primary);">👤 Профиль</h1>
 
     <?php if(session('success')): ?>
         <div class="alert alert-success"><?php echo e(session('success')); ?></div>
@@ -23,11 +58,11 @@
     <?php endif; ?>
 
     <!-- Основная информация -->
-    <div class="card mb-4" style="background: var(--bg-card); border: 1px solid var(--border-color);">
-        <div class="card-header" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);">
-            <h5 class="mb-0">📝 Личная информация</h5>
+    <div class="profile-card">
+        <div class="profile-card-header">
+            <h5 class="mb-0" style="color: var(--text-primary);">📝 Личная информация</h5>
         </div>
-        <div class="card-body">
+        <div class="profile-card-body">
             <form method="POST" action="<?php echo e(route('client.profile.update')); ?>">
                 <?php echo csrf_field(); ?>
                 <?php echo method_field('PUT'); ?>
@@ -76,11 +111,11 @@
     </div>
 
     <!-- Смена пароля -->
-    <div class="card" style="background: var(--bg-card); border: 1px solid var(--border-color);">
-        <div class="card-header" style="background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);">
-            <h5 class="mb-0">🔐 Смена пароля</h5>
+    <div class="profile-card">
+        <div class="profile-card-header">
+            <h5 class="mb-0" style="color: var(--text-primary);">🔐 Смена пароля</h5>
         </div>
-        <div class="card-body">
+        <div class="profile-card-body">
             <form method="POST" action="<?php echo e(route('client.profile.password')); ?>">
                 <?php echo csrf_field(); ?>
 

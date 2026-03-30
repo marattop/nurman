@@ -121,9 +121,9 @@
                     </div>
                     
                     <div class="mt-3">
-                        <a href="<?php echo e(route('client.coupons.print', $coupon->id)); ?>" target="_blank" class="btn btn-primary w-100">
-                            <i class="bi bi-printer"></i> Печать купона
-                        </a>
+                        <button class="btn btn-secondary w-100" disabled>
+                            <i class="bi bi-check-circle"></i> Купон в приложении
+                        </button>
                     </div>
                 </div>
             </div>
