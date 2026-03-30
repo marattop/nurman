@@ -168,7 +168,7 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label>Телефон (логин для клиента) <span style="color: #ef4444;">*</span></label>
-                    <input type="text" name="phone" id="createPhone" class="form-control" placeholder="+7 (___) ___-__-__" required>
+                    <input type="text" name="phone" id="createPhone" class="form-control" placeholder="(___) ___-___" value="+996" required>
                     <small style="color: #64748b;">Логин клиента = телефон</small>
                 </div>
                 <div class="form-group">

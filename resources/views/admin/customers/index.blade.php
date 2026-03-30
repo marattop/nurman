@@ -166,7 +166,7 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label>Телефон (логин для клиента) <span style="color: #ef4444;">*</span></label>
-                    <input type="text" name="phone" id="createPhone" class="form-control" placeholder="+996 (___) ___-___" required>
+                    <input type="text" name="phone" id="createPhone" class="form-control" placeholder="(___) ___-___" value="+996" required>
                     <small style="color: #64748b;">Логин клиента = телефон</small>
                 </div>
                 <div class="form-group">
@@ -611,6 +611,21 @@ document.addEventListener('DOMContentLoaded', function() {
             openCreateModal(this.dataset.phone, this.dataset.fullName);
         });
     });
+
+    // Автоформатирование телефона
+    const phoneInput = document.getElementById('createPhone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (!value.startsWith('996')) {
+                value = '996' + value;
+            }
+            if (value.length > 12) {
+                value = value.substring(0, 12);
+            }
+            e.target.value = '+996 (' + value.substring(3, 6) + ') ' + value.substring(6, 9) + '-' + value.substring(9, 12);
+        });
+    }
 });
 
 // Инициализация
