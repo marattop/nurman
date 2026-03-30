@@ -99,6 +99,11 @@
             .desktop-only { display: none !important; }
             #overlay { z-index: 1000 !important; }
             .topbar { padding: 12px 16px !important; }
+            
+            /* Скрываем текст имени на мобильном, показываем только аватар */
+            .user-info-name { display: none !important; }
+            .user-info-role { display: none !important; }
+            .user-avatar { margin-right: 0 !important; }
         }
         .mobile-toggle { display: none; }
     </style>
@@ -183,8 +188,19 @@
                 <h1 style="margin: 0; font-size: 20px; font-weight: 600;">@yield('page-title', 'NURMAN')</h1>
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
-                <button type="button" class="btn btn-danger" 
-                   onclick="showLogoutModal()" 
+                {{-- Информация о пользователе --}}
+                <div style="display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: rgba(56,189,248,0.1); border-radius: 12px; border: 1px solid rgba(56,189,248,0.2);">
+                    <div class="user-avatar" style="width: 32px; height: 32px; background: #38bdf8; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0f172a; font-weight: 700; font-size: 14px;">
+                        {{ strtoupper(substr(auth()->user()->full_name ?? auth()->user()->username, 0, 1)) }}
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <span class="user-info-name" style="color: #f1f5f9; font-size: 13px; font-weight: 600; line-height: 1.2;">{{ auth()->user()->full_name ?? auth()->user()->username }}</span>
+                        <span class="user-info-role" style="color: #94a3b8; font-size: 11px; line-height: 1.2;">{{ auth()->user()->role->name ?? 'Пользователь' }}</span>
+                    </div>
+                </div>
+                
+                <button type="button" class="btn btn-danger"
+                   onclick="showLogoutModal()"
                    style="padding: 8px 16px;">
                     <i class="bi bi-box-arrow-right"></i> <span class="desktop-only">Выход</span>
                 </button>
