@@ -117,18 +117,14 @@
             font-weight: 600;
         }
 
-        .input-wrapper {
-            position: relative;
-        }
-
         input {
             width: 100%;
-            padding: 12px 16px 12px 42px;
+            padding: 14px 16px;
             background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border-color);
             border-radius: 2px;
             color: var(--text-primary);
-            font-size: 0.9rem;
+            font-size: 1rem;
             transition: var(--transition);
         }
 
@@ -136,20 +132,6 @@
             outline: none;
             border-color: var(--accent-color);
             background: rgba(255, 255, 255, 0.07);
-        }
-
-        .input-icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            transition: var(--transition);
-        }
-
-        input:focus + .input-icon {
-            color: var(--accent-color);
         }
 
         .btn-submit {
@@ -251,15 +233,11 @@
                 font-size: 0.65rem;
             }
             input {
-                padding: 14px 16px 14px 40px;
-                font-size: 1rem;
-            }
-            .input-icon {
-                left: 12px;
+                padding: 16px;
                 font-size: 1rem;
             }
             .btn-submit {
-                padding: 14px;
+                padding: 16px;
                 font-size: 0.85rem;
             }
         }
@@ -294,7 +272,7 @@
                         type="text"
                         name="full_name"
                         value="<?php echo e(old('full_name')); ?>"
-                        placeholder="Напр. Александр Иванов"
+                        placeholder="Нурманов Нурман"
                         required
                     >
                     <?php $__errorArgs = ['full_name'];

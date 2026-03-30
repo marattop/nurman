@@ -272,7 +272,7 @@
                         type="text"
                         name="full_name"
                         value="{{ old('full_name') }}"
-                        placeholder="Напр. Александр Иванов"
+                        placeholder="Нурманов Нурман"
                         required
                     >
                     @error('full_name')<span class="text-danger text-[10px]">{{ $message }}</span>@enderror
