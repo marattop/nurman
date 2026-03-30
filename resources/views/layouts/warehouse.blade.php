@@ -195,13 +195,11 @@
                                 <span style="color: #94a3b8; font-size: 10px;">{{ auth()->user()->role->name ?? 'Пользователь' }}</span>
                             </div>
                         </a>
-                        
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit" class="w-full sidebar-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-danger/80 hover:text-danger hover:bg-danger/10">
-                                <i class="bi bi-box-arrow-right mr-3 text-lg"></i> Выйти
-                            </button>
-                        </form>
+
+                        <button type="button" class="w-full sidebar-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-danger/80 hover:text-danger hover:bg-danger/10" onclick="showLogoutModal()">
+                            <i class="bi bi-box-arrow-right mr-3 text-lg"></i> Выйти
+                        </button>
+                        <form id="logout-form" method="POST" action="{{ route('logout') }}" style="display: none;">@csrf</form>
                     </div>
                 </nav>
             </div>
@@ -271,7 +269,54 @@
             sidebar.classList.toggle('open');
             overlay.classList.toggle('show');
         }
+
+        function showLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            modal.style.display = 'block';
+            const backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop logout-backdrop';
+            backdrop.onclick = hideLogoutModal;
+            document.body.appendChild(backdrop);
+        }
+
+        function hideLogoutModal() {
+            const modal = document.getElementById('logoutModal');
+            modal.style.display = 'none';
+            document.querySelectorAll('.logout-backdrop').forEach(b => b.remove());
+        }
     </script>
+
+    {{-- Модальное окно выхода --}}
+    <div id="logoutModal" class="modal" style="display: none;">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+            <div class="modal-content" style="background: #1e293b; border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 16px;">
+                <div class="modal-body" style="padding: 32px; text-align: center;">
+                    <div style="width: 64px; height: 64px; background: rgba(239, 68, 68, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 32px; margin: 0 auto 20px;">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </div>
+                    <h3 style="font-size: 20px; font-weight: 700; color: #f1f5f9; margin-bottom: 8px;">Завершение сеанса</h3>
+                    <p style="color: #94a3b8; margin-bottom: 24px;">Вы действительно хотите выйти из системы? Для входа придётся ввести пароль заново.</p>
+                    <div style="display: flex; gap: 12px;">
+                        <button type="button" class="btn" onclick="hideLogoutModal()" style="flex: 1; justify-content: center; background: rgba(255,255,255,0.05); color: #f1f5f9; border: 1px solid rgba(255,255,255,0.1);">
+                            Отмена
+                        </button>
+                        <button type="button" class="btn" onclick="document.getElementById('logout-form').submit()" style="flex: 1; justify-content: center; background: #ef4444; color: white; border: none;">
+                            Выйти
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .modal { display: none; position: fixed; inset: 0; z-index: 1000; overflow-y: auto; }
+        .modal-dialog { margin: 1.75rem auto; max-width: 500px; }
+        .modal-dialog-centered { display: flex; align-items: center; min-height: calc(100% - 3.5rem); }
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
+        .modal-content { background: #1e293b; }
+        .modal-body { padding: 20px; }
+    </style>
     @stack('scripts')
 </body>
 </html>
