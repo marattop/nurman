@@ -182,7 +182,7 @@
 
                     <div class="pt-10 mt-10 border-t border-white/5">
                         {{-- Профиль пользователя --}}
-                        <a href="{{ route('admin.profile.index') }}" class="sidebar-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-white hover:bg-white/10 mb-2">
+                        <a href="{{ route('warehouse.profile.index') }}" class="sidebar-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-white hover:bg-white/10 mb-2">
                             <div style="width: 28px; height: 28px; background: #38bdf8; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0f172a; font-weight: 700; font-size: 12px; margin-right: 10px; overflow: hidden;">
                                 @if(auth()->user()->avatar)
                                     <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->full_name }}" style="width: 100%; height: 100%; object-fit: cover;">

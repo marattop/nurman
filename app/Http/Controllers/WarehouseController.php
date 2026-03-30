@@ -22,6 +22,62 @@ class WarehouseController extends Controller
         return view('warehouse.dashboard', compact('totalProducts', 'lowStock', 'recentPurchases', 'newProducts'));
     }
 
+    /**
+     * Страница профиля кладовщика.
+     */
+    public function profile()
+    {
+        $user = auth()->user();
+        return view('warehouse.profile.index', compact('user'));
+    }
+
+    /**
+     * Обновление профиля кладовщика.
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+        
+        $validated = $request->validate([
+            'full_name' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:255|unique:users,phone,' . $user->id,
+            'avatar' => 'nullable|image|max:2048',
+            'password' => 'nullable|min:8|confirmed',
+        ]);
+
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = $avatarPath;
+        }
+
+        if ($request->filled('full_name')) {
+            $user->full_name = $validated['full_name'];
+        }
+        
+        if ($request->filled('email')) {
+            $user->email = $validated['email'];
+        }
+        
+        if ($request->filled('phone')) {
+            $user->phone = $validated['phone'];
+        }
+        
+        if ($request->filled('password')) {
+            $user->password = bcrypt($validated['password']);
+        }
+
+        $user->save();
+
+        ActivityLog::create([
+            'user_id' => $user->id,
+            'action' => 'profile_update',
+            'description' => 'Обновлён профиль пользователя',
+        ]);
+
+        return back()->with('success', 'Профиль обновлён');
+    }
+
     public function purchases()
     {
         $purchases = Purchase::with(['variant.product', 'receivedBy'])->orderBy('created_at', 'desc')->paginate(20);

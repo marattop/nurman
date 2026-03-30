@@ -85,7 +85,7 @@
         </div>
         
         {{-- Профиль пользователя в sidebar --}}
-        <a href="{{ route('admin.profile.index') }}" class="menu-item" style="margin: 8px; border: 1px solid rgba(16,185,129,0.2); background: rgba(16,185,129,0.05); display: flex; align-items: center; text-decoration: none;">
+        <a href="{{ route('seller.profile.index') }}" class="menu-item" style="margin: 8px; border: 1px solid rgba(16,185,129,0.2); background: rgba(16,185,129,0.05); display: flex; align-items: center; text-decoration: none;">
             <div style="width: 36px; height: 36px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0f172a; font-weight: 700; font-size: 16px; margin-right: 12px; overflow: hidden; flex-shrink: 0;">
                 @if(auth()->user()->avatar)
                     <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->full_name }}" style="width: 100%; height: 100%; object-fit: cover;">
