@@ -181,6 +181,21 @@
                     @endif
 
                     <div class="pt-10 mt-10 border-t border-white/5">
+                        {{-- Профиль пользователя --}}
+                        <a href="{{ route('admin.profile.index') }}" class="sidebar-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-white hover:bg-white/10 mb-2">
+                            <div style="width: 28px; height: 28px; background: #38bdf8; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0f172a; font-weight: 700; font-size: 12px; margin-right: 10px; overflow: hidden;">
+                                @if(auth()->user()->avatar)
+                                    <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->full_name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                @else
+                                    {{ strtoupper(substr(auth()->user()->full_name ?? auth()->user()->username, 0, 1)) }}
+                                @endif
+                            </div>
+                            <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                                <span style="color: #f8fafc; font-weight: 600;">{{ auth()->user()->full_name ?? auth()->user()->username }}</span>
+                                <span style="color: #94a3b8; font-size: 10px;">{{ auth()->user()->role->name ?? 'Пользователь' }}</span>
+                            </div>
+                        </a>
+                        
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="w-full sidebar-item group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-danger/80 hover:text-danger hover:bg-danger/10">
