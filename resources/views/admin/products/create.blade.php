@@ -64,14 +64,10 @@
                 </div>
             </div>
             
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
                 <div>
                     <label class="block font-semibold mb-2 text-text text-sm">Цена закупки</label>
                     <input type="number" name="supplier_price" class="input" value="{{ old('supplier_price') }}" min="0" step="0.01" placeholder="0.00">
-                </div>
-                <div>
-                    <label class="block font-semibold mb-2 text-text text-sm">Оптовая цена</label>
-                    <input type="number" name="wholesale_price" class="input" value="{{ old('wholesale_price') }}" min="0" step="0.01" placeholder="0.00">
                 </div>
                 <div>
                     <label class="block font-semibold mb-2 text-text text-sm">Материал</label>
