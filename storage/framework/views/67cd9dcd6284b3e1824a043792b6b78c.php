@@ -118,10 +118,16 @@
                                         <i class="bi bi-unlock"></i>
                                     </button>
                                 <?php endif; ?>
-                                <button class="btn btn-outline btn-delete" 
+                                <button class="btn btn-outline btn-delete-customer"
+                                    data-customer-id="<?php echo e($customer->id); ?>"
+                                    data-client-name="<?php echo e($customer->full_name ?? 'Клиент'); ?>"
+                                    title="Удалить клиента" style="color: #ef4444; border-color: #ef4444; margin-left: 8px;">
+                                    <i class="bi bi-person-x"></i>
+                                </button>
+                                <button class="btn btn-outline btn-delete"
                                     data-coupon-id="<?php echo e($coupon->id); ?>"
                                     data-client-name="<?php echo e($customer->full_name ?? 'Клиент'); ?>"
-                                    title="Удалить" style="color: #ef4444; border-color: #ef4444;">
+                                    title="Удалить купон" style="color: #ef4444; border-color: #ef4444;">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             <?php else: ?>
@@ -168,11 +174,6 @@
                 <div class="form-group">
                     <label>ФИО <span style="color: #ef4444;">*</span></label>
                     <input type="text" name="full_name" id="createFullName" class="form-control" placeholder="Иванов Иван Иванович" required>
-                </div>
-                <div class="form-group">
-                    <label>Пароль <span style="color: #ef4444;">*</span></label>
-                    <input type="text" name="password" id="createPassword" class="form-control" placeholder="Минимум 6 символов" required>
-                    <small style="color: #64748b;">Пароль для входа клиента</small>
                 </div>
                 <div class="form-group">
                     <label>Тип скидки <span style="color: #ef4444;">*</span></label>
@@ -390,6 +391,7 @@ const ROUTES = {
     couponBlock: (id) => `/admin/customers/coupon/${id}/block`,
     couponUnblock: (id) => `/admin/customers/coupon/${id}/unblock`,
     couponDelete: (id) => `/admin/customers/coupon/${id}/delete`,
+    customerDelete: (id) => `/admin/customers/${id}/delete`,
 };
 
 function getCsrfToken() {
@@ -527,6 +529,32 @@ function deleteCoupon(couponId, clientName) {
     });
 }
 
+function deleteCustomer(customerId, clientName) {
+    if (!confirm('Вы уверены, что хотите УДАЛИТЬ КЛИЕНТА "' + clientName + '"?\n\nЭто удалит:\n- Купонную карту\n- Профиль клиента\n- Все данные из базы\n\nЭто действие НЕЛЬЗЯ отменить!')) {
+        return;
+    }
+
+    fetch(ROUTES.customerDelete(customerId), {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': getCsrfToken(),
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Ошибка: ' + (data.message || 'Неизвестная ошибка'));
+        }
+    })
+    .catch(error => {
+        alert('Ошибка при удалении клиента');
+    });
+}
+
 // Event listeners после загрузки DOM
 document.addEventListener('DOMContentLoaded', function() {
     // QR кнопки
@@ -569,6 +597,13 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.btn-delete').forEach(btn => {
         btn.addEventListener('click', function() {
             deleteCoupon(this.dataset.couponId, this.dataset.clientName);
+        });
+    });
+
+    // Кнопки удаления клиента
+    document.querySelectorAll('.btn-delete-customer').forEach(btn => {
+        btn.addEventListener('click', function() {
+            deleteCustomer(this.dataset.customerId, this.dataset.clientName);
         });
     });
 
