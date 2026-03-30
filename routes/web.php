@@ -233,6 +233,12 @@ Route::middleware(['auth', 'role:admin', 'ensure.admin', 'session.activity', '2f
             Route::post('save', [AdminController::class, 'saveSettings'])->name('save');
         });
 
+        // Профиль пользователя
+        Route::prefix('profile')->name('profile.')->group(function () {
+            Route::get('/', [AdminController::class, 'profile'])->name('index');
+            Route::post('update', [AdminController::class, 'updateProfile'])->name('update');
+        });
+
         // Журнал действий
         Route::get('activity-log', [AdminController::class, 'activityLog'])->name('activity-log');
 

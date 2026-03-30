@@ -190,13 +190,13 @@
             <div style="display: flex; align-items: center; gap: 12px;">
                 
                 <div style="display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: rgba(56,189,248,0.1); border-radius: 12px; border: 1px solid rgba(56,189,248,0.2);">
-                    <div style="width: 32px; height: 32px; background: #38bdf8; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0f172a; font-weight: 700; font-size: 14px;">
+                    <div class="user-avatar" style="width: 32px; height: 32px; background: #38bdf8; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0f172a; font-weight: 700; font-size: 14px;">
                         <?php echo e(strtoupper(substr(auth()->user()->full_name ?? auth()->user()->username, 0, 1))); ?>
 
                     </div>
                     <div style="display: flex; flex-direction: column;">
-                        <span style="color: #f1f5f9; font-size: 13px; font-weight: 600; line-height: 1.2;"><?php echo e(auth()->user()->full_name ?? auth()->user()->username); ?></span>
-                        <span style="color: #94a3b8; font-size: 11px; line-height: 1.2;"><?php echo e(auth()->user()->role->name ?? 'Пользователь'); ?></span>
+                        <span class="user-info-name" style="color: #f1f5f9; font-size: 13px; font-weight: 600; line-height: 1.2;"><?php echo e(auth()->user()->full_name ?? auth()->user()->username); ?></span>
+                        <span class="user-info-role" style="color: #94a3b8; font-size: 11px; line-height: 1.2;"><?php echo e(auth()->user()->role->name ?? 'Пользователь'); ?></span>
                     </div>
                 </div>
                 
