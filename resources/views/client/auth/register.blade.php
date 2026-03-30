@@ -235,6 +235,34 @@
             color: var(--text-secondary);
             opacity: 0.5;
         }
+
+        /* Адаптация под телефон */
+        @media (max-width: 480px) {
+            body {
+                padding: 20px 16px;
+            }
+            .register-card {
+                padding: 30px 20px;
+            }
+            .brand-logo {
+                font-size: 1.8rem;
+            }
+            .register-title {
+                font-size: 0.65rem;
+            }
+            input {
+                padding: 14px 16px 14px 40px;
+                font-size: 1rem;
+            }
+            .input-icon {
+                left: 12px;
+                font-size: 1rem;
+            }
+            .btn-submit {
+                padding: 14px;
+                font-size: 0.85rem;
+            }
+        }
     </style>
 </head>
 <body>
