@@ -83,7 +83,24 @@
         <div class="logo">
             <h2>NURMAN <span>SELLER</span></h2>
         </div>
-        <nav>
+        
+        {{-- Профиль пользователя в sidebar --}}
+        <a href="{{ route('admin.profile.index') }}" class="menu-item" style="margin: 8px; border: 1px solid rgba(16,185,129,0.2); background: rgba(16,185,129,0.05); display: flex; align-items: center; text-decoration: none;">
+            <div style="width: 36px; height: 36px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0f172a; font-weight: 700; font-size: 16px; margin-right: 12px; overflow: hidden; flex-shrink: 0;">
+                @if(auth()->user()->avatar)
+                    <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->full_name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                @else
+                    {{ strtoupper(substr(auth()->user()->full_name ?? auth()->user()->username, 0, 1)) }}
+                @endif
+            </div>
+            <div style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
+                <span style="color: #f1f5f9; font-size: 14px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ auth()->user()->full_name ?? auth()->user()->username }}</span>
+                <span style="color: #94a3b8; font-size: 11px; line-height: 1.2;">{{ auth()->user()->role->display_name ?? auth()->user()->role->name ?? 'Пользователь' }}</span>
+            </div>
+            <i class="bi bi-chevron-right" style="margin-left: auto; font-size: 14px; color: #64748b; flex-shrink: 0;"></i>
+        </a>
+        
+        <nav style="padding: 8px;">
             <div class="group-title">Главное</div>
             <a href="{{ route('seller.dashboard') }}" class="menu-item {{ request()->routeIs('seller.dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2"></i> Дашборд
