@@ -67,13 +67,6 @@
         .card-header { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .card-header-title { font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px; }
         
-        /* Bottom Navigation for Mobile */
-        .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 64px; background: #0f172a; border-top: 1px solid rgba(255,255,255,0.05); z-index: 1000; padding: 0 10px; }
-        .bottom-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; text-decoration: none; font-size: 11px; gap: 4px; transition: 0.2s; }
-        .bottom-nav-item i { font-size: 20px; }
-        .bottom-nav-item.active { color: #38bdf8; }
-        .bottom-nav-center { width: 56px; height: 56px; background: #38bdf8; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0f172a; font-size: 24px; margin-top: -24px; border: 5px solid #1e293b; box-shadow: 0 4px 12px rgba(56,189,248,0.3); }
-
         /* Modal styles */
         .modal { display: none; position: fixed; inset: 0; z-index: 1000; overflow-y: auto; }
         .modal.show { display: block; }
@@ -90,12 +83,10 @@
         .btn-close:hover { color: #f1f5f9; }
         
         @media (max-width: 768px) {
-            body { padding-bottom: 64px; }
             .sidebar { transform: translateX(-100%); transition: 0.3s; z-index: 1001; }
             .sidebar.show { transform: translateX(0); }
             .main-content { margin-left: 0; }
             .mobile-toggle { display: flex !important; z-index: 1002; }
-            .bottom-nav { display: flex; z-index: 1000; }
             .desktop-only { display: none !important; }
             #overlay { z-index: 1000 !important; }
             .topbar { padding: 12px 16px !important; }
@@ -232,25 +223,7 @@
     </div>
 
     <!-- Bottom Navigation -->
-    <div class="bottom-nav">
-        <a href="{{ route('admin.dashboard') }}" class="bottom-nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-            <i class="bi bi-speedometer2"></i>
-            <span>Главная</span>
-        </a>
-        <a href="{{ route('admin.products.index') }}" class="bottom-nav-item {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
-            <i class="bi bi-box-seam"></i>
-            <span>Товары</span>
-        </a>
-        <a href="{{ route('admin.qr.scan') }}" class="bottom-nav-item {{ request()->routeIs('admin.qr.scan') ? 'active' : '' }}">
-            <div class="bottom-nav-center">
-                <i class="bi bi-qr-code-scan"></i>
-            </div>
-        </a>
-        <a href="{{ url('admin/settings') }}" class="bottom-nav-item {{ request()->is('admin/settings*') ? 'active' : '' }}">
-            <i class="bi bi-person-gear"></i>
-            <span>Профиль</span>
-        </a>
-    </div>
+    @include('layouts.partials.bottom-nav')
 
     <!-- Overlay for mobile -->
     <div id="overlay" onclick="toggleSidebar()" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99;"></div>

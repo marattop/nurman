@@ -144,6 +144,8 @@
         </div>
     </div>
 
+    @include('layouts.partials.bottom-nav')
+
     <!-- Overlay for mobile -->
     <div id="overlay" onclick="toggleSidebar()" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99;"></div>
 
