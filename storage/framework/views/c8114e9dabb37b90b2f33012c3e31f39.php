@@ -117,6 +117,13 @@
             <a href="<?php echo e(route('seller.customers.index')); ?>" class="menu-item <?php echo e(request()->routeIs('seller.customers*') ? 'active' : ''); ?>">
                 <i class="bi bi-people"></i> База клиентов
             </a>
+
+            
+            <div class="pt-4 mt-4 border-t border-white/5">
+                <button type="button" class="menu-item text-danger w-full text-left" onclick="showLogoutModal()">
+                    <i class="bi bi-box-arrow-right"></i> Выйти
+                </button>
+            </div>
         </nav>
     </aside>
 
@@ -129,12 +136,6 @@
                     <i class="bi bi-list" style="font-size: 24px;"></i>
                 </button>
                 <h1 style="margin: 0; font-size: 20px; font-weight: 600;"><?php echo $__env->yieldContent('page-title', 'NURMAN'); ?></h1>
-            </div>
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <button type="button" class="btn btn-danger" onclick="showLogoutModal()" style="padding: 8px 16px;">
-                    <i class="bi bi-box-arrow-right"></i> <span class="desktop-only">Выход</span>
-                </button>
-                <form id="logout-form" action="<?php echo e(route('logout')); ?>" method="POST" style="display: none;"><?php echo csrf_field(); ?></form>
             </div>
         </div>
 
