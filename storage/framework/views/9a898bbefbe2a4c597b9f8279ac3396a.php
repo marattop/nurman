@@ -340,8 +340,9 @@
 }
 </style>
 
-<audio id="scan-sound" preload="auto">
-    <source src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU" type="audio/wav">
+<!-- Громкий звук сканирования -->
+<audio id="scan-sound" preload="auto" volume="1.0">
+    <source src="data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADhAC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7////////////////////////////////////////////////////////////AAAAAExhdmM1OC4xMzQAAAAAAAAAAAAAAAAkAAAAAAAAA4S/T4LKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/7kGQAD/AAAGkAAAAIAAANIAAAAQAAAaQAAAAgAAA0gAAABExBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//uQZAoP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" type="audio/mpeg">
 </audio>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -350,8 +351,9 @@ let html5QrCode = null;
 let isScanning = false;
 let lastScanTime = 0;
 let lastScannedCode = '';
-const SCAN_COOLDOWN = 800;
+const SCAN_COOLDOWN = 500; // Уменьшено с 800ms до 500ms для быстрее реакции
 let scanInFlight = false;
+let audioContext = null;
 
 function isMobile() {
     return window.matchMedia('(max-width: 768px)').matches;
@@ -418,7 +420,8 @@ document.getElementById('stop-scan').addEventListener('click', stopScanning);
 async function onScanSuccess(decodedText) {
     const now = Date.now();
 
-    if (decodedText === lastScannedCode && now - lastScanTime < 2000) {
+    // Защита от повторного сканирования того же кода (1 секунда)
+    if (decodedText === lastScannedCode && now - lastScanTime < 1000) {
         return;
     }
 
@@ -428,22 +431,25 @@ async function onScanSuccess(decodedText) {
     lastScannedCode = decodedText;
     scanInFlight = true;
 
+    // Громкий сигнал и вибрация
     playBeep();
-    if (navigator.vibrate) navigator.vibrate(200);
+    if (navigator.vibrate) navigator.vibrate(100);
 
+    // Визуальный эффект
     document.getElementById('scanner-wrapper').classList.add('scanner-success');
     setTimeout(() => {
         document.getElementById('scanner-wrapper').classList.remove('scanner-success');
-    }, 300);
+    }, 200);
 
+    // Быстрая обработка - не останавливаем камеру, сразу загружаем продукт
     try {
-        await stopScanning();
         await fetchProductInfo(decodedText);
     } catch (e) {
         console.error('Processing error:', e);
     } finally {
         scanInFlight = false;
-        setTimeout(() => { lastScannedCode = ''; }, 3000);
+        // Разрешаем повторное сканирование через 1 секунду
+        setTimeout(() => { lastScannedCode = ''; }, 1000);
     }
 }
 
@@ -660,9 +666,35 @@ function closeMobileResult() {
 }
 
 function playBeep() {
-    const audio = document.getElementById('scan-sound');
-    if (audio) {
-        audio.play().catch(() => {});
+    // Громкий звук через Web Audio API
+    try {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Громкий короткий сигнал (1000Hz, 150ms)
+        oscillator.frequency.value = 1000;
+        oscillator.type = 'sine';
+        
+        // Максимальная громкость
+        gainNode.gain.setValueAtTime(1.0, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.15);
+    } catch (e) {
+        // Fallback на обычный аудио элемент
+        const audio = document.getElementById('scan-sound');
+        if (audio) {
+            audio.volume = 1.0;
+            audio.play().catch(() => {});
+        }
     }
 }
 </script>
