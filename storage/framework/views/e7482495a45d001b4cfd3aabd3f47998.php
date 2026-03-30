@@ -91,12 +91,14 @@
         
         @media (max-width: 768px) {
             body { padding-bottom: 64px; }
-            .sidebar { transform: translateX(-100%); transition: 0.3s; }
+            .sidebar { transform: translateX(-100%); transition: 0.3s; z-index: 1001; }
             .sidebar.show { transform: translateX(0); }
             .main-content { margin-left: 0; }
-            .mobile-toggle { display: block !important; }
-            .bottom-nav { display: flex; }
+            .mobile-toggle { display: flex !important; z-index: 1002; }
+            .bottom-nav { display: flex; z-index: 1000; }
             .desktop-only { display: none !important; }
+            #overlay { z-index: 1000 !important; }
+            .topbar { padding: 12px 16px !important; }
         }
         .mobile-toggle { display: none; }
     </style>
@@ -121,9 +123,6 @@
                 </a>
                 <a href="<?php echo e(route('admin.purchases.index')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.purchases.*') ? 'active' : ''); ?>">
                     <i class="bi bi-cart-plus"></i> Закупки
-                </a>
-                <a href="<?php echo e(route('admin.scan-product')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.scan-product*') ? 'active' : ''); ?>">
-                    <i class="bi bi-qr-code-scan"></i> Сканер товаров
                 </a>
                 <a href="<?php echo e(route('admin.qr.scan')); ?>" class="menu-item <?php echo e(request()->routeIs('admin.qr.*') ? 'active' : ''); ?>">
                     <i class="bi bi-qr-code-scan"></i> QR-сканер
@@ -176,9 +175,9 @@
     <!-- Main Content -->
     <div class="main-content">
         <!-- Topbar -->
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); background: #1e293b; position: sticky; top: 0; z-index: 50;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); background: #1e293b; position: sticky; top: 0; z-index: 50;" class="topbar">
             <div style="display: flex; align-items: center; gap: 16px;">
-                <button class="mobile-toggle btn" onclick="toggleSidebar()" style="background: transparent; color: #94a3b8; padding: 8px;">
+                <button class="mobile-toggle btn" onclick="toggleSidebar()" style="background: transparent; color: #94a3b8; padding: 8px; z-index: 1002; position: relative;">
                     <i class="bi bi-list" style="font-size: 24px;"></i>
                 </button>
                 <h1 style="margin: 0; font-size: 20px; font-weight: 600;"><?php echo $__env->yieldContent('page-title', 'NURMAN'); ?></h1>

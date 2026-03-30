@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(composer *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git pull)"
     ]
   },
   "$version": 3

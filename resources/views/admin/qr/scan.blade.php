@@ -452,8 +452,14 @@ async function onScanSuccess(decodedText) {
 function onScanError(error) {}
 
 async function fetchProductInfo(qrData) {
+    console.log('=== fetchProductInfo START ===');
+    console.log('qrData:', qrData);
+    
     try {
-        const response = await fetch('{{ route('admin.qr.process') }}', {
+        // Принудительно используем HTTPS для API endpoint
+        const apiUrl = '{{ route('admin.qr.process') }}'.replace('http://', 'https://');
+        
+        const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -463,13 +469,18 @@ async function fetchProductInfo(qrData) {
             body: JSON.stringify({ qr_data: qrData })
         });
 
+        console.log('Response status:', response.status);
         const data = await response.json();
+        console.log('Response data:', data);
+        
         if (data.success) {
             displayProduct(data);
         } else {
+            console.log('Product not found. Message:', data.message);
             showNotFound(qrData);
         }
     } catch (err) {
+        console.error('Fetch error:', err);
         showNotFound(qrData);
     }
 }

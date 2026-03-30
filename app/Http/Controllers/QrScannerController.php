@@ -43,7 +43,9 @@ class QrScannerController extends Controller
         $qrData = trim($request->qr_data);
 
         // Логирование для отладки
+        \Log::info('===== QR SCAN START =====');
         \Log::info('QR/Barcode Scan received: ' . $qrData);
+        \Log::info('Raw qr_data: ' . json_encode($request->qr_data));
 
         $product = null;
         $foundBy = null; // 'article', 'barcode', или 'json_article'
@@ -51,20 +53,24 @@ class QrScannerController extends Controller
         // Пытаемся извлечь данные из JSON или используем как есть
         try {
             $parsed = json_decode($qrData, true);
+            \Log::info('JSON parse result: ' . json_encode($parsed));
+            \Log::info('JSON error: ' . json_last_error() . ' - ' . json_last_error_msg());
+            
             if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
                 // Это JSON данные (из QR-кода)
                 if (isset($parsed['coupon_id'])) {
                     // Это купонный QR
                     return $this->processCouponScan($parsed);
                 }
-                
+
                 if (isset($parsed['article'])) {
                     $article = $parsed['article'];
                     \Log::info('Extracted article from JSON: ' . $article);
                     $product = Product::where('article', $article)->first();
                     $foundBy = 'json_article';
+                    \Log::info('Product search result: ' . ($product ? 'FOUND' : 'NOT FOUND'));
                 }
-                
+
                 // Если в JSON есть barcode, пробуем найти по нему
                 if (!$product && isset($parsed['barcode'])) {
                     $barcode = $parsed['barcode'];
@@ -96,7 +102,8 @@ class QrScannerController extends Controller
         } catch (\Exception $e) {
             // Игнорируем ошибки парсинга, пробуем простой поиск
             \Log::error('JSON parse error: ' . $e->getMessage());
-            
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+
             // Пробуем найти по артикулу или barcode как строку
             $product = Product::where('article', $qrData)->first();
             if ($product) {
