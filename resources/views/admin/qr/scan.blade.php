@@ -281,8 +281,8 @@
 
 /* Mobile Adaptation */
 @media (max-width: 768px) {
-    body { padding-bottom: 64px !important; }
-    .sidebar { transform: translateX(-100%) !important; transition: 0.3s; }
+    body { padding-bottom: 0 !important; }
+    .sidebar { transform: translateX(-100%) !important; transition: 0.3s; z-index: 1001; }
     .sidebar.show { transform: translateX(0) !important; }
     .main-content { margin-left: 0 !important; padding-top: 0 !important; }
 
@@ -298,9 +298,16 @@
     .lg\\:col-span-5 { display: none !important; }
 
     /* Camera container full viewport */
+    #scanner-wrapper {
+        height: 100dvh !important;
+        width: 100% !important;
+        border-radius: 0 !important;
+    }
+    
     #scanner-container {
         height: 100dvh !important;
         width: 100% !important;
+        border-radius: 0 !important;
     }
 
     /* Manual input positioned at bottom */
@@ -308,9 +315,20 @@
 
     /* Scanner controls at very bottom */
     .absolute.bottom-6 { bottom: 16px !important; }
-    
+
     /* Show scanner indicator on mobile */
     #scan-indicator { top: 16px !important; right: 16px !important; }
+    
+    /* Mobile result overlay - full screen */
+    #mobile-result-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+    }
+    
+    #mobile-drawer {
+        max-height: 95vh !important;
+        border-radius: 24px 24px 0 0 !important;
+    }
 }
 
 /* Desktop hides mobile overlay */
@@ -353,7 +371,7 @@ let html5QrCode = null;
 let isScanning = false;
 let lastScanTime = 0;
 let lastScannedCode = '';
-const SCAN_COOLDOWN = 500; // Уменьшено с 800ms до 500ms для быстрее реакции
+const SCAN_COOLDOWN = 300; // Ещё меньше для быстрой реакции
 let scanInFlight = false;
 let audioContext = null;
 
@@ -422,8 +440,8 @@ document.getElementById('stop-scan').addEventListener('click', stopScanning);
 async function onScanSuccess(decodedText) {
     const now = Date.now();
 
-    // Защита от повторного сканирования того же кода (1 секунда)
-    if (decodedText === lastScannedCode && now - lastScanTime < 1000) {
+    // Защита от повторного сканирования того же кода (300ms)
+    if (decodedText === lastScannedCode && now - lastScanTime < SCAN_COOLDOWN) {
         return;
     }
 
@@ -433,25 +451,27 @@ async function onScanSuccess(decodedText) {
     lastScannedCode = decodedText;
     scanInFlight = true;
 
-    // Громкий сигнал и вибрация
+    // Тихий нежный звук
     playBeep();
-    if (navigator.vibrate) navigator.vibrate(100);
+    if (navigator.vibrate) navigator.vibrate(50);
 
     // Визуальный эффект
     document.getElementById('scanner-wrapper').classList.add('scanner-success');
     setTimeout(() => {
         document.getElementById('scanner-wrapper').classList.remove('scanner-success');
-    }, 200);
+    }, 150);
 
-    // Быстрая обработка - не останавливаем камеру, сразу загружаем продукт
+    // Останавливаем камеру и сразу показываем результат
     try {
+        await stopScanning();
+        // Очищаем память сразу после сканирования
+        lastScannedCode = '';
+        scanInFlight = false;
         await fetchProductInfo(decodedText);
     } catch (e) {
         console.error('Processing error:', e);
-    } finally {
         scanInFlight = false;
-        // Разрешаем повторное сканирование через 1 секунду
-        setTimeout(() => { lastScannedCode = ''; }, 1000);
+        lastScannedCode = '';
     }
 }
 
@@ -503,18 +523,48 @@ function displayProduct(data) {
     const p = data.product;
     const s = data.summary;
 
-    // Always use mobile overlay for consistency
-    const content = document.getElementById('mobile-result-content');
-    content.innerHTML = buildProductHTML(p, s, data);
-    
-    const overlay = document.getElementById('mobile-result-overlay');
-    overlay.classList.remove('hidden');
-    overlay.classList.add('mobile-overlay-visible');
-    overlay.style.display = 'block';
-    
-    setTimeout(() => {
+    // На мобильных - сразу открываем на весь экран
+    if (isMobile()) {
+        const content = document.getElementById('mobile-result-content');
+        content.innerHTML = buildProductHTML(p, s, data);
+
+        const overlay = document.getElementById('mobile-result-overlay');
+        overlay.classList.remove('hidden');
+        overlay.classList.add('mobile-overlay-visible');
+        overlay.style.display = 'block';
+
+        // Мгновенное открытие без задержки
         document.getElementById('mobile-drawer').classList.remove('translate-y-full');
-    }, 10);
+    } else {
+        // На десктопе показываем в правой колонке
+        document.getElementById('result-placeholder').classList.add('hidden');
+        document.getElementById('scan-result').classList.remove('hidden');
+        
+        // Заполняем данные
+        document.getElementById('product-name').textContent = p.name;
+        document.getElementById('product-article').textContent = p.article;
+        document.getElementById('product-retail-price').textContent = formatPrice(p.retail_price);
+        document.getElementById('product-profit').textContent = formatPrice((p.retail_price || 0) - (p.supplier_price || 0));
+        document.getElementById('total-stock').textContent = s.total_stock + ' шт';
+        document.getElementById('showcase-stock').textContent = s.shop_stock + ' шт';
+        document.getElementById('warehouse-stock').textContent = s.warehouse_stock + ' шт';
+        document.getElementById('edit-product-btn').href = '/admin/products/edit/' + p.id;
+        
+        if (p.photo) {
+            document.getElementById('product-photo').src = p.photo;
+        }
+        
+        // Бейджи
+        const badgesContainer = document.getElementById('badges-container');
+        badgesContainer.innerHTML = `
+            <span class="px-3 py-1 bg-success/20 text-success text-[10px] font-black uppercase rounded-lg border border-success/30">
+                ${data.is_known_qr ? '✓ Наш QR' : '⚠ Товар из базы'}
+            </span>
+            <span class="px-3 py-1 bg-white/10 text-white/70 text-[10px] font-bold uppercase rounded-lg">
+                ${getFoundByText(data.found_by)}
+            </span>
+        `;
+    }
 }
 
 function buildProductHTML(p, s, data) {
@@ -656,19 +706,21 @@ function closeMobileResult() {
         overlay.style.display = 'none';
         overlay.classList.remove('mobile-overlay-visible');
         overlay.classList.add('hidden');
-        
-        // Очищаем последний код чтобы можно было сканировать снова
+
+        // Сбрасываем всё
         lastScannedCode = '';
-        resetScannerUI();
-        // Небольшая задержка перед запуском камеры
+        scanInFlight = false;
+        isScanning = false;
+        
+        // Запускаем камеру сразу
         setTimeout(() => {
-            if (!isScanning) startScanning();
-        }, 500);
-    }, 300);
+            startScanning();
+        }, 100);
+    }, 200);
 }
 
 function playBeep() {
-    // Громкий звук через Web Audio API
+    // Нежный тихий звук через Web Audio API
     try {
         if (!audioContext) {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -680,21 +732,21 @@ function playBeep() {
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
         
-        // Громкий короткий сигнал (1000Hz, 150ms)
-        oscillator.frequency.value = 1000;
+        // Мягкий сигнал (800Hz, 100ms) - синусоида для нежного звука
+        oscillator.frequency.value = 800;
         oscillator.type = 'sine';
         
-        // Максимальная громкость
-        gainNode.gain.setValueAtTime(1.0, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+        // Тихая громкость (0.3 = 30%)
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
         
         oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.15);
+        oscillator.stop(audioContext.currentTime + 0.1);
     } catch (e) {
         // Fallback на обычный аудио элемент
         const audio = document.getElementById('scan-sound');
         if (audio) {
-            audio.volume = 1.0;
+            audio.volume = 0.3;
             audio.play().catch(() => {});
         }
     }
