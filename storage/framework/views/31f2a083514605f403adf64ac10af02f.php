@@ -173,16 +173,6 @@
             accent-color: var(--accent-color);
         }
 
-        .forgot-link {
-            color: var(--text-secondary);
-            text-decoration: none;
-            transition: var(--transition);
-        }
-
-        .forgot-link:hover {
-            color: var(--accent-color);
-        }
-
         .btn-submit {
             width: 100%;
             padding: 16px;
@@ -328,7 +318,6 @@
                         <input type="checkbox" name="remember">
                         <span>Запомнить меня</span>
                     </label>
-                    <a href="#" class="forgot-link">Забыли пароль?</a>
                 </div>
 
                 <button type="submit" class="btn-submit" id="submitBtn">
