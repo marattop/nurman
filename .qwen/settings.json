@@ -3,7 +3,8 @@
     "allow": [
       "Bash(composer *)",
       "Bash(git add *)",
-      "Bash(git pull)"
+      "Bash(git pull)",
+      "Bash(git commit *)"
     ]
   },
   "$version": 3
