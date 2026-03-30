@@ -699,28 +699,46 @@ class AdminController extends Controller
         // Проверяем существующий QR
         $existingQr = QrCode::where('variant_id', $variant->id)->first();
         if ($existingQr) {
+            // Если QR уже имеет путь и файл существует - ничего не делаем
+            if (!empty($existingQr->qr_code_path) && file_exists(public_path('storage/' . $existingQr->qr_code_path))) {
+                return true;
+            }
+            
             // Обновляем существующий с новым артикулом
             $existingQr->update([
                 'qr_data' => $qrData,
                 'is_printed' => false,
             ]);
+            
             // Генерируем новый QR-код через API
             $qrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($qrCodeContent);
-            $qrImageContent = file_get_contents($qrImageUrl);
-            if ($qrImageContent !== false) {
-                \Illuminate\Support\Facades\Storage::disk('public')->put($qrCodePath, $qrImageContent);
-                $existingQr->update(['qr_code_path' => $qrCodePath]);
+            try {
+                $qrImageContent = file_get_contents($qrImageUrl);
+                if ($qrImageContent !== false && strlen($qrImageContent) > 0) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->put($qrCodePath, $qrImageContent);
+                    $existingQr->update(['qr_code_path' => $qrCodePath]);
+                    \Log::info("QR сгенерирован: {$qrCodePath}");
+                } else {
+                    \Log::error("QR не сгенерировался - пустой ответ от API: {$qrImageUrl}");
+                }
+            } catch (\Exception $e) {
+                \Log::error("QR ошибка генерации: " . $e->getMessage());
             }
             return true;
         }
 
         // Генерируем QR-код через API
         $qrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($qrCodeContent);
-        $qrImageContent = file_get_contents($qrImageUrl);
-        if ($qrImageContent !== false) {
-            \Illuminate\Support\Facades\Storage::disk('public')->put($qrCodePath, $qrImageContent);
-        } else {
-            \Illuminate\Support\Facades\Storage::disk('public')->put($qrCodePath, '');
+        try {
+            $qrImageContent = file_get_contents($qrImageUrl);
+            if ($qrImageContent !== false && strlen($qrImageContent) > 0) {
+                \Illuminate\Support\Facades\Storage::disk('public')->put($qrCodePath, $qrImageContent);
+                \Log::info("QR сгенерирован: {$qrCodePath}");
+            } else {
+                \Log::error("QR не сгенерировался - пустой ответ от API");
+            }
+        } catch (\Exception $e) {
+            \Log::error("QR ошибка генерации: " . $e->getMessage());
         }
 
         // Создаем новый QR
