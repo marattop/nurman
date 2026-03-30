@@ -119,7 +119,7 @@
         </div>
         
         {{-- Профиль пользователя в sidebar --}}
-        <a href="{{ route('admin.profile.index') }}" class="menu-item" style="margin: 8px; border: 1px solid rgba(56,189,248,0.2); background: rgba(56,189,248,0.05);">
+        <a href="{{ auth()->user()->isSeller() ? route('seller.profile.index') : (auth()->user()->isWarehouse() ? route('warehouse.profile.index') : route('admin.profile.index')) }}" class="menu-item" style="margin: 8px; border: 1px solid rgba(56,189,248,0.2); background: rgba(56,189,248,0.05);">
             <div style="width: 36px; height: 36px; background: #38bdf8; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0f172a; font-weight: 700; font-size: 16px; margin-right: 12px; overflow: hidden;">
                 @if(auth()->user()->avatar)
                     <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->full_name }}" style="width: 100%; height: 100%; object-fit: cover;">
@@ -208,7 +208,7 @@
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
                 {{-- Информация о пользователе --}}
-                <a href="{{ route('admin.profile.index') }}" style="display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: rgba(56,189,248,0.1); border-radius: 12px; border: 1px solid rgba(56,189,248,0.2); text-decoration: none;" class="user-profile-link">
+                <a href="{{ auth()->user()->isSeller() ? route('seller.profile.index') : (auth()->user()->isWarehouse() ? route('warehouse.profile.index') : route('admin.profile.index')) }}" style="display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: rgba(56,189,248,0.1); border-radius: 12px; border: 1px solid rgba(56,189,248,0.2); text-decoration: none;" class="user-profile-link">
                     <div class="user-avatar" style="width: 32px; height: 32px; background: #38bdf8; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0f172a; font-weight: 700; font-size: 14px;">
                         @if(auth()->user()->avatar)
                             <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->full_name }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">

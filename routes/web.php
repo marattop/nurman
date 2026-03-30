@@ -313,6 +313,12 @@ Route::middleware(['auth', 'role:seller'])
             Route::get('today', [SellerController::class, 'todaySales'])->name('today');
         });
 
+        // Профиль продавца
+        Route::prefix('profile')->name('profile.')->group(function () {
+            Route::get('/', [SellerController::class, 'profile'])->name('index');
+            Route::post('update', [SellerController::class, 'updateProfile'])->name('update');
+        });
+
         // Смена
         Route::prefix('shift')->name('shift.')->group(function () {
             Route::get('/', [SellerController::class, 'shift'])->name('index');
@@ -326,6 +332,20 @@ Route::middleware(['auth', 'role:seller'])
 // Управление складом, приёмка, инвентаризация, QR-коды
 // ============================================================================
 // Маршруты определены в Modules/Warehouse/routes/web.php
+
+Route::middleware(['auth', 'role:warehouse'])
+    ->prefix('warehouse')
+    ->name('warehouse.')
+    ->group(function () {
+        // Дашборд
+        Route::get('/', [WarehouseController::class, 'dashboard'])->name('dashboard');
+        
+        // Профиль
+        Route::prefix('profile')->name('profile.')->group(function () {
+            Route::get('/', [WarehouseController::class, 'profile'])->name('index');
+            Route::post('update', [WarehouseController::class, 'updateProfile'])->name('update');
+        });
+    });
 
 // ============================================================================
 // КЛИЕНТ (CLIENT) - Уровень 10
