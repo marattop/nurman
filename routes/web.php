@@ -178,10 +178,6 @@ Route::middleware(['auth', 'role:admin', 'ensure.admin', 'session.activity', '2f
             Route::post('{product}/print-qr', [ProductController::class, 'printQr'])->name('print-qr');
         });
 
-        // Сканер товаров (QR/Штрих-коды)
-        Route::get('scan-product', [AdminController::class, 'scanProduct'])->name('scan-product');
-        Route::post('scan-product/process', [AdminController::class, 'processProductScan'])->name('scan-product.process');
-
         // Клиенты (CRM)
         Route::prefix('customers')->name('customers.')->group(function () {
             Route::get('/', [AdminController::class, 'customers'])->name('index');
@@ -193,6 +189,9 @@ Route::middleware(['auth', 'role:admin', 'ensure.admin', 'session.activity', '2f
             Route::post('coupon/{coupon}/delete', [AdminController::class, 'deleteCoupon'])->name('coupon.delete');
             Route::post('{customerId}/reset-password', [AdminController::class, 'resetPassword'])->name('reset-password');
         });
+
+        // QR-сканер товаров (использует QrScannerController)
+        // Маршруты определены отдельно ниже
 
         // Закупки товаров
         Route::prefix('purchases')->name('purchases.')->group(function () {
@@ -320,73 +319,7 @@ Route::middleware(['auth', 'role:seller'])
 // КЛАДОВЩИК (WAREHOUSE) - Уровень 20
 // Управление складом, приёмка, инвентаризация, QR-коды
 // ============================================================================
-
-Route::middleware(['auth', 'role:warehouse'])
-    ->prefix('warehouse')
-    ->name('warehouse.')
-    ->group(function () {
-        // Дашборд
-        Route::get('/', [WarehouseController::class, 'dashboard'])->name('dashboard');
-
-        // Приёмка товара - используем модульный контроллер
-        Route::prefix('purchases')->name('purchases.')->group(function () {
-            Route::get('/', [\Modules\Warehouse\Http\Controllers\PurchasesController::class, 'index'])->name('index');
-            Route::get('create', [\Modules\Warehouse\Http\Controllers\PurchasesController::class, 'create'])->name('create');
-            Route::post('store', [\Modules\Warehouse\Http\Controllers\PurchasesController::class, 'store'])->name('store');
-            Route::get('edit/{purchase}', [\Modules\Warehouse\Http\Controllers\PurchasesController::class, 'edit'])->name('edit');
-            Route::put('update/{purchase}', [\Modules\Warehouse\Http\Controllers\PurchasesController::class, 'update'])->name('update');
-        });
-
-        // Остатки - используем модульный контроллер
-        Route::prefix('stock')->name('stock.')->group(function () {
-            Route::get('/', [\Modules\Warehouse\Http\Controllers\StockController::class, 'index'])->name('index');
-            Route::get('low', [\Modules\Warehouse\Http\Controllers\StockController::class, 'lowStock'])->name('low');
-            Route::post('adjust', [\Modules\Warehouse\Http\Controllers\StockController::class, 'adjust'])->name('adjust');
-        });
-
-        // Инвентаризация - используем модульный контроллер
-        Route::prefix('inventory')->name('inventory.')->group(function () {
-            Route::get('/', [\Modules\Warehouse\Http\Controllers\InventoryController::class, 'index'])->name('index');
-            Route::post('start', [\Modules\Warehouse\Http\Controllers\InventoryController::class, 'start'])->name('start');
-            Route::post('complete', [\Modules\Warehouse\Http\Controllers\InventoryController::class, 'complete'])->name('complete');
-        });
-
-        // Печать QR - модульный контроллер
-        Route::prefix('qrcodes')->name('qrcodes.')->group(function () {
-            Route::get('/', [\Modules\Warehouse\Http\Controllers\QrCodeController::class, 'index'])->name('index');
-            Route::get('batch-print', [\Modules\Warehouse\Http\Controllers\QrCodeController::class, 'batchPrint'])->name('batch-print');
-            Route::post('generate', [\Modules\Warehouse\Http\Controllers\QrCodeController::class, 'generate'])->name('generate');
-            Route::get('{qrCode}/print', [\Modules\Warehouse\Http\Controllers\QrCodeController::class, 'print'])->name('print');
-        });
-
-        // Списание товара
-        Route::prefix('writeoff')->name('writeoff.')->group(function () {
-            Route::get('/', [WarehouseController::class, 'writeoff'])->name('index');
-            Route::post('create', [WarehouseController::class, 'createWriteoff'])->name('create');
-            Route::get('pending', [WarehouseController::class, 'pendingWriteoff'])->name('pending');
-        });
-
-        // Перемещение товара
-        Route::prefix('transfers')->name('transfers.')->group(function () {
-            Route::get('/', [WarehouseController::class, 'transfers'])->name('index');
-            Route::post('create', [WarehouseController::class, 'createTransfer'])->name('create');
-        });
-
-        // Товары - модульный контроллер
-        Route::prefix('products')->name('products.')->group(function () {
-            Route::get('/', [\Modules\Warehouse\Http\Controllers\ProductsController::class, 'index'])->name('index');
-            Route::post('/', [\Modules\Warehouse\Http\Controllers\ProductsController::class, 'store'])->name('store');
-            Route::get('create', [\Modules\Warehouse\Http\Controllers\ProductsController::class, 'create'])->name('create');
-            Route::get('{product}/edit', [\Modules\Warehouse\Http\Controllers\ProductsController::class, 'edit'])->name('edit');
-            Route::put('{product}', [\Modules\Warehouse\Http\Controllers\ProductsController::class, 'update'])->name('update');
-        });
-
-        // Магазины - модульный контроллер
-        Route::prefix('shops')->name('shops.')->group(function () {
-            Route::get('/', [\Modules\Warehouse\Http\Controllers\ShopsController::class, 'index'])->name('index');
-            Route::get('{shop}', [\Modules\Warehouse\Http\Controllers\ShopsController::class, 'show'])->name('show');
-        });
-    });
+// Маршруты определены в Modules/Warehouse/routes/web.php
 
 // ============================================================================
 // КЛИЕНТ (CLIENT) - Уровень 10

@@ -9,15 +9,15 @@
 
         <!-- Scanner Column -->
         <div class="lg:col-span-7 space-y-6">
-            <div class="glass overflow-hidden rounded-[2rem] relative aspect-[4/5] md:aspect-square bg-black shadow-2xl border-white/10">
+            <div id="scanner-wrapper" class="glass overflow-hidden rounded-[2rem] relative aspect-[4/5] md:aspect-square bg-black shadow-2xl border-white/10">
                 <!-- Camera Viewport -->
-                <div id="scanner-container" class="absolute inset-0"></div>
+                <div id="scanner-container" class="absolute inset-0 rounded-[2rem] overflow-hidden"></div>
 
-                <!-- Overlay Gradients -->
-                <div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-black/30"></div>
+                <!-- Overlay Gradients - ПОВЕРХ видео -->
+                <div class="scanner-overlay absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-black/30 rounded-[2rem]" style="opacity: 1;"></div>
 
-                <!-- Scanning Frame -->
-                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <!-- Scanning Frame - ПОВЕРХ видео -->
+                <div class="scanner-overlay absolute inset-0 flex items-center justify-center pointer-events-none rounded-[2rem]" style="opacity: 1;">
                     <div class="w-64 h-64 md:w-80 md:h-80 border-2 border-white/20 rounded-[2rem] relative">
                         <!-- Corners -->
                         <div class="absolute -top-1 -left-1 w-12 h-12 border-t-4 border-l-4 border-accent rounded-tl-3xl"></div>
@@ -31,7 +31,7 @@
                 </div>
 
                 <!-- Manual Input (Floating) -->
-                <div class="absolute bottom-24 left-6 right-6 z-10">
+                <div class="absolute bottom-24 left-6 right-6" style="z-index: 30;">
                     <div class="glass p-2 rounded-2xl flex items-center gap-2 border-white/20 shadow-xl">
                         <input type="text" id="manual-article" placeholder="Введите артикул вручную..."
                             class="flex-1 bg-transparent border-none text-white placeholder-white/40 px-4 py-2 focus:ring-0 text-sm"
@@ -43,7 +43,7 @@
                 </div>
 
                 <!-- Scanner Controls -->
-                <div class="absolute bottom-6 left-0 right-0 flex justify-center gap-4 z-10 px-6">
+                <div class="absolute bottom-6 left-0 right-0 flex justify-center gap-4 px-6" style="z-index: 30;">
                     <button id="start-scan" class="flex-1 glass py-4 rounded-2xl flex items-center justify-center gap-3 font-bold text-white hover:bg-white/10 transition-all border-white/20">
                         <i class="bi bi-camera-fill text-xl text-accent"></i> Запустить камеру
                     </button>
@@ -53,7 +53,7 @@
                 </div>
 
                 <!-- Status Badge -->
-                <div id="scan-indicator" class="hidden absolute top-6 right-6 z-10">
+                <div id="scan-indicator" class="hidden absolute top-6 right-6" style="z-index: 30;">
                     <div class="bg-success text-bg px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg animate-pulse">
                         <span class="w-2 h-2 bg-bg rounded-full animate-ping"></span> Активно
                     </div>
@@ -158,9 +158,9 @@
 </div>
 
 <!-- Mobile Drawer Result Overlay -->
-<div id="mobile-result-overlay" class="fixed inset-0 z-[100] hidden">
+<div id="mobile-result-overlay" class="fixed inset-0 z-[9999]" style="display: none;">
     <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeMobileResult()"></div>
-    <div class="absolute bottom-0 left-0 right-0 glass rounded-t-[2.5rem] border-t border-white/20 p-6 transform translate-y-full transition-transform duration-300 ease-out max-h-[90vh] overflow-y-auto" id="mobile-drawer">
+    <div class="absolute bottom-0 left-0 right-0 glass rounded-t-[2.5rem] border-t border-white/20 p-6 transform translate-y-full transition-transform duration-300 ease-out max-h-[90vh] overflow-y-auto" id="mobile-drawer" style="z-index: 10000; position: relative;">
         <div class="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-8"></div>
         <div id="mobile-result-content"></div>
     </div>
@@ -173,46 +173,122 @@
     90% { opacity: 1; }
     100% { top: 100%; opacity: 0; }
 }
+
+/* Анимация успешного сканирования */
+@keyframes scan-success {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Пульсация при сканировании */
+@keyframes scanning-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); }
+    50% { box-shadow: 0 0 0 20px rgba(168, 85, 247, 0); }
+}
+
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Glass morphism effect */
+.glass {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Улучшенная рамка сканера */
+.scanner-active #scanner-container {
+    animation: scanning-pulse 2s infinite;
+}
+
+.scanner-success {
+    animation: scan-success 0.3s ease-in-out;
+}
+
+/* Видео превью для мобильных */
+#scanner-container {
+    background: #000;
+    border-radius: 2rem;
+}
+
+#scanner-container video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    border-radius: 2rem;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.scanner-overlay {
+    z-index: 2;
+}
+
 /* Mobile Adaptation */
 @media (max-width: 768px) {
-    body { padding-bottom: 0 !important; }
-    .sidebar { display: none !important; }
-    .bottom-nav { display: none !important; }
+    body { padding-bottom: 64px !important; }
+    .sidebar { transform: translateX(-100%) !important; transition: 0.3s; }
+    .sidebar.show { transform: translateX(0) !important; }
     .main-content { margin-left: 0 !important; padding-top: 0 !important; }
-    
+
     /* Hide page header on mobile */
     .qr-scan-header { display: none !important; }
-    
+
     /* Full width container */
     .max-w-5xl { max-width: 100% !important; padding: 0 !important; }
     .grid { gap: 0 !important; }
-    
+
     /* Scanner full screen */
     .lg\\:col-span-7 { grid-column: span 12 !important; }
     .lg\\:col-span-5 { display: none !important; }
-    
-    /* Result overlay for mobile */
-    #mobile-result-overlay { display: block !important; }
-    
+
     /* Camera container full viewport */
     #scanner-container {
         height: 100dvh !important;
         width: 100% !important;
     }
-    
+
     /* Manual input positioned at bottom */
     .absolute.bottom-24 { bottom: 80px !important; }
-    
+
     /* Scanner controls at very bottom */
     .absolute.bottom-6 { bottom: 16px !important; }
+    
+    /* Show scanner indicator on mobile */
+    #scan-indicator { top: 16px !important; right: 16px !important; }
 }
 
 /* Desktop hides mobile overlay */
 @media (min-width: 769px) {
     #mobile-result-overlay { display: none !important; }
+}
+
+/* Mobile overlay visibility classes */
+.mobile-overlay-visible {
+    display: block !important;
+}
+
+.mobile-overlay-hidden {
+    display: none !important; }
+
+/* Mobile overlay explicit styles */
+#mobile-result-overlay {
+    display: none;
+}
+
+#mobile-result-overlay.mobile-overlay-visible {
+    display: block !important;
+}
+
+#mobile-drawer {
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 }
 </style>
 
@@ -226,14 +302,14 @@ let html5QrCode = null;
 let isScanning = false;
 let lastScanTime = 0;
 let lastScannedCode = '';
-const SCAN_COOLDOWN = 1500; // Увеличено до 1.5 сек
+const SCAN_COOLDOWN = 800;
 let scanInFlight = false;
 
 function isMobile() {
-    return window.matchMedia('(max-width: 1024px)').matches;
+    return window.matchMedia('(max-width: 768px)').matches;
 }
 
-function startScanning() {
+async function startScanning() {
     if (isScanning) return;
     isScanning = true;
     scanInFlight = false;
@@ -241,15 +317,16 @@ function startScanning() {
     document.getElementById('start-scan').classList.add('hidden');
     document.getElementById('stop-scan').classList.remove('hidden');
     document.getElementById('scan-indicator').classList.remove('hidden');
+    document.getElementById('scanner-wrapper').classList.add('scanner-active');
 
     html5QrCode = new Html5Qrcode('scanner-container');
 
-    const qrBoxSize = Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.7);
+    const qrBoxSize = Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.6);
 
     html5QrCode.start(
         { facingMode: 'environment' },
         {
-            fps: 24,
+            fps: 10,
             qrbox: { width: qrBoxSize, height: qrBoxSize },
             aspectRatio: 1,
             disableFlip: false
@@ -259,7 +336,7 @@ function startScanning() {
     ).catch(err => {
         console.error('Scanner error:', err);
         resetScannerUI();
-        alert('Не удалось получить доступ к камере');
+        alert('Не удалось запустить камеру. Проверьте разрешения.');
     });
 }
 
@@ -268,6 +345,7 @@ function resetScannerUI() {
     document.getElementById('start-scan').classList.remove('hidden');
     document.getElementById('stop-scan').classList.add('hidden');
     document.getElementById('scan-indicator').classList.add('hidden');
+    document.getElementById('scanner-wrapper').classList.remove('scanner-active');
 }
 
 function stopScanning() {
@@ -282,12 +360,11 @@ document.getElementById('stop-scan').addEventListener('click', stopScanning);
 
 async function onScanSuccess(decodedText) {
     const now = Date.now();
-    
-    // Защита от повторного сканирования того же кода
-    if (decodedText === lastScannedCode && now - lastScanTime < 3000) {
-        return; // Игнорируем тот же код в течение 3 секунд
+
+    if (decodedText === lastScannedCode && now - lastScanTime < 2000) {
+        return;
     }
-    
+
     if (now - lastScanTime < SCAN_COOLDOWN || scanInFlight) return;
 
     lastScanTime = now;
@@ -295,17 +372,21 @@ async function onScanSuccess(decodedText) {
     scanInFlight = true;
 
     playBeep();
-    if (navigator.vibrate) navigator.vibrate(100);
+    if (navigator.vibrate) navigator.vibrate(200);
+
+    document.getElementById('scanner-wrapper').classList.add('scanner-success');
+    setTimeout(() => {
+        document.getElementById('scanner-wrapper').classList.remove('scanner-success');
+    }, 300);
 
     try {
         await stopScanning();
         await fetchProductInfo(decodedText);
     } catch (e) {
-        console.error(e);
+        console.error('Processing error:', e);
     } finally {
         scanInFlight = false;
-        // Очищаем последний код через 5 секунд
-        setTimeout(() => { lastScannedCode = ''; }, 5000);
+        setTimeout(() => { lastScannedCode = ''; }, 3000);
     }
 }
 
@@ -317,7 +398,8 @@ async function fetchProductInfo(qrData) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
             },
             body: JSON.stringify({ qr_data: qrData })
         });
@@ -348,8 +430,15 @@ function displayProduct(data) {
     // Always use mobile overlay for consistency
     const content = document.getElementById('mobile-result-content');
     content.innerHTML = buildProductHTML(p, s, data);
-    document.getElementById('mobile-result-overlay').style.display = 'block';
-    setTimeout(() => document.getElementById('mobile-drawer').classList.remove('translate-y-full'), 10);
+    
+    const overlay = document.getElementById('mobile-result-overlay');
+    overlay.classList.remove('hidden');
+    overlay.classList.add('mobile-overlay-visible');
+    overlay.style.display = 'block';
+    
+    setTimeout(() => {
+        document.getElementById('mobile-drawer').classList.remove('translate-y-full');
+    }, 10);
 }
 
 function buildProductHTML(p, s, data) {
@@ -373,7 +462,7 @@ function buildProductHTML(p, s, data) {
                     <div class="text-xs text-white">
                         ${[v.size, v.color].filter(Boolean).join(' • ') || '—'}
                     </div>
-                    <div class="text-xs font-bold text-accent">${v.total_stock} шт</div>
+                    <div class="text-xs font-bold text-accent">${v.total_quantity} шт</div>
                 </div>
             `).join('')}
             ${p.variants.length > 3 ? `<div class="text-[10px] text-muted text-center mt-2">+ ещё ${p.variants.length - 3}</div>` : ''}
@@ -425,11 +514,11 @@ function buildProductHTML(p, s, data) {
             </div>
             
             ${variantsHTML}
-            
+
             <a href="/admin/products/edit/${p.id}" class="block w-full bg-accent hover:bg-accent-hover text-bg text-center py-4 rounded-2xl font-black transition-all">
                 <i class="bi bi-pencil-square"></i> Изменить товар
             </a>
-            
+
             <button onclick="closeMobileResult()" class="w-full glass py-4 rounded-2xl font-bold text-white transition-all">
                 <i class="bi bi-arrow-clockwise"></i> Сканировать снова
             </button>
@@ -448,7 +537,8 @@ function getFoundByText(foundBy) {
 }
 
 function formatPrice(price) {
-    return (price || 0).toFixed(2) + ' сом';
+    const num = parseFloat(price) || 0;
+    return num.toFixed(2) + ' сом';
 }
 
 function showNotFound(qrData) {
@@ -463,13 +553,16 @@ function showNotFound(qrData) {
                 Отсканированные данные:<br>
                 <code class="text-xs bg-white/5 px-2 py-1 rounded mt-1 block">${qrData}</code>
             </p>
-            <button onclick="closeMobileResult(); resetScannerUI(); startScanning();" 
+            <button onclick="closeMobileResult(); resetScannerUI(); startScanning();"
                     class="bg-accent hover:bg-accent-hover text-bg px-6 py-3 rounded-xl font-bold w-full">
                 <i class="bi bi-camera"></i> Сканировать снова
             </button>
         </div>
     `;
-    document.getElementById('mobile-result-overlay').style.display = 'block';
+    const overlay = document.getElementById('mobile-result-overlay');
+    overlay.classList.remove('hidden');
+    overlay.classList.add('mobile-overlay-visible');
+    overlay.style.display = 'block';
     setTimeout(() => document.getElementById('mobile-drawer').classList.remove('translate-y-full'), 10);
 }
 
@@ -483,7 +576,11 @@ function clearResult() {
 function closeMobileResult() {
     document.getElementById('mobile-drawer').classList.add('translate-y-full');
     setTimeout(() => {
-        document.getElementById('mobile-result-overlay').style.display = 'none';
+        const overlay = document.getElementById('mobile-result-overlay');
+        overlay.style.display = 'none';
+        overlay.classList.remove('mobile-overlay-visible');
+        overlay.classList.add('hidden');
+        
         // Очищаем последний код чтобы можно было сканировать снова
         lastScannedCode = '';
         resetScannerUI();
