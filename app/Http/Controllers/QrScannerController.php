@@ -156,8 +156,9 @@ class QrScannerController extends Controller
                 'category' => $product->category?->name ?? '—',
                 'photo' => $product->photo ? asset('storage/' . $product->photo) : null,
                 'retail_price' => $product->retail_price ?? 0,
-                'supplier_price' => $product->supplier_price ?? 0,
-                'wholesale_price' => $product->wholesale_price ?? 0,
+                // Берём supplier_price и wholesale_price из первого варианта
+                'supplier_price' => $variants->first()->supplier_price ?? $product->retail_price ?? 0,
+                'wholesale_price' => $variants->first()->wholesale_price ?? $product->retail_price ?? 0,
                 'variants' => $variants,
             ],
             'summary' => [

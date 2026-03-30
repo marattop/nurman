@@ -321,11 +321,23 @@
     #mobile-result-overlay {
         position: fixed !important;
         inset: 0 !important;
+        z-index: 9999 !important;
     }
     
+    #mobile-result-overlay .absolute {
+        z-index: 1 !important;
+    }
+
     #mobile-drawer {
-        max-height: 95vh !important;
+        max-height: 90vh !important;
         border-radius: 24px 24px 0 0 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    
+    /* Убираем скругления для overlay на мобильном */
+    #mobile-result-overlay > div:first-child {
+        border-radius: 0 !important;
     }
 }
 
@@ -566,7 +578,6 @@ function displayProduct(data) {
 }
 
 function buildProductHTML(p, s, data) {
-    const profit = (p.retail_price || 0) - (p.supplier_price || 0);
     const badges = data ? `
         <div class="flex gap-2 mb-3">
             <span class="px-3 py-1 bg-success/20 text-success text-[10px] font-black uppercase rounded-lg border border-success/30">
@@ -577,7 +588,7 @@ function buildProductHTML(p, s, data) {
             </span>
         </div>
     ` : '';
-    
+
     const variantsHTML = p.variants && p.variants.length > 0 ? `
         <div class="glass p-4 rounded-xl mb-4">
             <div class="text-[10px] text-muted uppercase font-bold mb-2">Варианты (${p.variants.length})</div>
@@ -593,32 +604,38 @@ function buildProductHTML(p, s, data) {
         </div>
     ` : '';
 
+    // Информация о товаре (страна, материал, бренд)
+    const productInfo = [
+        (p.brand && p.brand !== 'null') ? `<div class="text-xs"><span class="text-[9px] uppercase text-muted">Бренд:</span> ${p.brand}</div>` : '',
+        (p.material && p.material !== 'null') ? `<div class="text-xs"><span class="text-[9px] uppercase text-muted">Материал:</span> ${p.material}</div>` : '',
+        (p.country && p.country !== 'null') ? `<div class="text-xs"><span class="text-[9px] uppercase text-muted">Страна:</span> ${p.country}</div>` : '',
+        (p.category && p.category !== '—') ? `<div class="text-xs"><span class="text-[9px] uppercase text-muted">Категория:</span> ${p.category}</div>` : ''
+    ].filter(Boolean).join('');
+
     return `
         <div class="space-y-4 pb-8">
             ${badges}
-            
+
             <div class="text-center">
-                <img src="${p.photo || 'data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"200\" viewBox=\"0 0 200 200\"%3E%3Crect fill=\"%23e2e8f0\" width=\"200\" height=\"200\"/%3E%3Ctext fill=\"%2394a3b8\" font-family=\"Arial\" font-size=\"14\" x=\"50%25\" y=\"50%25\" text-anchor=\"middle\" dominant-baseline=\"middle\"%3EНет фото%3C/text%3E%3C/svg%3E'}" 
-                     class="w-48 h-48 object-cover rounded-2xl mx-auto mb-4 border-2 border-white/10">
+                <img src="${p.photo || 'data:image/svg+xml,%3Csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"200\" viewBox=\"0 0 200 200\"%3E%3Crect fill=\"%23e2e8f0\" width=\"200\" height=\"200\"/%3E%3Ctext fill=\"%2394a3b8\" font-family=\"Arial\" font-size=\"14\" x=\"50%25\" y=\"50%25\" text-anchor=\"middle\" dominant-baseline=\"middle\"%3EНет фото%3C/text%3E%3C/svg%3E'}"
+                     class="w-40 h-40 object-cover rounded-2xl mx-auto mb-3 border-2 border-white/10">
                 <h3 class="text-lg font-black text-white mb-1">${p.name}</h3>
                 <p class="text-xs text-muted">Артикул: <span class="font-mono text-accent">${p.article}</span></p>
             </div>
-            
-            <div class="grid grid-cols-3 gap-2">
+
+            ${productInfo ? `<div class="glass p-3 rounded-xl mb-3">${productInfo}</div>` : ''}
+
+            <div class="grid grid-cols-2 gap-2">
                 <div class="glass p-3 rounded-xl text-center">
                     <div class="text-[9px] text-muted uppercase">Розница</div>
                     <div class="text-sm font-black text-success">${formatPrice(p.retail_price)}</div>
                 </div>
                 <div class="glass p-3 rounded-xl text-center">
-                    <div class="text-[9px] text-muted uppercase">Опт</div>
-                    <div class="text-sm font-black text-warning">${formatPrice(p.wholesale_price)}</div>
-                </div>
-                <div class="glass p-3 rounded-xl text-center">
-                    <div class="text-[9px] text-muted uppercase">Прибыль</div>
-                    <div class="text-sm font-black text-accent">${(profit > 0 ? '+' : '') + formatPrice(profit)}</div>
+                    <div class="text-[9px] text-muted uppercase">Закупка</div>
+                    <div class="text-sm font-black text-warning">${formatPrice(p.supplier_price || p.wholesale_price || 0)}</div>
                 </div>
             </div>
-            
+
             <div class="glass p-4 rounded-xl">
                 <div class="text-[9px] text-muted uppercase mb-2">Остатки</div>
                 <div class="flex justify-between items-center mb-2">
@@ -636,7 +653,7 @@ function buildProductHTML(p, s, data) {
                     </div>
                 </div>
             </div>
-            
+
             ${variantsHTML}
 
             <a href="/admin/products/edit/${p.id}" class="block w-full bg-accent hover:bg-accent-hover text-bg text-center py-4 rounded-2xl font-black transition-all">
@@ -644,7 +661,7 @@ function buildProductHTML(p, s, data) {
             </a>
 
             <button onclick="closeMobileResult()" class="w-full glass py-4 rounded-2xl font-bold text-white transition-all">
-                <i class="bi bi-arrow-clockwise"></i> Сканировать снова
+                <i class="bi bi-camera"></i> Сканировать снова
             </button>
         </div>
     `;
@@ -698,9 +715,13 @@ function clearResult() {
 }
 
 function closeMobileResult() {
-    document.getElementById('mobile-drawer').classList.add('translate-y-full');
+    const drawer = document.getElementById('mobile-drawer');
+    const overlay = document.getElementById('mobile-result-overlay');
+    
+    // Закрываем drawer
+    drawer.classList.add('translate-y-full');
+    
     setTimeout(() => {
-        const overlay = document.getElementById('mobile-result-overlay');
         overlay.style.display = 'none';
         overlay.classList.remove('mobile-overlay-visible');
         overlay.classList.add('hidden');
@@ -711,10 +732,8 @@ function closeMobileResult() {
         isScanning = false;
         
         // Запускаем камеру сразу
-        setTimeout(() => {
-            startScanning();
-        }, 100);
-    }, 200);
+        startScanning();
+    }, 250);
 }
 
 function playBeep() {
