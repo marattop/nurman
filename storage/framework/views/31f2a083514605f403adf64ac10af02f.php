@@ -252,38 +252,6 @@
             text-decoration: underline;
         }
 
-        .credentials-box {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .credentials-title {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            color: var(--text-secondary);
-            text-align: center;
-            margin-bottom: 12px;
-        }
-
-        .credentials-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: center;
-        }
-
-        .credential-tag {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            padding: 4px 10px;
-            border-radius: 2px;
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            font-family: monospace;
-        }
-
         .copyright {
             text-align: center;
             margin-top: 30px;
@@ -370,17 +338,8 @@
             </form>
 
             <div class="register-hint">
-                Нет аккаунта? 
+                Нет аккаунта?
                 <a href="<?php echo e(route('client.register')); ?>">Создать профиль</a>
-            </div>
-
-            <div class="credentials-box">
-                <p class="credentials-title">Тестовый доступ</p>
-                <div class="credentials-list">
-                    <span class="credential-tag">admin / admin123</span>
-                    <span class="credential-tag">seller1 / seller123</span>
-                    <span class="credential-tag">warehouse1 / warehouse123</span>
-                </div>
             </div>
 
             <div class="copyright">

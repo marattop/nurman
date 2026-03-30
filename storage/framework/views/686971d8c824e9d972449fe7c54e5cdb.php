@@ -206,7 +206,7 @@
     .pay-method-pill.active { background: rgba(16,185,129,0.15); border-color: #10b981; color: #10b981; font-weight: 700; }
     .pos-change-text { margin-top: 10px; text-align: right; color: #94a3b8; font-size: 13px; }
 
-    .pos-mobile-cart-btn { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 30px; background: #10b981; color: #0f172a; font-size: 24px; display: none; z-index: 1000; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+    .pos-mobile-cart-btn { position: fixed; bottom: 80px; right: 20px; width: 60px; height: 60px; border-radius: 30px; background: #10b981; color: #0f172a; font-size: 24px; display: none; z-index: 1000; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
     .pos-mobile-cart-btn span { position: absolute; top: 0; right: 0; background: #ef4444; color: #fff; font-size: 11px; width: 22px; height: 22px; border-radius: 11px; display: flex; align-items: center; justify-content: center; border: 2px solid #10b981; }
 
     @media (max-width: 1024px) {
