@@ -1564,10 +1564,10 @@ class AdminController extends Controller
     public function resetPassword($customerId)
     {
         $customer = User::findOrFail($customerId);
-        
+
         // Генерируем новый пароль
         $password = substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 8);
-        
+
         $customer->update([
             'password' => Hash::make($password),
         ]);
@@ -1577,6 +1577,34 @@ class AdminController extends Controller
             'password' => $password,
             'message' => 'Пароль сброшен'
         ]);
+    }
+
+    /**
+     * Удаление клиента полностью из базы.
+     */
+    public function deleteCustomer(User $customer)
+    {
+        // Проверяем что это клиент (роль 5)
+        if ($customer->role_id != 5) {
+            return response()->json(['success' => false, 'message' => 'Можно удалять только клиентов'], 403);
+        }
+
+        // Удаляем все купоны клиента
+        $customer->myCoupons()->delete();
+
+        // Удаляем профиль клиента
+        $customer->customerProfile()->delete();
+
+        // Удаляем самого клиента
+        $customer->delete();
+
+        ActivityLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'customer_delete',
+            'description' => 'Удалён клиент: ' . ($customer->full_name ?? $customer->phone),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Клиент удалён']);
     }
 
     /**

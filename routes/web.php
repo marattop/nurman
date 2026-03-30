@@ -187,7 +187,8 @@ Route::middleware(['auth', 'role:admin', 'ensure.admin', 'session.activity', '2f
             Route::post('coupon/{coupon}/block', [AdminController::class, 'toggleBlockCoupon'])->name('coupon.block');
             Route::post('coupon/{coupon}/unblock', [AdminController::class, 'unblockCoupon'])->name('coupon.unblock');
             Route::post('coupon/{coupon}/delete', [AdminController::class, 'deleteCoupon'])->name('coupon.delete');
-            Route::post('{customerId}/reset-password', [AdminController::class, 'resetPassword'])->name('reset-password');
+            Route::post('{customer}/delete', [AdminController::class, 'deleteCustomer'])->name('delete');
+            Route::post('{customer}/reset-password', [AdminController::class, 'resetPassword'])->name('reset-password');
         });
 
         // QR-сканер товаров (использует QrScannerController)
