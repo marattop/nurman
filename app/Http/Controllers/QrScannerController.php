@@ -132,6 +132,15 @@ class QrScannerController extends Controller
 
         // Получаем все варианты товара с полной информацией
         $variants = $this->getVariantsWithStock($product);
+        
+        // Берём цены напрямую из БД для точности
+        $firstVariantDB = ProductVariant::where('product_id', $product->id)
+            ->orderBy('id')
+            ->first(['supplier_price', 'wholesale_price']);
+        $supplierPrice = $firstVariantDB ? floatval($firstVariantDB->supplier_price) : floatval($product->retail_price);
+        $wholesalePrice = $firstVariantDB ? floatval($firstVariantDB->wholesale_price) : floatval($product->retail_price);
+        
+        \Log::info('DB supplier_price: ' . $supplierPrice . ', wholesale_price: ' . $wholesalePrice);
 
         // "Наш" QR: проверяем, существует ли QR-код в системе для этого товара
         $isKnownQr = QrCode::whereIn('variant_id', function ($q) use ($product) {
@@ -155,10 +164,10 @@ class QrScannerController extends Controller
                 'brand' => $product->brand,
                 'category' => $product->category?->name ?? '—',
                 'photo' => $product->photo ? asset('storage/' . $product->photo) : null,
-                'retail_price' => $product->retail_price ?? 0,
-                // Берём supplier_price и wholesale_price из первого варианта
-                'supplier_price' => $variants->first()->supplier_price ?? $product->retail_price ?? 0,
-                'wholesale_price' => $variants->first()->wholesale_price ?? $product->retail_price ?? 0,
+                'retail_price' => floatval($product->retail_price ?? 0),
+                // Реальные цены из БД
+                'supplier_price' => $supplierPrice,
+                'wholesale_price' => $wholesalePrice,
                 'variants' => $variants,
             ],
             'summary' => [
