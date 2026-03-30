@@ -184,12 +184,11 @@
                 <a href="{{ route('admin.activity-log') }}" class="menu-item {{ request()->routeIs('admin.activity-log') ? 'active' : '' }}">
                     <i class="bi bi-journal-text"></i> Журнал
                 </a>
-                
-                {{-- Logout for Mobile Sidebar --}}
-                <div class="md:hidden border-t border-white/5 mt-4 pt-4">
-                    <button type="button" class="menu-item text-danger w-full text-left" 
-                       onclick="showLogoutModal()">
-                        <i class="bi bi-box-arrow-right"></i> Выход
+
+                {{-- Выход в конце меню --}}
+                <div class="border-t border-white/5 mt-4 pt-4">
+                    <button type="button" class="menu-item text-danger w-full text-left" onclick="showLogoutModal()">
+                        <i class="bi bi-box-arrow-right"></i> Выйти
                     </button>
                 </div>
             @endif
@@ -222,11 +221,6 @@
                     </div>
                 </a>
                 
-                <button type="button" class="btn btn-danger"
-                   onclick="showLogoutModal()"
-                   style="padding: 8px 16px;">
-                    <i class="bi bi-box-arrow-right"></i> <span class="desktop-only">Выход</span>
-                </button>
                 <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">@csrf</form>
             </div>
         </div>
