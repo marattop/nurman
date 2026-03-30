@@ -9,7 +9,7 @@
 
         <!-- Scanner Column -->
         <div class="lg:col-span-7 space-y-6">
-            <div id="scanner-wrapper" class="glass overflow-hidden rounded-[2rem] relative aspect-[4/5] md:aspect-square bg-black shadow-2xl border-white/10">
+            <div id="scanner-wrapper" class="glass overflow-visible rounded-[2rem] relative aspect-[4/5] md:aspect-square bg-black shadow-2xl border-white/10">
                 <!-- Camera Viewport -->
                 <div id="scanner-container" class="absolute inset-0 rounded-[2rem] overflow-hidden"></div>
 
@@ -208,25 +208,75 @@
     animation: scan-success 0.3s ease-in-out;
 }
 
-/* Видео превью для мобильных */
+/* Видео превью - базовые стили */
 #scanner-container {
     background: #000;
-    border-radius: 2rem;
-}
-
-#scanner-container video {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover;
     border-radius: 2rem;
     position: absolute;
     top: 0;
     left: 0;
-    z-index: 1;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 500px;
+    overflow: hidden;
+    z-index: 0 !important;
+}
+
+/* Стили для видео от html5-qrcode библиотеки */
+#scanner-container video,
+#scanner-container .__scanner video,
+#scanner-container video#__scan_video {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    min-width: 100% !important;
+    object-fit: cover;
+    border-radius: 2rem;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 10 !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Контейнер сканирования от библиотеки */
+#scanner-container .__scanner {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 0 !important;
+    background: #000 !important;
 }
 
 .scanner-overlay {
-    z-index: 2;
+    z-index: 20 !important;
+}
+
+/* Принудительное отображение видео на десктопе */
+@media (min-width: 769px) {
+    #scanner-container video,
+    #scanner-container .__scanner video,
+    #scanner-container video#__scan_video {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* Явная высота для десктопа */
+    #scanner-wrapper {
+        min-height: 500px !important;
+    }
+    
+    #scanner-container {
+        height: 100% !important;
+        min-height: 500px !important;
+    }
 }
 
 /* Mobile Adaptation */
@@ -321,10 +371,18 @@ async function startScanning() {
 
     html5QrCode = new Html5Qrcode('scanner-container');
 
-    const qrBoxSize = Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.6);
+    // Вычисляем размер сканера от контейнера, а не от окна
+    const container = document.getElementById('scanner-container');
+    const containerSize = Math.min(container.clientWidth, container.clientHeight);
+    const qrBoxSize = Math.floor(containerSize * 0.7);
+
+    // Пробуем сначала rear камеру, потом user (для вебок десктопа)
+    const cameraConfig = isMobile()
+        ? { facingMode: 'environment' }  // задняя камера на мобильном
+        : { facingMode: 'user' };        // веб-камера на десктопе
 
     html5QrCode.start(
-        { facingMode: 'environment' },
+        cameraConfig,
         {
             fps: 10,
             qrbox: { width: qrBoxSize, height: qrBoxSize },
@@ -333,10 +391,11 @@ async function startScanning() {
         },
         onScanSuccess,
         onScanError
-    ).catch(err => {
+    )
+    .catch(err => {
         console.error('Scanner error:', err);
         resetScannerUI();
-        alert('Не удалось запустить камеру. Проверьте разрешения.');
+        alert('Не удалось запустить камеру. Проверьте разрешения браузера для камеры.');
     });
 }
 

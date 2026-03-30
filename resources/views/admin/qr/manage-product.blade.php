@@ -136,7 +136,9 @@
                                 @if($hasQr)
                                     @php
                                         $qrContent = $variantQr->qr_data['article'] ?? $product->article;
-                                        $qrImageUrl = $variantQr->qr_code_path ? asset('storage/' . $variantQr->qr_code_path) : 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . urlencode($qrContent);
+                                        $qrImageUrl = $variantQr->qr_code_path && file_exists(public_path('storage/' . $variantQr->qr_code_path))
+                                            ? asset('storage/' . $variantQr->qr_code_path)
+                                            : 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' . urlencode($qrContent);
                                     @endphp
                                     <img src="{{ $qrImageUrl }}" alt="QR" style="width: 72px; height: 72px; object-fit: contain;">
                                     @if($isPrinted)

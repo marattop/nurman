@@ -692,24 +692,42 @@ class AdminController extends Controller
     private function generateQrCode(ProductVariant $variant, string $article): bool
     {
         // QR-код содержит только артикул (без размера и других данных)
-        $qrData = $article;
+        $qrData = ['article' => $article];
+        $qrCodeContent = json_encode($qrData, JSON_UNESCAPED_UNICODE);
+        $qrCodePath = 'qrcodes/' . $article . '-' . $variant->id . '.png';
 
         // Проверяем существующий QR
         $existingQr = QrCode::where('variant_id', $variant->id)->first();
         if ($existingQr) {
             // Обновляем существующий с новым артикулом
             $existingQr->update([
-                'qr_data' => json_encode(['article' => $qrData]),
+                'qr_data' => $qrData,
                 'is_printed' => false,
             ]);
+            // Генерируем новый QR-код через API
+            $qrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($qrCodeContent);
+            $qrImageContent = file_get_contents($qrImageUrl);
+            if ($qrImageContent !== false) {
+                \Illuminate\Support\Facades\Storage::disk('public')->put($qrCodePath, $qrImageContent);
+                $existingQr->update(['qr_code_path' => $qrCodePath]);
+            }
             return true;
         }
 
-        // Создаем новый QR с пустым путем (будет сгенерирован при печати)
+        // Генерируем QR-код через API
+        $qrImageUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" . urlencode($qrCodeContent);
+        $qrImageContent = file_get_contents($qrImageUrl);
+        if ($qrImageContent !== false) {
+            \Illuminate\Support\Facades\Storage::disk('public')->put($qrCodePath, $qrImageContent);
+        } else {
+            \Illuminate\Support\Facades\Storage::disk('public')->put($qrCodePath, '');
+        }
+
+        // Создаем новый QR
         QrCode::create([
             'variant_id' => $variant->id,
-            'qr_code_path' => '', // Пустая строка вместо NULL
-            'qr_data' => json_encode(['article' => $qrData]),
+            'qr_code_path' => $qrCodePath,
+            'qr_data' => $qrData,
             'is_printed' => false,
         ]);
 
