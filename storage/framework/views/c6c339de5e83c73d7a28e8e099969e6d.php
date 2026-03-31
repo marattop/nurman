@@ -13,7 +13,7 @@
         <h3 class="card-header-title"><i class="bi bi-list-ul" style="color: #38bdf8;"></i> Последние действия</h3>
     </div>
     <div style="overflow-x: auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
+        <table class="table responsive-table" style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr>
                     <th style="text-align: left;">Пользователь</th>
@@ -25,12 +25,12 @@
             <tbody>
                 <?php $__empty_1 = true; $__currentLoopData = $logs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $activity): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                 <tr>
-                    <td>
+                    <td data-label="Пользователь">
                         <div style="font-weight: 500;"><?php echo e($activity->user?->full_name ?? '—'); ?></div>
                     </td>
-                    <td style="color: #94a3b8;"><?php echo e($activity->description ?? '—'); ?></td>
-                    <td style="color: #94a3b8;"><?php echo e($activity->subject_type ?? '—'); ?></td>
-                    <td style="color: #94a3b8;"><?php echo e($activity->created_at?->format('d.m.Y H:i') ?? '—'); ?></td>
+                    <td data-label="Действие" style="color: #94a3b8;"><?php echo e($activity->description ?? '—'); ?></td>
+                    <td data-label="Объект" style="color: #94a3b8;"><?php echo e($activity->subject_type ?? '—'); ?></td>
+                    <td data-label="Дата" style="color: #94a3b8;"><?php echo e($activity->created_at?->format('d.m.Y H:i') ?? '—'); ?></td>
                 </tr>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                 <tr><td colspan="4" style="text-align: center; padding: 3rem; color: #64748b;">Записей не найдено</td></tr>

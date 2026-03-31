@@ -35,7 +35,7 @@
         </button>
     </div>
     <div style="overflow-x: auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
+        <table class="table responsive-table" style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr>
                     <th style="text-align: left;">Название</th>
@@ -51,7 +51,7 @@
                         $isMain = isset($mainShop) && $mainShop && (int)$mainShop->id === (int)$shop->id;
                     @endphp
                 <tr>
-                    <td>
+                    <td data-label="Название">
                         <div style="font-weight: 500;">{{ $shop->name }}</div>
                         @if($isMain)
                             <div style="margin-top:4px;">
@@ -59,12 +59,12 @@
                             </div>
                         @endif
                     </td>
-                    <td style="color: #94a3b8;">{{ $shop->address ?? '—' }}</td>
-                    <td style="color: #94a3b8;">{{ $shop->phone ?? '—' }}</td>
-                    <td>
+                    <td data-label="Адрес" style="color: #94a3b8;">{{ $shop->address ?? '—' }}</td>
+                    <td data-label="Телефон" style="color: #94a3b8;">{{ $shop->phone ?? '—' }}</td>
+                    <td data-label="Продавцы">
                         <span class="badge badge-blue">{{ $shop->sellers_count ?? 0 }} чел.</span>
                     </td>
-                    <td>
+                    <td data-label="Действия">
                         <button
                             type="button"
                             class="btn btn-outline"

@@ -66,6 +66,20 @@
         .page-subtitle { font-size: 14px; color: #94a3b8; margin: 4px 0 0 0; }
         .card-header { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .card-header-title { font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px; }
+
+        /* Responsive Table */
+        @media (max-width: 768px) {
+            .responsive-table thead { display: none; }
+            .responsive-table tr { display: block; margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; background: rgba(255,255,255,0.02); padding: 8px; }
+            .responsive-table td { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px !important; border-bottom: 1px solid rgba(255,255,255,0.05) !important; text-align: right !important; }
+            .responsive-table td:last-child { border-bottom: 0 !important; }
+            .responsive-table td::before { content: attr(data-label); font-weight: 600; color: #64748b; font-size: 11px; text-transform: uppercase; text-align: left; }
+            
+            .main-content > div { padding: 16px !important; }
+            .page-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .page-icon { width: 40px; height: 40px; font-size: 20px; }
+            .page-title { font-size: 22px; }
+        }
         
         /* Modal styles */
         .modal { display: none; position: fixed; inset: 0; z-index: 1000; overflow-y: auto; }
@@ -256,6 +270,14 @@
 
     <script>
         function showLogoutModal() {
+            // Закрываем боковое меню если оно открыто на мобильном
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            if (sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+                if (overlay) overlay.style.display = 'none';
+            }
+
             const modal = document.getElementById('logoutModal');
             modal.classList.add('show');
             modal.style.display = 'block';

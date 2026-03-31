@@ -38,7 +38,7 @@
         </button>
     </div>
     <div style="overflow-x: auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
+        <table class="table responsive-table" style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr>
                     <th style="text-align: left;">Имя</th>
@@ -51,11 +51,11 @@
             <tbody>
                 <?php $__empty_1 = true; $__currentLoopData = $users; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                 <tr>
-                    <td>
+                    <td data-label="Имя">
                         <div style="font-weight: 500;"><?php echo e($user->full_name ?? '—'); ?></div>
                         <div style="color: #94a3b8; font-size: 13px;"><?php echo e($user->email ?? ''); ?></div>
                     </td>
-                    <td>
+                    <td data-label="Роль">
                         <?php if($user->isOwner()): ?>
                             <span class="badge badge-blue">Владелец</span>
                         <?php elseif($user->isAdmin()): ?>
@@ -68,10 +68,10 @@
                             <span class="badge" style="background: rgba(148,163,184,0.15); color: #94a3b8;">Пользователь</span>
                         <?php endif; ?>
                     </td>
-                    <td style="color: #94a3b8;"><?php echo e($user->phone ?? '—'); ?></td>
-                    <td style="color: #94a3b8;"><?php echo e($user->shop?->name ?? '—'); ?></td>
-                    <td>
-                        <a href="<?php echo e(route('admin.users.edit', $user->id)); ?>" class="btn btn-outline">
+                    <td data-label="Телефон" style="color: #94a3b8;"><?php echo e($user->phone ?? '—'); ?></td>
+                    <td data-label="Магазин" style="color: #94a3b8;"><?php echo e($user->shop?->name ?? '—'); ?></td>
+                    <td data-label="Действия">
+                        <a href="<?php echo e(route('admin.users.edit', $user->id)); ?>" class="btn btn-outline" style="width: 100%; justify-content: center;">
                             <i class="bi bi-pencil"></i> Ред.
                         </a>
                     </td>

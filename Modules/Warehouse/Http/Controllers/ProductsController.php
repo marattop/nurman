@@ -97,7 +97,7 @@ class ProductsController extends Controller
             }
         }
 
-        return redirect()->route('warehouse.products')
+        return redirect()->route('warehouse.products.index')
             ->with('success', 'Товар успешно добавлен');
     }
 

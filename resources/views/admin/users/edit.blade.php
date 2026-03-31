@@ -8,8 +8,8 @@
         <h1 class="page-title">Редактирование сотрудника</h1>
         <p class="page-subtitle">Обновление данных и роли</p>
     </div>
-    <div style="margin-left:auto; display:flex; gap:10px;">
-        <a href="{{ route('admin.users.index') }}" class="btn btn-outline">
+    <div class="flex flex-col sm:flex-row gap-2" style="margin-left:auto;">
+        <a href="{{ route('admin.users.index') }}" class="btn btn-outline justify-center">
             <i class="bi bi-arrow-left"></i> Назад
         </a>
     </div>
@@ -57,12 +57,12 @@
     </div>
 
     <div style="padding: 24px;">
-        <div class="users-edit-grid" style="display:grid; grid-template-columns: 1fr 340px; gap:16px;">
-            <div>
+        <div class="users-edit-grid grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2">
                 <form action="{{ route('admin.users.update', $user) }}" method="POST">
                     @csrf
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <div style="font-size: 13px; color:#f1f5f9; margin-bottom: 6px; font-weight: 600;">
                                 Логин <span style="color:#ef4444;">*</span>
@@ -77,7 +77,7 @@
                         </div>
                     </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top: 12px;">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                         <div>
                             <div style="font-size: 13px; color:#f1f5f9; margin-bottom: 6px; font-weight: 600;">
                                 Телефон
@@ -92,7 +92,7 @@
                         </div>
                     </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top: 12px;">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                         <div>
                             <div style="font-size: 13px; color:#f1f5f9; margin-bottom: 6px; font-weight: 600;">
                                 Роль <span style="color:#ef4444;">*</span>
@@ -123,7 +123,7 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 12px;">
+                    <div style="margin-top: 16px;">
                         <div style="font-size: 13px; color:#f1f5f9; margin-bottom: 6px; font-weight: 600;">
                             Новый пароль
                         </div>
@@ -133,48 +133,50 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 14px; display:flex; align-items:center; gap:10px;">
-                        <input type="checkbox" name="is_active" value="1" id="isActive" {{ $user->is_active ? 'checked' : '' }}>
-                        <label for="isActive" style="font-weight:700; color:#f1f5f9; cursor:pointer;">Активен</label>
-                        <span style="font-size:12px; color:#94a3b8;">Сотрудник сможет входить в систему</span>
+                    <div style="margin-top: 20px; display:flex; align-items:flex-start; gap:10px;">
+                        <input type="checkbox" name="is_active" value="1" id="isActive" {{ $user->is_active ? 'checked' : '' }} style="margin-top: 4px;">
+                        <div>
+                            <label for="isActive" style="font-weight:700; color:#f1f5f9; cursor:pointer; display:block;">Активен</label>
+                            <span style="font-size:12px; color:#94a3b8;">Сотрудник сможет входить в систему</span>
+                        </div>
                     </div>
 
-                    <div style="margin-top: 18px; display:flex; gap: 10px; flex-wrap: wrap;">
-                        <button type="submit" class="btn btn-primary">
+                    <div class="mt-8 flex flex-col sm:flex-row gap-3">
+                        <button type="submit" class="btn btn-primary justify-center sm:flex-1">
                             <i class="bi bi-save"></i> Сохранить
                         </button>
-                        <a href="{{ route('admin.users.index') }}" class="btn btn-outline">
+                        <a href="{{ route('admin.users.index') }}" class="btn btn-outline justify-center sm:flex-1">
                             <i class="bi bi-x-lg"></i> Отмена
                         </a>
                     </div>
                 </form>
             </div>
 
-            <div>
+            <div class="space-y-6">
                 <div class="card" style="background: transparent; border: 1px solid rgba(255,255,255,0.05); padding: 16px;">
                     <div style="font-weight:700; margin-bottom: 12px; display:flex; align-items:center; gap:8px;">
                         <i class="bi bi-info-circle" style="color:#38bdf8;"></i> Информация
                     </div>
-                    <table class="table" style="width:100%; border-collapse: collapse; margin:0;">
+                    <table class="table responsive-table" style="width:100%; border-collapse: collapse; margin:0;">
                         <tr>
-                            <td style="color:#94a3b8; padding: 8px 0;">ID</td>
-                            <td style="padding: 8px 0; font-weight:700;">{{ $user->id }}</td>
+                            <td data-label="Поле" style="color:#94a3b8; padding: 8px 0;">ID</td>
+                            <td data-label="Значение" style="padding: 8px 0; font-weight:700;">{{ $user->id }}</td>
                         </tr>
                         <tr>
-                            <td style="color:#94a3b8; padding: 8px 0;">Email</td>
-                            <td style="padding: 8px 0;">{{ $user->email ?? '—' }}</td>
+                            <td data-label="Поле" style="color:#94a3b8; padding: 8px 0;">Email</td>
+                            <td data-label="Значение" style="padding: 8px 0;">{{ $user->email ?? '—' }}</td>
                         </tr>
                         <tr>
-                            <td style="color:#94a3b8; padding: 8px 0;">Дата регистрации</td>
-                            <td style="padding: 8px 0;">{{ $user->created_at?->format('d.m.Y H:i') ?? '—' }}</td>
+                            <td data-label="Поле" style="color:#94a3b8; padding: 8px 0;">Регистрация</td>
+                            <td data-label="Значение" style="padding: 8px 0;">{{ $user->created_at?->format('d.m.Y H:i') ?? '—' }}</td>
                         </tr>
                         <tr>
-                            <td style="color:#94a3b8; padding: 8px 0;">Последний вход</td>
-                            <td style="padding: 8px 0;">{{ $user->last_login_at?->format('d.m.Y H:i') ?? '—' }}</td>
+                            <td data-label="Поле" style="color:#94a3b8; padding: 8px 0;">Вход</td>
+                            <td data-label="Значение" style="padding: 8px 0;">{{ $user->last_login_at?->format('d.m.Y H:i') ?? '—' }}</td>
                         </tr>
                         <tr>
-                            <td style="color:#94a3b8; padding: 8px 0;">Статус</td>
-                            <td style="padding: 8px 0;">
+                            <td data-label="Поле" style="color:#94a3b8; padding: 8px 0;">Статус</td>
+                            <td data-label="Значение" style="padding: 8px 0;">
                                 @if($user->is_active)
                                     <span class="badge badge-success"><i class="bi bi-check-circle"></i> Активен</span>
                                 @else
@@ -185,15 +187,13 @@
                     </table>
                 </div>
 
-                <div style="height: 12px;"></div>
-
                 <div class="card" style="background: transparent; border: 1px solid rgba(255,255,255,0.05); padding: 16px;">
                     <div style="font-weight:700; margin-bottom: 12px; display:flex; align-items:center; gap:8px;">
                         <i class="bi bi-exclamation-triangle" style="color:#f59e0b;"></i> Опасная зона
                     </div>
                     <form action="{{ route('admin.users.delete', $user) }}" method="POST" onsubmit="return confirm('Вы уверены, что хотите удалить сотрудника?')">
                         @csrf
-                        <button type="submit" class="btn btn-danger" style="width:100%; justify-content:center;">
+                        <button type="submit" class="btn btn-danger w-full justify-center">
                             <i class="bi bi-trash"></i> Удалить сотрудника
                         </button>
                     </form>
@@ -204,8 +204,5 @@
 </div>
 
 <style>
-    @media (max-width: 992px) {
-        .users-edit-grid { grid-template-columns: 1fr !important; }
-    }
 </style>
 @endsection

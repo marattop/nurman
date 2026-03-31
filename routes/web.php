@@ -5,7 +5,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OwnerController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\SellerController;
-use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ProductController;
@@ -325,44 +324,6 @@ Route::middleware(['auth', 'role:seller'])
             Route::get('/', [SellerController::class, 'shift'])->name('index');
             Route::post('open', [SellerController::class, 'openShift'])->name('open');
             Route::post('close', [SellerController::class, 'closeShift'])->name('close');
-        });
-    });
-
-// ============================================================================
-// КЛАДОВЩИК (WAREHOUSE) - Уровень 20
-// ============================================================================
-
-Route::middleware(['auth', 'role:warehouse'])
-    ->prefix('warehouse')
-    ->name('warehouse.')
-    ->group(function () {
-        Route::get('/', [WarehouseController::class, 'dashboard'])->name('dashboard');
-        
-        // Приёмка товаров
-        Route::get('purchases', [WarehouseController::class, 'purchases'])->name('purchases.index');
-        Route::get('purchases/create', [WarehouseController::class, 'createPurchase'])->name('purchases.create');
-        Route::post('purchases', [WarehouseController::class, 'storePurchase'])->name('purchases.store');
-        
-        // Инвентаризация
-        Route::get('inventory', [WarehouseController::class, 'inventory'])->name('inventory.index');
-        
-        // Списание
-        Route::get('writeoff', [WarehouseController::class, 'writeoff'])->name('writeoff.index');
-        
-        // Перемещение
-        Route::get('transfers', [WarehouseController::class, 'transfers'])->name('transfers.index');
-        
-        // Склад
-        Route::get('stock', [WarehouseController::class, 'stock'])->name('stock.index');
-        Route::get('stock/low', [WarehouseController::class, 'lowStock'])->name('stock.low');
-        
-        // QR-коды
-        Route::get('qrcodes', [WarehouseController::class, 'qrcodes'])->name('qrcodes.index');
-        
-        // Профиль кладовщика
-        Route::prefix('profile')->name('profile.')->group(function () {
-            Route::get('/', [WarehouseController::class, 'profile'])->name('index');
-            Route::post('update', [WarehouseController::class, 'updateProfile'])->name('update');
         });
     });
 

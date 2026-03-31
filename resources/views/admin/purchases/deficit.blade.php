@@ -8,8 +8,8 @@
         <h1 class="page-title">Дефицит товаров</h1>
         <p class="page-subtitle">Товары с критически низким остатком</p>
     </div>
-    <div style="margin-left: auto;">
-        <a href="{{ route('admin.purchases.create', ['mode' => 'deficit']) }}" class="btn btn-primary">
+    <div class="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-0 sm:ml-auto w-full sm:w-auto">
+        <a href="{{ route('admin.purchases.create', ['mode' => 'deficit']) }}" class="btn btn-primary justify-center">
             <i class="bi bi-cart-plus"></i> Закупить дефицит
         </a>
     </div>
@@ -32,7 +32,7 @@
         <h3 class="card-header-title"><i class="bi bi-list-ul" style="color: #f59e0b;"></i> Список товаров</h3>
     </div>
     <div style="overflow-x: auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
+        <table class="table responsive-table" style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr>
                     <th style="text-align: left; padding: 12px 16px;">Товар</th>
@@ -47,13 +47,13 @@
             <tbody>
                 @forelse($deficitItems as $item)
                 <tr style="{{ $item['current_qty'] <= 0 ? 'background: rgba(239, 68, 68, 0.1);' : '' }}">
-                    <td style="padding: 12px 16px;">
+                    <td data-label="Товар" style="padding: 12px 16px;">
                         <div style="font-weight: 500;">{{ $item['variant']->product->name ?? '—' }}</div>
                     </td>
-                    <td style="padding: 12px 16px; text-align: center;">
+                    <td data-label="Размер" style="padding: 12px 16px; text-align: center;">
                         <span class="badge badge-blue">{{ $item['variant']->size ?? '—' }}</span>
                     </td>
-                    <td style="padding: 12px 16px; text-align: center;">
+                    <td data-label="Текущий остаток" style="padding: 12px 16px; text-align: center;">
                         @if($item['current_qty'] <= 0)
                             <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
                                 <i class="bi bi-x-circle"></i> Нет
@@ -68,21 +68,21 @@
                             </span>
                         @endif
                     </td>
-                    <td style="padding: 12px 16px; text-align: center;">
+                    <td data-label="Продаж/день" style="padding: 12px 16px; text-align: center;">
                         @if($item['avg_daily_sales'] > 0)
                             <span style="font-weight: 600; color: #10b981;">{{ $item['avg_daily_sales'] }} шт/день</span>
                         @else
                             <span style="color: #94a3b8;">—</span>
                         @endif
                     </td>
-                    <td style="padding: 12px 16px; text-align: center; color: #94a3b8;">
+                    <td data-label="Последняя продажа" style="padding: 12px 16px; text-align: center; color: #94a3b8;">
                         @if($item['last_sale_at'])
                             {{ \Carbon\Carbon::parse($item['last_sale_at'])->diffForHumans() }}
                         @else
                             Нет продаж
                         @endif
                     </td>
-                    <td style="padding: 12px 16px; text-align: center;">
+                    <td data-label="Рекомендуется закупить" style="padding: 12px 16px; text-align: center;">
                         @if($item['recommended_qty'] > 0)
                             <span style="font-weight: 600; color: #38bdf8;">{{ $item['recommended_qty'] }} шт</span>
                             <div style="font-size: 12px; color: #94a3b8;">на 30 дней</div>
@@ -90,9 +90,9 @@
                             <span style="color: #94a3b8;">—</span>
                         @endif
                     </td>
-                    <td style="padding: 12px 16px;">
+                    <td data-label="Действия" style="padding: 12px 16px;">
                         <a href="{{ route('admin.purchases.create', ['mode' => 'deficit']) }}" 
-                           class="btn btn-primary btn-sm"
+                           class="btn btn-primary btn-sm w-full sm:w-auto justify-center"
                            onclick="addToPurchase({{ $item['variant']->id }}, '{{ $item['variant']->product->name }}', {{ $item['recommended_qty'] }})">
                             <i class="bi bi-cart-plus"></i> В закупку
                         </a>

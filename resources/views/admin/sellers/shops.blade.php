@@ -17,7 +17,7 @@
         </button>
     </div>
     <div style="overflow-x: auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
+        <table class="table responsive-table" style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr>
                     <th style="text-align: left;">Имя</th>
@@ -28,23 +28,23 @@
             <tbody>
                 @forelse($employees as $seller)
                 <tr>
-                    <td>
+                    <td data-label="Имя">
                         <div style="font-weight: 500;">{{ $seller->full_name ?? '—' }}</div>
                         <div style="color: #94a3b8; font-size: 13px;">{{ $seller->email ?? '' }}</div>
                     </td>
-                    <td>
+                    <td data-label="Магазины">
                         @if($seller->shop)
-                            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; md:justify-content: flex-start;">
                                 <span class="badge badge-blue">{{ $seller->shop->name }}</span>
                             </div>
                         @else
                             <span style="color: #94a3b8;">—</span>
                         @endif
                     </td>
-                    <td>
+                    <td data-label="Действия">
                         <form action="{{ route('admin.sellers.shops.detach', $seller->id) }}" method="POST" style="display: inline;">
                             @csrf
-                            <button type="submit" class="btn btn-outline" onclick="return confirm('Отвязать сотрудника от магазина?')">
+                            <button type="submit" class="btn btn-outline w-full justify-center" onclick="return confirm('Отвязать сотрудника от магазина?')">
                                 <i class="bi bi-x-lg"></i> Отвязать
                             </button>
                         </form>
@@ -60,27 +60,27 @@
 
 <!-- Модальное окно для привязки к магазину -->
 <div class="modal fade" id="assignShopModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ route('admin.sellers.shops.assign') }}" method="POST">
                 @csrf
                 <div class="modal-header">
-                    <h5 class="modal-title">Привязка к магазину</h5>
+                    <h5 class="modal-title"><i class="bi bi-shop"></i> Привязка к магазину</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Сотрудник</label>
-                        <select name="employee_id" class="form-select" required>
+                    <div class="mb-4">
+                        <label class="form-label" style="display:block; margin-bottom:8px; font-weight:600; color:#94a3b8;">Сотрудник</label>
+                        <select name="employee_id" class="input" required>
                             <option value="">Выберите сотрудника</option>
                             @foreach($employees as $employee)
                                 <option value="{{ $employee->id }}">{{ $employee->full_name }} ({{ $employee->role->name ?? '-' }})</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Магазин</label>
-                        <select name="shop_id" class="form-select">
+                    <div class="mb-2">
+                        <label class="form-label" style="display:block; margin-bottom:8px; font-weight:600; color:#94a3b8;">Магазин</label>
+                        <select name="shop_id" class="input">
                             <option value="">Без магазина</option>
                             @foreach($shops as $shop)
                                 <option value="{{ $shop->id }}">{{ $shop->name }}</option>
@@ -88,9 +88,9 @@
                         </select>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                <div class="modal-footer flex flex-col sm:flex-row gap-2">
+                    <button type="button" class="btn btn-outline w-full sm:flex-1 justify-center" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary w-full sm:flex-1 justify-center">Сохранить</button>
                 </div>
             </form>
         </div>

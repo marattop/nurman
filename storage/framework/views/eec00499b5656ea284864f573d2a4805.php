@@ -60,11 +60,11 @@
         </div>
     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
-    <div class="flex gap-4 justify-end">
-        <a href="<?php echo e(route('admin.roles.index')); ?>" class="btn btn-outline">
+    <div class="flex flex-col sm:flex-row gap-4 justify-end">
+        <a href="<?php echo e(route('admin.roles.index')); ?>" class="btn btn-outline justify-center">
             <i class="bi bi-x-lg me-2"></i>Отмена
         </a>
-        <button type="submit" class="btn btn-primary btn-lg">
+        <button type="submit" class="btn btn-primary btn-lg justify-center">
             <i class="bi bi-check-lg me-2"></i>Сохранить изменения
         </button>
     </div>

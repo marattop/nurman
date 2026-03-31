@@ -8,11 +8,11 @@
         <h1 class="page-title">Создать закупку</h1>
         <p class="page-subtitle">Закупка товаров для пополнения остатков</p>
     </div>
-    <div style="margin-left: auto; display: flex; gap: 12px;">
-        <a href="{{ route('admin.purchases.deficit') }}" class="btn btn-outline">
+    <div class="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-0 sm:ml-auto w-full sm:w-auto">
+        <a href="{{ route('admin.purchases.deficit') }}" class="btn btn-outline justify-center">
             <i class="bi bi-exclamation-triangle"></i> Дефицит
         </a>
-        <a href="{{ route('admin.purchases.index') }}" class="btn btn-outline">
+        <a href="{{ route('admin.purchases.index') }}" class="btn btn-outline justify-center">
             <i class="bi bi-arrow-left"></i> Назад
         </a>
     </div>

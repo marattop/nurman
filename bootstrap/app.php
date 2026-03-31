@@ -9,11 +9,14 @@ return Application::configure(basePath: dirname(__DIR__))
         web: [
             __DIR__.'/../routes/web.php',
             base_path('Modules/Owner/routes/web.php'),
+            base_path('Modules/Warehouse/routes/web.php'),
         ],
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        
         // Регистрация алиасов для RBAC middleware
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,

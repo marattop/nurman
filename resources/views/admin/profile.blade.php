@@ -97,28 +97,30 @@
 
                 {{-- Загрузка аватара --}}
                 <div>
-                    <label class="block font-semibold mb-2 text-text text-sm">Аватар</label>
-                    <div class="flex items-center gap-4">
-                        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-accent to-accent-hover flex items-center justify-center text-bg font-black text-2xl border-4 border-white/10 overflow-hidden">
+                    <label class="block font-semibold mb-3 text-text text-sm">Аватар</label>
+                    <div class="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                        <div class="w-24 h-24 rounded-full bg-gradient-to-br from-accent to-accent-hover flex items-center justify-center text-bg font-black text-3xl border-4 border-white/10 overflow-hidden shadow-lg flex-shrink-0">
                             @if($user->avatar)
                                 <img src="{{ asset('storage/' . $user->avatar) }}" alt="{{ $user->full_name }}" class="w-full h-full object-cover">
                             @else
                                 {{ strtoupper(substr($user->full_name ?? $user->username, 0, 1)) }}
                             @endif
                         </div>
-                        <div class="flex-1">
+                        <div class="flex-1 w-full text-center sm:text-left">
                             <input type="file" name="avatar" id="avatar" accept="image/*" class="hidden" onchange="previewAvatar(this)">
-                            <label for="avatar" class="btn btn-outline py-2 px-4 text-sm cursor-pointer">
-                                <i class="bi bi-upload"></i> Загрузить фото
-                            </label>
-                            @if($user->avatar)
-                                <button type="button" onclick="removeAvatar()" class="btn btn-danger py-2 px-4 text-sm ml-2">
-                                    <i class="bi bi-trash"></i> Удалить
-                                </button>
-                            @endif
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <label for="avatar" class="btn btn-outline py-2.5 px-4 text-sm cursor-pointer justify-center">
+                                    <i class="bi bi-upload"></i> Загрузить фото
+                                </label>
+                                @if($user->avatar)
+                                    <button type="button" onclick="removeAvatar()" class="btn btn-danger py-2.5 px-4 text-sm justify-center">
+                                        <i class="bi bi-trash"></i> Удалить
+                                    </button>
+                                @endif
+                            </div>
+                            <p class="text-[10px] text-muted mt-3">Рекомендуемый размер: PNG, JPG до 2MB. Квадратное изображение (1:1) выглядит лучше всего.</p>
                         </div>
                     </div>
-                    <p class="text-[10px] text-muted mt-2">PNG, JPG до 2MB</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -160,11 +162,11 @@
                     </div>
                 </div>
 
-                <div class="flex gap-3 pt-4">
-                    <button type="submit" class="btn btn-primary flex-1">
+                <div class="flex flex-col sm:flex-row gap-3 pt-4">
+                    <button type="submit" class="btn btn-primary flex-1 justify-center">
                         <i class="bi bi-check-lg"></i> Сохранить
                     </button>
-                    <a href="{{ route('admin.dashboard') }}" class="btn btn-outline">
+                    <a href="{{ route('admin.dashboard') }}" class="btn btn-outline justify-center">
                         <i class="bi bi-x-lg"></i> Отмена
                     </a>
                 </div>

@@ -164,7 +164,8 @@ function showProduct(product) {
     document.getElementById('product-stock').textContent = (product.stock_quantity || 0) + ' шт';
     
     if (product.photo) {
-        document.getElementById('product-image').innerHTML = `<img src="/storage/${product.photo}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">`;
+        const storageUrl = "{{ asset('storage') }}/";
+        document.getElementById('product-image').innerHTML = `<img src="${storageUrl}${product.photo}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">`;
     }
 }
 

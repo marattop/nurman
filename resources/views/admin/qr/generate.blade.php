@@ -22,26 +22,26 @@
         <p class="text-muted">Артикул: {{ $product->article }}</p>
         
         @if($product->variants->count() > 0)
-            <div class="mb-3">
-                <h5>Варианты товара:</h5>
-                <ul class="list-group">
+            <div class="mb-6">
+                <h5 class="font-semibold mb-3">Варианты товара:</h5>
+                <div class="space-y-2">
                     @foreach($product->variants as $variant)
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">
                             <div>
-                                <strong>{{ $variant->size ?? 'Стандарт' }}</strong>
-                                <span class="text-muted">({{ $variant->barcode ?? '—' }})</span>
+                                <strong class="text-text">{{ $variant->size ?? 'Стандарт' }}</strong>
+                                <span class="text-muted text-sm ml-2">({{ $variant->barcode ?? '—' }})</span>
                             </div>
                             <span class="badge {{ $variant->qrCodes->count() > 0 ? 'badge-success' : 'badge-danger' }}">
                                 {{ $variant->qrCodes->count() > 0 ? 'QR есть' : 'Нет QR' }}
                             </span>
-                        </li>
+                        </div>
                     @endforeach
-                </ul>
+                </div>
             </div>
             
             <form id="generateForm">
                 @csrf
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary w-full sm:w-auto justify-center">
                     <i class="bi bi-qr-code-scan"></i> Сгенерировать QR-коды
                 </button>
             </form>

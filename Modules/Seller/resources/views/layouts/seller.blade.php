@@ -66,12 +66,26 @@
         .page-subtitle { font-size: 14px; color: #94a3b8; margin: 4px 0 0 0; }
         .card-header { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .card-header-title { font-size: 16px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 8px; }
+
+        /* Responsive Table */
         @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); transition: 0.3s; }
-            .sidebar.show { transform: translateX(0); }
+            .responsive-table thead { display: none; }
+            .responsive-table tr { display: block; margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; background: rgba(255,255,255,0.02); padding: 8px; }
+            .responsive-table td { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px !important; border-bottom: 1px solid rgba(255,255,255,0.05) !important; text-align: right !important; }
+            .responsive-table td:last-child { border-bottom: 0 !important; }
+            .responsive-table td::before { content: attr(data-label); font-weight: 600; color: #64748b; font-size: 11px; text-transform: uppercase; text-align: left; }
+            
             .main-content { margin-left: 0; }
-            .mobile-toggle { display: block !important; }
+            .main-content > div { padding: 16px !important; }
+            .sidebar { transform: translateX(-100%); transition: 0.3s; z-index: 1001; }
+            .sidebar.show { transform: translateX(0); }
+            .mobile-toggle { display: flex !important; z-index: 1002; position: relative; }
+            
+            .page-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .page-icon { width: 40px; height: 40px; font-size: 20px; }
+            .page-title { font-size: 22px; }
         }
+        
         .mobile-toggle { display: none; }
         .stat-card { background: #1e293b; border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 20px; }
     </style>
@@ -129,7 +143,7 @@
     <!-- Main Content -->
     <div class="main-content">
         <!-- Topbar -->
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); background: #1e293b; position: sticky; top: 0; z-index: 50;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); background: #1e293b; position: sticky; top: 0; z-index: 50;" class="topbar">
             <div style="display: flex; align-items: center; gap: 16px;">
                 <button class="mobile-toggle btn" onclick="toggleSidebar()" style="background: transparent; color: #94a3b8; padding: 8px;">
                     <i class="bi bi-list" style="font-size: 24px;"></i>
@@ -144,7 +158,7 @@
         </div>
     </div>
 
-    @include('layouts.partials.bottom-nav')
+    @include('seller::layouts.partials.seller-bottom-nav')
 
     <!-- Overlay for mobile -->
     <div id="overlay" onclick="toggleSidebar()" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99;"></div>
@@ -161,6 +175,14 @@
         }
 
         function showLogoutModal() {
+            // Закрываем боковое меню если оно открыто на мобильном
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            if (sidebar.classList.contains('show')) {
+                sidebar.classList.remove('show');
+                if (overlay) overlay.style.display = 'none';
+            }
+
             const modal = document.getElementById('logoutModal');
             modal.style.display = 'block';
             const backdrop = document.createElement('div');

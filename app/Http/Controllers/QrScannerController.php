@@ -42,10 +42,8 @@ class QrScannerController extends Controller
 
         $qrData = trim($request->qr_data);
 
-        // Логирование для отладки
-        \Log::info('===== QR SCAN START =====');
-        \Log::info('QR/Barcode Scan received: ' . $qrData);
-        \Log::info('Raw qr_data: ' . json_encode($request->qr_data));
+        // Краткое логирование (не забиваем лог при массовом сканировании)
+        \Log::debug('QR scan: ' . mb_substr($qrData, 0, 100));
 
         $product = null;
         $foundBy = null; // 'article', 'barcode', или 'json_article'
@@ -53,8 +51,6 @@ class QrScannerController extends Controller
         // Пытаемся извлечь данные из JSON или используем как есть
         try {
             $parsed = json_decode($qrData, true);
-            \Log::info('JSON parse result: ' . json_encode($parsed));
-            \Log::info('JSON error: ' . json_last_error() . ' - ' . json_last_error_msg());
             
             if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
                 // Это JSON данные (из QR-кода)
@@ -65,16 +61,14 @@ class QrScannerController extends Controller
 
                 if (isset($parsed['article'])) {
                     $article = $parsed['article'];
-                    \Log::info('Extracted article from JSON: ' . $article);
                     $product = Product::where('article', $article)->first();
                     $foundBy = 'json_article';
-                    \Log::info('Product search result: ' . ($product ? 'FOUND' : 'NOT FOUND'));
                 }
 
                 // Если в JSON есть barcode, пробуем найти по нему
                 if (!$product && isset($parsed['barcode'])) {
                     $barcode = $parsed['barcode'];
-                    \Log::info('Trying barcode from JSON: ' . $barcode);
+
                     $variant = ProductVariant::where('barcode', $barcode)->first();
                     if ($variant) {
                         $product = $variant->product;
@@ -87,7 +81,6 @@ class QrScannerController extends Controller
                 $product = Product::where('article', $qrData)->first();
                 if ($product) {
                     $foundBy = 'article';
-                    \Log::info('Found by article: ' . $qrData);
                 } else {
                     // Если не нашли по артикулу, пробуем найти по штрих-коду (barcode)
                     // Сканеры штрих-кодов часто передают просто число/строку
@@ -95,14 +88,13 @@ class QrScannerController extends Controller
                     if ($variant) {
                         $product = $variant->product;
                         $foundBy = 'barcode';
-                        \Log::info('Found by barcode: ' . $qrData);
+
                     }
                 }
             }
         } catch (\Exception $e) {
             // Игнорируем ошибки парсинга, пробуем простой поиск
-            \Log::error('JSON parse error: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            \Log::warning('QR parse error: ' . $e->getMessage());
 
             // Пробуем найти по артикулу или barcode как строку
             $product = Product::where('article', $qrData)->first();
@@ -118,7 +110,6 @@ class QrScannerController extends Controller
         }
 
         if (!$product) {
-            \Log::warning('Product not found by: ' . $qrData);
 
             return response()->json([
                 'success' => false,
@@ -128,7 +119,7 @@ class QrScannerController extends Controller
             ]);
         }
         
-        \Log::info('Product found: ' . $product->name . ' (found by: ' . $foundBy . ')');
+        \Log::debug('QR found: ' . $product->article . ' by ' . $foundBy);
 
         // Получаем все варианты товара с полной информацией
         $variants = $this->getVariantsWithStock($product);
@@ -140,7 +131,7 @@ class QrScannerController extends Controller
         $supplierPrice = $firstVariantDB ? floatval($firstVariantDB->supplier_price) : floatval($product->retail_price);
         $wholesalePrice = $firstVariantDB ? floatval($firstVariantDB->wholesale_price) : floatval($product->retail_price);
         
-        \Log::info('DB supplier_price: ' . $supplierPrice . ', wholesale_price: ' . $wholesalePrice);
+
 
         // "Наш" QR: проверяем, существует ли QR-код в системе для этого товара
         $isKnownQr = QrCode::whereIn('variant_id', function ($q) use ($product) {
@@ -163,7 +154,7 @@ class QrScannerController extends Controller
                 'article' => $product->article,
                 'brand' => $product->brand,
                 'category' => $product->category?->name ?? '—',
-                'photo' => $product->photo ? asset('storage/' . $product->photo) : null,
+                'photo' => $product->photo ? '/storage/' . $product->photo : null,
                 'retail_price' => floatval($product->retail_price ?? 0),
                 // Реальные цены из БД
                 'supplier_price' => $supplierPrice,

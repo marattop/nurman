@@ -650,7 +650,7 @@ class OwnerController extends Controller
 
         $qrData = trim($request->qr_data);
 
-        \Log::info('Owner QR/Barcode Scan received: ' . $qrData);
+        \Log::debug('Owner QR scan: ' . mb_substr($qrData, 0, 100));
 
         $product = null;
         $foundBy = null;
@@ -660,14 +660,14 @@ class OwnerController extends Controller
             if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
                 if (isset($parsed['article'])) {
                     $article = $parsed['article'];
-                    \Log::info('Extracted article from JSON: ' . $article);
+
                     $product = Product::where('article', $article)->first();
                     $foundBy = 'json_article';
                 }
 
                 if (!$product && isset($parsed['barcode'])) {
                     $barcode = $parsed['barcode'];
-                    \Log::info('Trying barcode from JSON: ' . $barcode);
+
                     $variant = ProductVariant::where('barcode', $barcode)->first();
                     if ($variant) {
                         $product = $variant->product;
@@ -678,18 +678,18 @@ class OwnerController extends Controller
                 $product = Product::where('article', $qrData)->first();
                 if ($product) {
                     $foundBy = 'article';
-                    \Log::info('Found by article: ' . $qrData);
+
                 } else {
                     $variant = ProductVariant::where('barcode', $qrData)->first();
                     if ($variant) {
                         $product = $variant->product;
                         $foundBy = 'barcode';
-                        \Log::info('Found by barcode: ' . $qrData);
+
                     }
                 }
             }
         } catch (\Exception $e) {
-            \Log::error('JSON parse error: ' . $e->getMessage());
+            \Log::warning('Owner QR parse error: ' . $e->getMessage());
 
             $product = Product::where('article', $qrData)->first();
             if ($product) {
@@ -704,7 +704,7 @@ class OwnerController extends Controller
         }
 
         if (!$product) {
-            \Log::warning('Product not found by: ' . $qrData);
+
 
             return response()->json([
                 'success' => false,
@@ -714,7 +714,7 @@ class OwnerController extends Controller
             ]);
         }
 
-        \Log::info('Product found: ' . $product->name . ' (found by: ' . $foundBy . ')');
+        \Log::debug('Owner QR found: ' . $product->article . ' by ' . $foundBy);
 
         $variants = $this->getVariantsWithStock($product);
 
@@ -737,7 +737,7 @@ class OwnerController extends Controller
                 'article' => $product->article,
                 'brand' => $product->brand,
                 'category' => $product->category?->name ?? '—',
-                'photo' => $product->photo ? asset('storage/' . $product->photo) : null,
+                'photo' => $product->photo ? '/storage/' . $product->photo : null,
                 'retail_price' => $product->retail_price ?? 0,
                 'supplier_price' => $product->supplier_price ?? 0,
                 'wholesale_price' => $product->wholesale_price ?? 0,

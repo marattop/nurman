@@ -73,11 +73,15 @@
 
         /* Mobile specific adjustments */
         @media (max-width: 768px) {
-            .main-content { margin-left: 0 !important; padding-top: 64px; }
-            .sidebar { transform: translateX(-100%); z-index: 50; }
+            .main-content { margin-left: 0 !important; padding-top: 64px; width: 100%; }
+            .sidebar { transform: translateX(-100%); z-index: 1000; }
             .sidebar.open { transform: translateX(0); }
             .mobile-overlay { display: none; }
             .mobile-overlay.show { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 40; }
+            .content-container { padding: 16px !important; }
+            .content-container.no-padding { padding: 0 !important; }
+            .content-container.no-padding .page-header-wrapper { display: none !important; }
+            .content-container.no-padding .max-w-7xl { max-width: none !important; margin: 0 !important; }
         }
 
         /* Table to Cards on mobile */
@@ -206,17 +210,18 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="main-content flex-1 ml-64 min-h-screen p-4 md:p-8">
-            <div class="max-w-7xl mx-auto">
-                <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                    <div>
-                        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">@yield('page-title')</h1>
-                        <p class="text-muted text-sm mt-1">@yield('page-subtitle')</p>
+        <main class="main-content flex-1 ml-64 min-h-screen">
+            <div class="content-container p-4 md:p-8 @yield('container-class')">
+                <div class="max-w-7xl mx-auto @yield('max-width-class')">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 page-header-wrapper">
+                        <div>
+                            <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">@yield('page-title')</h1>
+                            <p class="text-muted text-sm mt-1">@yield('page-subtitle')</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            @yield('page-actions')
+                        </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        @yield('page-actions')
-                    </div>
-                </div>
 
                 @if(session('success'))
                     <div class="glass p-4 rounded-2xl border border-success/30 text-success mb-6 flex items-center gap-3">
@@ -248,9 +253,9 @@
             <span>Склад</span>
         </a>
         <div class="relative -top-5">
-            <div class="w-14 h-14 bg-accent rounded-full flex items-center justify-center text-bg shadow-glow border-4 border-bg">
-                <i class="bi bi-box text-2xl"></i>
-            </div>
+            <a href="{{ route('warehouse.qrcodes.scan') }}" class="w-14 h-14 bg-accent rounded-full flex items-center justify-center text-bg shadow-glow border-4 border-bg">
+                <i class="bi bi-qr-code-scan text-2xl"></i>
+            </a>
         </div>
         <a href="{{ route('warehouse.purchases.index') }}" class="flex flex-col items-center justify-center gap-1 text-[10px] {{ request()->routeIs('warehouse.purchases.*') ? 'text-accent' : 'text-muted' }}">
             <i class="bi bi-cart-plus text-xl"></i>
@@ -271,6 +276,14 @@
         }
 
         function showLogoutModal() {
+            // Закрываем боковое меню если оно открыто на мобильном
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            if (sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+                if (overlay) overlay.classList.remove('show');
+            }
+
             const modal = document.getElementById('logoutModal');
             modal.style.display = 'block';
             const backdrop = document.createElement('div');

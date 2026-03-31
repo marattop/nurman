@@ -4,7 +4,8 @@
       "Bash(composer *)",
       "Bash(git add *)",
       "Bash(git pull)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(composer.phar *)"
     ]
   },
   "$version": 3

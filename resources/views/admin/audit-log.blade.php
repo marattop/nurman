@@ -110,7 +110,7 @@
         </h3>
     </div>
     <div style="overflow-x: auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
+        <table class="table responsive-table" style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr>
                     <th style="text-align: left; padding: 0.75rem;">ID</th>
@@ -125,17 +125,17 @@
             <tbody>
                 @forelse($auditLogs as $log)
                 <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 0.75rem; color: #64748b;">#{{ $log->id }}</td>
-                    <td style="padding: 0.75rem;">
+                    <td data-label="ID" style="padding: 0.75rem; color: #64748b;">#{{ $log->id }}</td>
+                    <td data-label="Пользователь" style="padding: 0.75rem;">
                         <div style="font-weight: 500;">{{ $log->user?->username ?? '—' }}</div>
                         <div style="font-size: 0.75rem; color: #94a3b8;">{{ $log->user?->role?->display_name ?? '' }}</div>
                     </td>
-                    <td style="padding: 0.75rem;">
+                    <td data-label="Действие" style="padding: 0.75rem;">
                         <span class="badge" style="background: {{ $log->getActionColor() }}; color: #fff;">
                             {{ $log->getActionDescription() }}
                         </span>
                     </td>
-                    <td style="padding: 0.75rem;">
+                    <td data-label="Модель" style="padding: 0.75rem;">
                         @if($log->model_type)
                             <div style="font-size: 0.875rem;">{{ $log->getModelName() }}</div>
                             <div style="font-size: 0.75rem; color: #94a3b8;">ID: {{ $log->model_id }}</div>
@@ -143,15 +143,15 @@
                             <span style="color: #94a3b8;">—</span>
                         @endif
                     </td>
-                    <td style="padding: 0.75rem; font-family: monospace; font-size: 0.875rem;">
+                    <td data-label="IP адрес" style="padding: 0.75rem; font-family: monospace; font-size: 0.875rem;">
                         {{ $log->ip_address }}
                     </td>
-                    <td style="padding: 0.75rem;">
+                    <td data-label="Дата" style="padding: 0.75rem;">
                         <div style="font-size: 0.875rem;">{{ $log->created_at->format('d.m.Y') }}</div>
                         <div style="font-size: 0.75rem; color: #94a3b8;">{{ $log->created_at->format('H:i:s') }}</div>
                     </td>
-                    <td style="padding: 0.75rem; text-align: right;">
-                        <button class="btn btn-sm btn-info" onclick="showLogDetails({{ $log->id }})">
+                    <td data-label="Детали" style="padding: 0.75rem; text-align: right;">
+                        <button class="btn btn-sm btn-outline" onclick="showLogDetails({{ $log->id }})" style="width: 100%; justify-content: center;">
                             <i class="bi bi-eye"></i>
                         </button>
                     </td>
@@ -190,13 +190,22 @@
 </div>
 
 {{-- Модальное окно для деталей --}}
-<div id="logModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border-radius: 0.5rem; padding: 1.5rem; width: 90%; max-width: 800px; max-height: 80vh; overflow-y: auto;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3 style="margin: 0;">Детали записи</h3>
-            <button onclick="closeModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+<div id="logModal" class="modal">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="bi bi-info-circle"></i> Детали записи
+                </div>
+                <button type="button" class="btn-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline w-full" onclick="closeModal()">Закрыть</button>
+            </div>
         </div>
-        <div id="modalContent"></div>
     </div>
 </div>
 
@@ -212,7 +221,12 @@
         font-size: 0.875rem;
         font-weight: 600;
         margin-bottom: 0.5rem;
-        color: #475569;
+        color: #94a3b8;
+    }
+    pre {
+        background: #0f172a !important;
+        border: 1px solid rgba(255,255,255,0.05);
+        color: #38bdf8 !important;
     }
 </style>
 
@@ -224,20 +238,24 @@ function showLogDetails(logId) {
     
     if (detailsDiv) {
         modalContent.innerHTML = detailsDiv.querySelector('.modal-details').innerHTML;
+        modal.classList.add('show');
         modal.style.display = 'block';
+
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop log-backdrop';
+        backdrop.onclick = closeModal;
+        document.body.appendChild(backdrop);
+        document.body.style.overflow = 'hidden';
     }
 }
 
 function closeModal() {
-    document.getElementById('logModal').style.display = 'none';
+    const modal = document.getElementById('logModal');
+    modal.classList.remove('show');
+    modal.style.display = 'none';
+    document.querySelectorAll('.log-backdrop').forEach(b => b.remove());
+    document.body.style.overflow = '';
 }
-
-// Закрытие по клику вне модального окна
-document.getElementById('logModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeModal();
-    }
-});
 
 // Закрытие по Escape
 document.addEventListener('keydown', function(e) {

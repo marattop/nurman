@@ -17,5 +17,5 @@
 # Блокировка доступа к папкам (кроме public/)
 <IfModule mod_rewrite.c>
     RewriteCond %{REQUEST_URI} !^/public/
-    RewriteRule ^(database|vendor|config|storage|bootstrap|tests|routes|resources|app)/ - [F,L]
+    RewriteRule ^(database|vendor|config|bootstrap|tests|routes|resources|app)/ - [F,L]
 </IfModule>

@@ -1,31 +1,29 @@
 @extends('layouts.warehouse')
+
 @section('page-title', 'Доступ ограничен')
+
 @section('content')
-<div class="glass rounded-2xl overflow-hidden p-8 text-center">
-    <div class="mb-6">
-        <i class="bi bi-shield-lock text-8xl text-warning/50"></i>
+<div class="min-h-[60vh] flex flex-col items-center justify-center text-center">
+    <div class="w-32 h-32 rounded-full bg-danger/10 flex items-center justify-center text-danger mb-8">
+        <i class="bi bi-shield-lock text-6xl"></i>
     </div>
     
-    <h2 class="text-3xl font-bold mb-4">Доступ ограничен</h2>
-    
-    <p class="text-lg text-muted mb-6">
-        У вас нет разрешения на просмотр этой страницы.
+    <h2 class="text-3xl font-black text-white mb-4">403: Нет доступа</h2>
+    <p class="text-muted max-w-md mx-auto mb-8 leading-relaxed">
+        У вашего аккаунта недостаточно прав для просмотра этого раздела. 
+        Пожалуйста, обратитесь к администратору для получения доступа.
     </p>
-    
-    <div class="bg-warning/10 border border-warning/30 rounded-xl p-4 mb-6">
-        <p class="text-warning font-medium">
-            <i class="bi bi-info-circle me-2"></i>
-            Обратитесь к администратору для получения разрешения на печать QR-кодов.
-        </p>
-    </div>
-    
-    <div class="flex gap-4 justify-center">
-        <a href="{{ route('warehouse.dashboard') }}" class="btn btn-primary btn-lg px-8">
-            <i class="bi bi-house me-2"></i>На дашборд
+
+    <div class="flex flex-col sm:flex-row gap-4">
+        <a href="{{ route('warehouse.dashboard') }}" class="btn btn-primary px-8 py-3 rounded-2xl font-black">
+            ВЕРНУТЬСЯ НА ГЛАВНУЮ
         </a>
-        <a href="{{ route('warehouse.qrcodes.index') }}" class="btn btn-outline btn-lg px-8">
-            <i class="bi bi-arrow-left me-2"></i>Назад
-        </a>
+        <form action="{{ route('logout') }}" method="POST">
+            @csrf
+            <button type="submit" class="btn btn-outline px-8 py-3 rounded-2xl font-black w-full">
+                ВЫЙТИ ИЗ АККАУНТА
+            </button>
+        </form>
     </div>
 </div>
 @endsection

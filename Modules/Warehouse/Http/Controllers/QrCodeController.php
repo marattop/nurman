@@ -5,6 +5,8 @@ namespace Modules\Warehouse\Http\Controllers;
 use Illuminate\Http\Request;
 use Modules\Warehouse\Models\QrCode as QrCodeModel;
 use Modules\Warehouse\Models\ProductVariant;
+use Modules\Warehouse\Models\Product;
+use Modules\Warehouse\Models\Stock;
 
 class QrCodeController extends Controller
 {
@@ -16,7 +18,85 @@ class QrCodeController extends Controller
                 abort(403, 'Доступ ограничен. Обратитесь к администратору для получения разрешения на печать QR-кодов.');
             }
             return $next($request);
-        })->except([]);
+        })->except(['scan', 'processScan']);
+    }
+
+    public function scan()
+    {
+        return view('warehouse::scan-qr');
+    }
+
+    public function processScan(Request $request)
+    {
+        $qrData = $request->get('qr_data');
+        
+        if (!$qrData) {
+            return response()->json(['success' => false, 'message' => 'Код не передан']);
+        }
+
+        // Поиск по QR-коду (формат id:code)
+        if (str_contains($qrData, ':')) {
+            $parts = explode(':', $qrData);
+            $qr = QrCodeModel::where('id', $parts[0])->where('qr_data', $parts[1])->first();
+            if ($qr) {
+                $variant = $qr->variant;
+                $product = $variant->product;
+                return $this->formatScanResponse($product, $variant, true);
+            }
+        }
+
+        // Поиск по артикулу товара
+        $product = Product::where('article', $qrData)->first();
+        if ($product) {
+            $variant = $product->variants->first();
+            return $this->formatScanResponse($product, $variant);
+        }
+
+        // Поиск по штрих-коду варианта
+        $variant = ProductVariant::where('barcode', $qrData)->first();
+        if ($variant) {
+            $product = $variant->product;
+            return $this->formatScanResponse($product, $variant);
+        }
+
+        return response()->json(['success' => false, 'message' => 'Товар не найден']);
+    }
+
+    private function formatScanResponse($product, $variant, $isKnownQr = false)
+    {
+        $stock = Stock::where('variant_id', $variant->id)->get();
+        $shopStock = $stock->whereNotNull('shop_id')->sum('quantity');
+        $warehouseStock = $stock->whereNotNull('warehouse_id')->sum('quantity');
+
+        return response()->json([
+            'success' => true,
+            'is_known_qr' => $isKnownQr,
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'article' => $product->article,
+                'photo' => $product->photo ? asset('storage/' . $product->photo) : null,
+                'retail_price' => $product->retail_price,
+                'supplier_price' => $variant->supplier_price,
+                'variants' => $product->variants->map(function($v) {
+                    $vStock = Stock::where('variant_id', $v->id)->get();
+                    return [
+                        'id' => $v->id,
+                        'size' => $v->size,
+                        'color' => $v->color,
+                        'barcode' => $v->barcode,
+                        'total_quantity' => $vStock->sum('quantity'),
+                        'showcase_quantity' => $vStock->whereNotNull('shop_id')->sum('quantity'),
+                        'warehouse_quantity' => $vStock->whereNotNull('warehouse_id')->sum('quantity'),
+                    ];
+                })
+            ],
+            'summary' => [
+                'total_stock' => $shopStock + $warehouseStock,
+                'shop_stock' => $shopStock,
+                'warehouse_stock' => $warehouseStock,
+            ]
+        ]);
     }
 
     public function index(Request $request)

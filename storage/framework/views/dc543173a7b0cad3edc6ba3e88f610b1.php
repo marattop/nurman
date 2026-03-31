@@ -61,7 +61,7 @@
     </div>
     
     <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-        <table class="table" style="width: 100%; border-collapse: collapse; min-width: 800px;">
+        <table class="table responsive-table" style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr>
                     <th style="text-align: left; padding: 16px; width: 35%;">Товар</th>
@@ -82,7 +82,7 @@
                     <tr style="transition: 0.2s;" 
                         onmouseover="this.style.background='rgba(56,189,248,0.05)'" 
                         onmouseout="this.style.background='transparent'">
-                        <td style="padding: 16px; text-align: left;">
+                        <td data-label="Товар" style="padding: 16px; text-align: left;">
                             <div style="display: flex; align-items: center; gap: 12px;">
                                 <?php if($product->photo): ?>
                                     <img src="<?php echo e(asset('storage/' . $product->photo)); ?>" 
@@ -100,9 +100,9 @@
                                 </div>
                             </div>
                         </td>
-                        <td style="padding: 16px; text-align: left; color: #94a3b8; font-family: monospace; font-size: 13px;"><?php echo e($product->article); ?></td>
-                        <td style="padding: 16px; text-align: left;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
+                        <td data-label="Артикул" style="padding: 16px; text-align: left; color: #94a3b8; font-family: monospace; font-size: 13px;"><?php echo e($product->article); ?></td>
+                        <td data-label="QR-коды" style="padding: 16px; text-align: left;">
+                            <div style="display: flex; align-items: center; gap: 10px; justify-content: flex-end; md:justify-content: flex-start;">
                                 <div style="width: 38px; height: 38px; background: white; border-radius: 4px; padding: 2px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);">
                                     <?php
                                         $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' . urlencode($product->article);
@@ -111,7 +111,7 @@
                                 </div>
 
                                 <?php if($qrCount > 0): ?>
-                                    <div style="display: flex; flex-direction: column;">
+                                    <div style="display: flex; flex-direction: column; text-align: left;">
                                         <span style="color: #10b981; font-weight: 600; font-size: 12px;"><?php echo e($qrCount); ?> QR</span>
                                         <?php if($printedCount > 0): ?>
                                             <span style="color: #94a3b8; font-size: 10px;"><?php echo e($printedCount); ?> печ.</span>
@@ -122,7 +122,7 @@
                                 <?php endif; ?>
                             </div>
                         </td>
-                        <td style="padding: 16px; text-align: left;">
+                        <td data-label="Статус" style="padding: 16px; text-align: left;">
                             <?php if($qrCount >= $variantsCount && $variantsCount > 0): ?>
                                 <span class="badge badge-success" style="font-size: 11px; padding: 4px 8px;">Готов</span>
                             <?php elseif($qrCount > 0): ?>
@@ -131,10 +131,10 @@
                                 <span class="badge badge-danger" style="font-size: 11px; padding: 4px 8px;">Нет</span>
                             <?php endif; ?>
                         </td>
-                        <td style="padding: 16px; text-align: right;">
+                        <td data-label="Действия" style="padding: 16px; text-align: right;">
                             <a href="<?php echo e(route('admin.qr.manage.product', $product->id)); ?>" 
                                class="btn btn-primary btn-sm"
-                               style="padding: 4px 8px; font-size: 12px;">
+                               style="padding: 6px 12px; font-size: 12px; width: 100%; justify-content: center;">
                                 <i class="bi bi-gear"></i> Управление
                             </a>
                         </td>

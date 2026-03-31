@@ -32,7 +32,8 @@ class PurchasesController extends Controller
     {
         $shops = Shop::all();
         $warehouses = WarehouseModel::all();
-        return view('warehouse::purchases.create', compact('shops', 'warehouses'));
+        $products = \Modules\Warehouse\Models\Product::with('variants')->get();
+        return view('warehouse::purchases.create', compact('shops', 'warehouses', 'products'));
     }
 
     public function store(Request $request)
@@ -76,7 +77,7 @@ class PurchasesController extends Controller
 
         $stock->addQuantity($validated['quantity']);
 
-        return redirect()->route('warehouse.purchases')
+        return redirect()->route('warehouse.purchases.index')
             ->with('success', 'Закупка успешно добавлена');
     }
 }

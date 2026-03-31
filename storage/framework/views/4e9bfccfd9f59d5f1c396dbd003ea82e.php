@@ -289,7 +289,8 @@ function showQrModal(productId, productName, qrCodes) {
         div.className = 'flex flex-col items-center gap-3 p-4 bg-sidebar/50 rounded-2xl border border-white/5';
         
         const qrContent = qr.qr_data && qr.qr_data.article ? qr.qr_data.article : '—';
-        const qrImageUrl = qr.qr_code_path ? '/storage/' + qr.qr_code_path : 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrContent);
+        const storageUrl = "<?php echo e(asset('storage')); ?>/";
+        const qrImageUrl = qr.qr_code_path ? storageUrl + qr.qr_code_path : 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrContent);
         
         div.innerHTML = `
             <div class="bg-white p-2 rounded-xl">

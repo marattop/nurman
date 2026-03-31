@@ -25,7 +25,7 @@
         <h3 class="card-header-title"><i class="bi bi-list-ul" style="color: #38bdf8;"></i> Список товаров</h3>
     </div>
     <div style="overflow-x: auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
+        <table class="table responsive-table" style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr>
                     <th style="text-align: left; padding: 12px 16px;">Товар</th>
@@ -44,13 +44,13 @@
                     $isOutOfStock = $totalQty <= 0;
                 ?>
                 <tr style="<?php echo e($isOutOfStock ? 'opacity: 0.5;' : ''); ?>">
-                    <td style="padding: 12px 16px; vertical-align: middle;">
+                    <td data-label="Товар" style="padding: 12px 16px; vertical-align: middle; text-align: left;">
                         <div style="font-weight: 500;"><?php echo e($item->name); ?></div>
                     </td>
-                    <td style="padding: 12px 16px; vertical-align: middle; text-align: center;">
+                    <td data-label="Размер" style="padding: 12px 16px; vertical-align: middle; text-align: center;">
                         <span class="badge badge-blue"><?php echo e($item->size); ?></span>
                     </td>
-                    <td style="padding: 12px 16px; vertical-align: middle; text-align: center;">
+                    <td data-label="В магазине" style="padding: 12px 16px; vertical-align: middle; text-align: center;">
                         <?php if(($item->shop_quantity ?? 0) > 0): ?>
                             <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
                                 <i class="bi bi-shop"></i> <?php echo e($item->shop_quantity); ?> шт
@@ -59,7 +59,7 @@
                             <span style="color: #94a3b8;">—</span>
                         <?php endif; ?>
                     </td>
-                    <td style="padding: 12px 16px; vertical-align: middle; text-align: center;">
+                    <td data-label="На складе" style="padding: 12px 16px; vertical-align: middle; text-align: center;">
                         <?php if(($item->warehouse_quantity ?? 0) > 0): ?>
                             <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;">
                                 <i class="bi bi-building"></i> <?php echo e($item->warehouse_quantity); ?> шт
@@ -68,7 +68,7 @@
                             <span style="color: #94a3b8;">—</span>
                         <?php endif; ?>
                     </td>
-                    <td style="padding: 12px 16px; vertical-align: middle; text-align: center;">
+                    <td data-label="Всего" style="padding: 12px 16px; vertical-align: middle; text-align: center;">
                         <?php if($isOutOfStock): ?>
                             <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
                                 <i class="bi bi-x-circle"></i> Нет
@@ -77,8 +77,8 @@
                             <span style="font-weight: 600; color: #f1f5f9;"><?php echo e($totalQty); ?> шт</span>
                         <?php endif; ?>
                     </td>
-                    <td style="padding: 12px 16px; vertical-align: middle; text-align: right; color: #94a3b8;"><?php echo e(number_format($item->retail_price, 0, '.', ' ')); ?> сом</td>
-                    <td style="padding: 12px 16px; vertical-align: middle; text-align: right;">
+                    <td data-label="Цена" style="padding: 12px 16px; vertical-align: middle; text-align: right; color: #94a3b8;"><?php echo e(number_format($item->retail_price, 0, '.', ' ')); ?> сом</td>
+                    <td data-label="Стоимость" style="padding: 12px 16px; vertical-align: middle; text-align: right;">
                         <?php if($isOutOfStock): ?>
                             <span style="color: #94a3b8;">Нет</span>
                         <?php else: ?>

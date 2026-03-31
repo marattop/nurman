@@ -30,7 +30,7 @@
         </button>
     </div>
     <div style="overflow-x: auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
+        <table class="table responsive-table" style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr>
                     <th style="text-align: left; padding: 12px 16px;">Имя</th>
@@ -49,11 +49,11 @@
                     $qrCode = $hasCoupon ? $coupon->qrCode : null;
                 @endphp
                 <tr>
-                    <td style="padding: 12px 16px;">
+                    <td data-label="Имя" style="padding: 12px 16px;">
                         <div style="font-weight: 500;">{{ $customer->full_name ?? '—' }}</div>
                     </td>
-                    <td style="padding: 12px 16px; color: #94a3b8;">{{ $customer->phone ?? '—' }}</td>
-                    <td style="padding: 12px 16px;">
+                    <td data-label="Телефон" style="padding: 12px 16px; color: #94a3b8;">{{ $customer->phone ?? '—' }}</td>
+                    <td data-label="Тип скидки" style="padding: 12px 16px;">
                         @if($hasCoupon)
                             @if($coupon->discount_type === 'percent')
                                 <span class="badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
@@ -68,7 +68,7 @@
                             <span style="color: #64748b;">—</span>
                         @endif
                     </td>
-                    <td style="padding: 12px 16px;">
+                    <td data-label="QR код" style="padding: 12px 16px;">
                         @if($hasCoupon && $qrCode)
                             <button class="btn btn-outline btn-qr" 
                                 data-qr='@json($qrCode->qr_data)' 
@@ -79,7 +79,7 @@
                             <span style="color: #64748b;">—</span>
                         @endif
                     </td>
-                    <td style="padding: 12px 16px;">
+                    <td data-label="Статус" style="padding: 12px 16px;">
                         @if($hasCoupon)
                             @if($coupon->is_active)
                                 <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
@@ -94,8 +94,8 @@
                             <span style="color: #64748b;">—</span>
                         @endif
                     </td>
-                    <td style="padding: 12px 16px;">
-                        <div style="display: flex; gap: 8px;">
+                    <td data-label="Действия" style="padding: 12px 16px;">
+                        <div style="display: flex; gap: 8px; justify-content: flex-end;">
                             @if($hasCoupon)
                                 <button class="btn btn-outline btn-edit" 
                                     data-coupon-id="{{ $coupon->id }}"
@@ -120,7 +120,7 @@
                                 <button class="btn btn-outline btn-delete-customer"
                                     data-customer-id="{{ $customer->id }}"
                                     data-client-name="{{ $customer->full_name ?? 'Клиент' }}"
-                                    title="Удалить клиента" style="color: #ef4444; border-color: #ef4444; margin-left: 8px;">
+                                    title="Удалить клиента" style="color: #ef4444; border-color: #ef4444;">
                                     <i class="bi bi-person-x"></i>
                                 </button>
                                 <button class="btn btn-outline btn-delete"
@@ -154,121 +154,124 @@
 </div>
 
 {{-- Модальное окно создания купона --}}
-<div id="createModal" class="modal" style="display: none;">
-    <div class="modal-overlay" onclick="closeCreateModal()"></div>
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="modal-header">
-            <h3><i class="bi bi-plus-circle"></i> Создать купонную карту</h3>
-            <button class="btn-close" onclick="closeCreateModal()">&times;</button>
+<div id="createModal" class="modal">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="bi bi-plus-circle"></i> Создать купонную карту</h3>
+                <button type="button" class="btn-close" onclick="closeCreateModal()">&times;</button>
+            </div>
+            <form id="createForm" action="{{ route('admin.customers.coupon.create') }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Телефон (логин для клиента) <span style="color: #ef4444;">*</span></label>
+                        <input type="text" name="phone" id="createPhone" class="form-control" placeholder="(___) ___-___" value="+996" required>
+                        <small style="color: #64748b;">Логин клиента = телефон</small>
+                    </div>
+                    <div class="form-group">
+                        <label>ФИО <span style="color: #ef4444;">*</span></label>
+                        <input type="text" name="full_name" id="createFullName" class="form-control" placeholder="Иванов Иван Иванович" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Тип скидки <span style="color: #ef4444;">*</span></label>
+                        <select name="discount_type" id="createDiscountType" class="form-control" required onchange="toggleDiscountValue()">
+                            <option value="percent">Процентная скидка</option>
+                            <option value="wholesale">Оптовая скидка (закупочная цена)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="discountValueGroup">
+                        <label>Размер скидки (%)</label>
+                        <input type="number" name="discount_value" id="createDiscountValue" class="form-control" placeholder="10" min="0" max="100" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Срок действия</label>
+                        <select name="validity_period" id="createValidityPeriod" class="form-control" onchange="toggleCustomValidity()">
+                            <option value="12">12 месяцев</option>
+                            <option value="24">24 месяца</option>
+                            <option value="999">Бессрочно</option>
+                            <option value="custom">Выбрать дату...</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="customValidityGroup" style="display: none;">
+                        <label>Дата окончания</label>
+                        <input type="date" name="valid_until" id="createValidUntil" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeCreateModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Создать</button>
+                </div>
+            </form>
         </div>
-        <form id="createForm" action="{{ route('admin.customers.coupon.create') }}" method="POST">
-            @csrf
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Телефон (логин для клиента) <span style="color: #ef4444;">*</span></label>
-                    <input type="text" name="phone" id="createPhone" class="form-control" placeholder="(___) ___-___" value="+996" required>
-                    <small style="color: #64748b;">Логин клиента = телефон</small>
-                </div>
-                <div class="form-group">
-                    <label>ФИО <span style="color: #ef4444;">*</span></label>
-                    <input type="text" name="full_name" id="createFullName" class="form-control" placeholder="Иванов Иван Иванович" required>
-                </div>
-                <div class="form-group">
-                    <label>Тип скидки <span style="color: #ef4444;">*</span></label>
-                    <select name="discount_type" id="createDiscountType" class="form-control" required onchange="toggleDiscountValue()">
-                        <option value="percent">Процентная скидка</option>
-                        <option value="wholesale">Оптовая скидка (закупочная цена)</option>
-                    </select>
-                </div>
-                <div class="form-group" id="discountValueGroup">
-                    <label>Размер скидки (%)</label>
-                    <input type="number" name="discount_value" id="createDiscountValue" class="form-control" placeholder="10" min="0" max="100" step="0.1">
-                </div>
-                <div class="form-group">
-                    <label>Срок действия</label>
-                    <select name="validity_period" id="createValidityPeriod" class="form-control" onchange="toggleCustomValidity()">
-                        <option value="12">12 месяцев</option>
-                        <option value="24">24 месяца</option>
-                        <option value="999">Бессрочно</option>
-                        <option value="custom">Выбрать дату...</option>
-                    </select>
-                </div>
-                <div class="form-group" id="customValidityGroup" style="display: none;">
-                    <label>Дата окончания</label>
-                    <input type="date" name="valid_until" id="createValidUntil" class="form-control">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeCreateModal()">Отмена</button>
-                <button type="submit" class="btn btn-primary">Создать</button>
-            </div>
-        </form>
     </div>
 </div>
 
 {{-- Модальное окно редактирования купона --}}
-<div id="editModal" class="modal" style="display: none;">
-    <div class="modal-overlay" onclick="closeEditModal()"></div>
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="modal-header">
-            <h3><i class="bi bi-pencil"></i> Редактировать купонную карту</h3>
-            <button class="btn-close" onclick="closeEditModal()">&times;</button>
+<div id="editModal" class="modal">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="bi bi-pencil"></i> Редактировать купонную карту</h3>
+                <button type="button" class="btn-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <input type="hidden" name="coupon_id" id="editCouponId">
+                    <div class="form-group">
+                        <label>ФИО</label>
+                        <input type="text" name="full_name" id="editFullName" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Телефон</label>
+                        <input type="text" id="editPhone" class="form-control" disabled style="background: rgba(148, 163, 184, 0.1);">
+                    </div>
+                    <div class="form-group">
+                        <label>Тип скидки</label>
+                        <select name="discount_type" id="editDiscountType" class="form-control" onchange="toggleEditDiscountValue()">
+                            <option value="percent">Процентная скидка</option>
+                            <option value="wholesale">Оптовая скидка (закупочная цена)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="editDiscountValueGroup">
+                        <label>Размер скидки (%)</label>
+                        <input type="number" name="discount_value" id="editDiscountValue" class="form-control" min="0" max="100" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Статус</label>
+                        <select name="is_active" id="editIsActive" class="form-control">
+                            <option value="1">Активен</option>
+                            <option value="0">Неактивен (заблокирован)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата окончания</label>
+                        <input type="date" name="valid_until" id="editValidUntil" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeEditModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
         </div>
-        <form id="editForm" method="POST">
-            @csrf
-            <div class="modal-body">
-                <input type="hidden" name="coupon_id" id="editCouponId">
-                <div class="form-group">
-                    <label>ФИО</label>
-                    <input type="text" name="full_name" id="editFullName" class="form-control">
-                </div>
-                <div class="form-group">
-                    <label>Телефон</label>
-                    <input type="text" id="editPhone" class="form-control" disabled style="background: rgba(148, 163, 184, 0.1);">
-                </div>
-                <div class="form-group">
-                    <label>Тип скидки</label>
-                    <select name="discount_type" id="editDiscountType" class="form-control" onchange="toggleEditDiscountValue()">
-                        <option value="percent">Процентная скидка</option>
-                        <option value="wholesale">Оптовая скидка (закупочная цена)</option>
-                    </select>
-                </div>
-                <div class="form-group" id="editDiscountValueGroup">
-                    <label>Размер скидки (%)</label>
-                    <input type="number" name="discount_value" id="editDiscountValue" class="form-control" min="0" max="100" step="0.1">
-                </div>
-                <div class="form-group">
-                    <label>Статус</label>
-                    <select name="is_active" id="editIsActive" class="form-control">
-                        <option value="1">Активен</option>
-                        <option value="0">Неактивен (заблокирован)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Дата окончания</label>
-                    <input type="date" name="valid_until" id="editValidUntil" class="form-control">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeEditModal()">Отмена</button>
-                <button type="submit" class="btn btn-primary">Сохранить</button>
-            </div>
-        </form>
     </div>
 </div>
 
 {{-- Модальное окно просмотра QR кода --}}
-<div id="qrModal" class="modal" style="display: none;">
-    <div class="modal-overlay" onclick="closeQrModal()"></div>
-    <div class="modal-content" style="max-width: 400px; text-align: center;">
-        <div class="modal-header">
-            <h3><i class="bi bi-qr-code"></i> QR код клиента</h3>
-            <button class="btn-close" onclick="closeQrModal()">&times;</button>
-        </div>
-        <div class="modal-body" style="text-align: center;">
-            <p id="qrClientName" style="font-weight: 600; margin-bottom: 16px;"></p>
-            <div id="qrCodeContainer" style="background: white; padding: 24px; border-radius: 12px; display: inline-block;"></div>
-            <p style="margin-top: 16px; color: #64748b; font-size: 14px;">Покажите этот QR код клиенту для сканирования</p>
+<div id="qrModal" class="modal">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content" style="text-align: center;">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="bi bi-qr-code"></i> QR код клиента</h3>
+                <button type="button" class="btn-close" onclick="closeQrModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <p id="qrClientName" style="font-weight: 600; margin-bottom: 16px;"></p>
+                <div id="qrCodeContainer" style="background: white; padding: 24px; border-radius: 12px; display: inline-block;"></div>
+                <p style="margin-top: 16px; color: #64748b; font-size: 14px;">Покажите этот QR код клиенту для сканирования</p>
+            </div>
         </div>
     </div>
 </div>
@@ -277,75 +280,6 @@
 
 @push('styles')
 <style>
-    .modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 1000;
-        display: none;
-    }
-    .modal-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-    }
-    .modal-content {
-        position: relative;
-        background: #1e293b;
-        border-radius: 12px;
-        margin: 80px auto;
-        max-width: 500px;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-        animation: modalSlideIn 0.3s ease-out;
-    }
-    @keyframes modalSlideIn {
-        from { transform: translateY(-50px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 24px;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-    }
-    .modal-header h3 {
-        margin: 0;
-        font-size: 18px;
-        color: #f1f5f9;
-    }
-    .modal-body {
-        padding: 24px;
-    }
-    .modal-footer {
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-        padding: 20px 24px;
-        border-top: 1px solid rgba(148, 163, 184, 0.1);
-    }
-    .btn-close {
-        background: none;
-        border: none;
-        font-size: 24px;
-        color: #94a3b8;
-        cursor: pointer;
-        padding: 0;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 6px;
-    }
-    .btn-close:hover {
-        background: rgba(148, 163, 184, 0.1);
-    }
     .form-group {
         margin-bottom: 16px;
     }
@@ -381,7 +315,6 @@
 @endpush
 
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const ROUTES = {
     couponCreate: '{{ route("admin.customers.coupon.create") }}',
@@ -399,11 +332,15 @@ function getCsrfToken() {
 function openCreateModal(phone = '', fullName = '') {
     document.getElementById('createPhone').value = phone;
     document.getElementById('createFullName').value = fullName;
-    document.getElementById('createModal').style.display = 'block';
+    const modalEl = document.getElementById('createModal');
+    const instance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+    instance.show();
 }
 
 function closeCreateModal() {
-    document.getElementById('createModal').style.display = 'none';
+    const modalEl = document.getElementById('createModal');
+    const instance = bootstrap.Modal.getInstance(modalEl);
+    if (instance) instance.hide();
     document.getElementById('createForm').reset();
 }
 
@@ -429,12 +366,17 @@ function openEditModal(couponId, fullName, phone, discountType, discountValue, i
     document.getElementById('editDiscountValue').value = discountValue || 0;
     document.getElementById('editIsActive').value = isActive ? '1' : '0';
     document.getElementById('editValidUntil').value = validUntil || '';
-    document.getElementById('editModal').style.display = 'block';
+    
+    const modalEl = document.getElementById('editModal');
+    const instance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+    instance.show();
     toggleEditDiscountValue();
 }
 
 function closeEditModal() {
-    document.getElementById('editModal').style.display = 'none';
+    const modalEl = document.getElementById('editModal');
+    const instance = bootstrap.Modal.getInstance(modalEl);
+    if (instance) instance.hide();
 }
 
 function toggleEditDiscountValue() {
@@ -444,7 +386,8 @@ function toggleEditDiscountValue() {
 
 function showQrCode(qrData, clientName) {
     document.getElementById('qrClientName').textContent = clientName || 'Клиент';
-    document.getElementById('qrCodeContainer').innerHTML = '';
+    const container = document.getElementById('qrCodeContainer');
+    container.innerHTML = '<div style="padding: 20px;"><i class="bi bi-hourglass-split"></i> Генерирую...</div>';
     
     try {
         const data = qrData;
@@ -454,27 +397,26 @@ function showQrCode(qrData, clientName) {
         }
         
         const qrText = data.coupon_id + ':' + data.code;
+        const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrText)}&color=0f172a&margin=10`;
         
-        const container = document.getElementById('qrCodeContainer');
-        container.innerHTML = '';
-        
-        new QRCode(container, {
-            text: qrText,
-            width: 256,
-            height: 256,
-            colorDark: '#0f172a',
-            colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.H
-        });
+        container.innerHTML = `
+            <img src="${qrImageUrl}" alt="QR Code" style="max-width: 100%; height: auto;" 
+                 onload="this.parentElement.style.padding='0'"
+                 onerror="this.parentElement.innerHTML='<p style=\'color: #ef4444;\'>Ошибка загрузки QR</p>'">
+        `;
     } catch (e) {
-        document.getElementById('qrCodeContainer').innerHTML = '<p style="color: #ef4444;">Ошибка: ' + e.message + '</p>';
+        container.innerHTML = '<p style="color: #ef4444;">Ошибка: ' + e.message + '</p>';
     }
     
-    document.getElementById('qrModal').style.display = 'block';
+    const modalEl = document.getElementById('qrModal');
+    const instance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+    instance.show();
 }
 
 function closeQrModal() {
-    document.getElementById('qrModal').style.display = 'none';
+    const modalEl = document.getElementById('qrModal');
+    const instance = bootstrap.Modal.getInstance(modalEl);
+    if (instance) instance.hide();
 }
 
 function toggleCoupon(couponId, action) {

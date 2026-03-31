@@ -68,47 +68,51 @@
     </div>
 </div>
 
-<div class="main-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
+<div class="main-grid grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Последние товары -->
-    <div class="card" style="padding: 0; overflow: hidden;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(56,189,248,0.05); font-weight: 600; display: flex; align-items: center; gap: 8px;">
-            <i class="bi bi-clock-history" style="color: #38bdf8;"></i> Последние товары
+    <div class="lg:col-span-2 card !p-0 overflow-hidden border-white/5 shadow-lg">
+        <div class="px-5 py-4 border-b border-white/5 bg-white/5 font-bold flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="bi bi-clock-history text-accent"></i> 
+                <span>Последние товары</span>
+            </div>
+            <a href="<?php echo e(route('admin.products.index')); ?>" class="text-xs text-accent hover:underline">Все товары →</a>
         </div>
-        <div style="overflow-x: auto;">
-            <table class="table" style="width: 100%; border-collapse: collapse; min-width: 500px;">
+        <div class="overflow-x-auto">
+            <table class="table responsive-table w-full border-collapse">
                 <thead>
                     <tr>
-                        <th style="text-align: left;">Товар</th>
+                        <th class="text-left px-5">Товар</th>
                         <th>Артикул</th>
                         <th>Категория</th>
-                        <th>Дата</th>
+                        <th class="text-right px-5">Дата</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php $__empty_1 = true; $__currentLoopData = $recentProducts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $product): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                    <tr>
-                        <td>
-                            <div style="display: flex; align-items: center; gap: 12px;">
+                    <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/5 last:border-0">
+                        <td data-label="Товар" class="px-5">
+                            <div class="flex items-center gap-3 py-1">
                                 <?php if($product->photo): ?>
-                                    <img src="<?php echo e(asset('storage/' . $product->photo)); ?>" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">
+                                    <img src="<?php echo e(asset('storage/' . $product->photo)); ?>" class="w-10 h-10 rounded-lg object-cover border border-white/10 shadow-sm">
                                 <?php else: ?>
-                                    <div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(16,185,129,0.15); display: flex; align-items: center; justify-content: center; color: #10b981;">
+                                    <div class="w-10 h-10 rounded-lg bg-success/15 flex items-center justify-center text-success border border-success/10">
                                         <i class="bi bi-box"></i>
                                     </div>
                                 <?php endif; ?>
-                                <span style="font-weight: 500;"><?php echo e(Str::limit($product->name, 35)); ?></span>
+                                <div class="flex flex-col">
+                                    <span class="font-bold text-text truncate max-w-[150px] sm:max-w-none"><?php echo e($product->name); ?></span>
+                                    <span class="text-[10px] text-muted md:hidden"><?php echo e($product->category?->name ?? '—'); ?></span>
+                                </div>
                             </div>
                         </td>
-                        <td style="color: #94a3b8;"><?php echo e($product->article); ?></td>
-                        <td style="color: #94a3b8;"><?php echo e($product->category?->name ?? '—'); ?></td>
-                        <td style="color: #94a3b8;"><?php echo e($product->created_at->format('d.m H:i')); ?></td>
+                        <td data-label="Артикул" class="text-muted font-mono text-xs"><?php echo e($product->article); ?></td>
+                        <td data-label="Категория" class="text-muted text-xs hidden md:table-cell"><?php echo e($product->category?->name ?? '—'); ?></td>
+                        <td data-label="Дата" class="text-muted text-xs text-right px-5"><?php echo e($product->created_at->format('d.m H:i')); ?></td>
                     </tr>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
-                        <td colspan="4" style="text-align: center; padding: 40px; color: #64748b;">
-                            <i class="bi bi-box" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 12px;"></i>
-                            Нет новых товаров
-                        </td>
+                        <td colspan="4" class="text-center py-12 text-muted italic">Нет новых товаров</td>
                     </tr>
                     <?php endif; ?>
                 </tbody>
@@ -117,77 +121,69 @@
     </div>
 
     <!-- Заканчиваются -->
-    <div class="card" style="padding: 0; overflow: hidden;">
-        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(239,68,68,0.05); font-weight: 600; display: flex; align-items: center; gap: 8px; justify-content: space-between;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <i class="bi bi-exclamation-triangle" style="color: #ef4444;"></i> Заканчиваются
+    <div class="card !p-0 overflow-hidden border-white/5 shadow-lg border-danger/10">
+        <div class="px-5 py-4 border-b border-white/5 bg-danger/5 font-bold flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i class="bi bi-exclamation-triangle text-danger"></i> 
+                <span>Дефицит</span>
             </div>
             <?php if($deficitCount > 0): ?>
-                <a href="<?php echo e(route('admin.purchases.deficit')); ?>" class="btn btn-sm" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; font-size: 12px; padding: 6px 12px;">
-                    <?php echo e($deficitCount); ?> шт <i class="bi bi-arrow-right"></i>
-                </a>
+                <span class="badge badge-danger"><?php echo e($deficitCount); ?> поз.</span>
             <?php endif; ?>
         </div>
-        <div style="overflow-x: auto;">
-            <table class="table" style="width: 100%; border-collapse: collapse; min-width: 250px;">
+        <div class="overflow-x-auto">
+            <table class="table responsive-table w-full border-collapse">
                 <thead>
                     <tr>
-                        <th style="text-align: left;">Товар</th>
-                        <th>Остаток</th>
+                        <th class="text-left px-5">Товар</th>
+                        <th class="text-right px-5">Остаток</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php $__empty_1 = true; $__currentLoopData = $lowStockProducts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $product): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                    <tr>
-                        <td>
-                            <div style="font-weight: 500;"><?php echo e(Str::limit($product->name, 30)); ?></div>
-                            <div style="color: #94a3b8; font-size: 13px;"><?php echo e($product->article); ?></div>
+                    <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/5 last:border-0">
+                        <td data-label="Товар" class="px-5 py-3">
+                            <div class="font-bold text-text text-sm truncate max-w-[120px] sm:max-w-none"><?php echo e($product->name); ?></div>
+                            <div class="text-[10px] text-muted font-mono"><?php echo e($product->article); ?></div>
                         </td>
-                        <td>
+                        <td data-label="Остаток" class="text-right px-5">
                             <?php if($product->quantity <= 2): ?>
-                                <span class="badge badge-danger"><?php echo e($product->quantity); ?> шт</span>
+                                <span class="text-danger font-bold"><?php echo e($product->quantity); ?> шт</span>
                             <?php elseif($product->quantity <= 5): ?>
-                                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;"><?php echo e($product->quantity); ?> шт</span>
+                                <span class="text-warning font-bold"><?php echo e($product->quantity); ?> шт</span>
                             <?php else: ?>
-                                <span class="badge badge-success"><?php echo e($product->quantity); ?> шт</span>
+                                <span class="text-success font-bold"><?php echo e($product->quantity); ?> шт</span>
                             <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <tr>
-                        <td colspan="2" style="text-align: center; padding: 40px; color: #64748b;">
-                            <i class="bi bi-check-circle" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 12px;"></i>
-                            Всё в наличии
-                        </td>
+                        <td colspan="2" class="text-center py-12 text-muted italic">Всё в наличии</td>
                     </tr>
                     <?php endif; ?>
                 </tbody>
             </table>
         </div>
+        <?php if($deficitCount > 5): ?>
+        <div class="p-3 bg-white/5 border-t border-white/5 text-center">
+            <a href="<?php echo e(route('admin.purchases.deficit')); ?>" class="text-xs text-accent hover:underline">Смотреть весь дефицит</a>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startPush('styles'); ?>
 <style>
 @media (max-width: 768px) {
-    .main-grid {
-        grid-template-columns: 1fr !important;
-    }
-    .stats-grid {
-        grid-template-columns: 1fr !important;
-    }
     .stats-icon {
         width: 48px !important;
         height: 48px !important;
         font-size: 20px !important;
     }
-    .card {
-        padding: 16px !important;
-    }
-    .page-title {
-        font-size: 24px !important;
-    }
 }
 </style>
-<?php $__env->stopSection(); ?>
+<?php $__env->stopPush(); ?>
 
 <?php echo $__env->make('layouts.admin', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\nurman\resources\views/admin/dashboard.blade.php ENDPATH**/ ?>
