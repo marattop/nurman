@@ -29,25 +29,34 @@ class DashboardController extends Controller
         $cacheKey = "owner_dashboard_{$period}_{$dateFrom}_{$dateTo}_".md5(auth()->id());
 
         try {
-            $data = cache()->remember($cacheKey, now()->addMinutes(5), function () use ($period, $dateFrom, $dateTo) {
+            $data = cache()->remember($cacheKey, now()->addMinute(), function () use ($period, $dateFrom, $dateTo) {
                 $rangeStart = Carbon::parse($dateFrom)->startOfDay();
                 $rangeEnd = Carbon::parse($dateTo)->endOfDay();
 
                 $revenue = Transaction::sales()
-                    ->whereBetween('created_at', [$rangeStart, $rangeEnd])
+                    ->whereDate('created_at', '>=', $dateFrom)
+                    ->whereDate('created_at', '<=', $dateTo)
                     ->selectRaw('COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total, COALESCE(AVG(total_amount), 0) as average')
                     ->first();
 
                 $costOfGoods = DB::table('transaction_items')
                     ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
                     ->where('transactions.type', 'sale')
-                    ->whereBetween('transactions.created_at', [$rangeStart, $rangeEnd])
+                    ->whereDate('transactions.created_at', '>=', $dateFrom)
+                    ->whereDate('transactions.created_at', '<=', $dateTo)
                     ->sum(DB::raw('supplier_price * quantity'));
 
                 $grossProfit = $revenue->total - $costOfGoods;
                 $grossMargin = $revenue->total > 0 ? ($grossProfit / $revenue->total) * 100 : 0;
 
-                $purchases = Purchase::whereBetween('created_at', [$rangeStart, $rangeEnd])
+                $purchases = Purchase::where(function($q) use ($dateFrom, $dateTo) {
+                        $q->whereDate('created_at', '>=', $dateFrom)
+                          ->whereDate('created_at', '<=', $dateTo)
+                          ->orWhere(function($sq) use ($dateFrom, $dateTo) {
+                              $sq->whereDate('purchase_date', '>=', $dateFrom)
+                                 ->whereDate('purchase_date', '<=', $dateTo);
+                          });
+                    })
                     ->selectRaw('COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total, COALESCE(SUM(quantity), 0) as quantity')
                     ->first();
 
@@ -55,7 +64,7 @@ class DashboardController extends Controller
                     ->selectRaw('COUNT(*) as count, COALESCE(SUM(amount), 0) as total')
                     ->first();
 
-                $netProfit = $grossProfit - $purchases->total - $expenses->total;
+                $netProfit = $grossProfit - $expenses->total;
                 $netMargin = $revenue->total > 0 ? ($netProfit / $revenue->total) * 100 : 0;
 
                 $dailySalesSummary = Transaction::sales()
@@ -445,7 +454,7 @@ class DashboardController extends Controller
             $expensesValue = (float) ($expensesByDate[$date] ?? 0);
             $purchasesValue = (float) ($purchasesByDate[$date] ?? 0);
             
-            $netProfitValue = $grossProfitValue - $expensesValue - $purchasesValue;
+            $netProfitValue = $grossProfitValue - $expensesValue;
             $avgCheck = $orders > 0 ? $revenueValue / $orders : 0;
             $grossMargin = $revenueValue > 0 ? ($grossProfitValue / $revenueValue) * 100 : 0;
             $netMargin = $revenueValue > 0 ? ($netProfitValue / $revenueValue) * 100 : 0;

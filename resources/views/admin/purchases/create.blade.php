@@ -35,6 +35,31 @@
 <form action="{{ route('admin.purchases.store') }}" method="POST" class="space-y-6">
     @csrf
 
+    {{-- Номер накладной и дата --}}
+    <div class="card !p-0 overflow-hidden border-white/5">
+        <div class="px-5 py-4 border-b border-white/5 bg-white/5">
+            <h3 class="text-base font-semibold m-0 flex items-center gap-2">
+                <i class="bi bi-receipt text-accent"></i> Документ
+            </h3>
+        </div>
+        <div class="p-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block font-semibold mb-2 text-text text-sm">Накладная №</label>
+                    <input type="text" name="invoice_number" id="invoice_number" class="input" 
+                        placeholder="PUR-... (оставьте пустым для автогенерации)">
+                    <p style="font-size: 12px; color: #94a3b8; margin-top: 6px;">
+                        <i class="bi bi-info-circle"></i> Если не заполнить, номер сгенерируется автоматически
+                    </p>
+                </div>
+                <div>
+                    <label class="block font-semibold mb-2 text-text text-sm">Дата закупки <span class="text-danger">*</span></label>
+                    <input type="date" name="purchase_date" class="input" value="{{ date('Y-m-d') }}" required>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Товары --}}
     <div class="card !p-0 overflow-hidden border-white/5 shadow-xl">
         <div class="px-5 py-4 border-b border-white/5 bg-white/5 flex justify-between items-center">

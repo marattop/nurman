@@ -326,9 +326,16 @@ class QrScannerController extends Controller
             // Логируем перемещение
             ActivityLog::create([
                 'user_id' => auth()->id(),
-                'action' => 'QR: Перемещение товара',
-                'description' => "Товар {$variant->product->name} ({$variant->size}) перемещен: {$request->from} → {$request->to}, кол-во: {$quantity}",
+                'action' => 'stock_transfer',
+                'model_type' => Stock::class,
+                'description' => "Перемещение: {$variant->product->name} ({$variant->size}) из {$request->from} в {$request->to}, кол-во: {$quantity}",
                 'ip_address' => $request->ip(),
+                'new_values' => [
+                    'variant_id' => $variant->id,
+                    'from' => $request->from,
+                    'to' => $request->to,
+                    'quantity' => $quantity,
+                ],
             ]);
 
             return response()->json([

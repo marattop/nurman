@@ -56,6 +56,7 @@
                     <th style="text-align: right; padding: 12px 16px;">Сумма</th>
                     <th style="text-align: left; padding: 12px 16px;">Место</th>
                     <th style="text-align: left; padding: 12px 16px;">Принял</th>
+                    <th style="text-align: right; padding: 12px 16px;">Действия</th>
                 </tr>
             </thead>
             <tbody>
@@ -63,8 +64,11 @@
                 <tr>
                     <td data-label="Дата" style="padding: 12px 16px;">
                         <div style="font-weight: 500;">{{ $purchase->purchase_date->format('d.m.Y') }}</div>
+                        <div style="font-size: 12px; color: #94a3b8;">{{ $purchase->purchase_date->format('H:i') }}</div>
                     </td>
-                    <td data-label="№" style="padding: 12px 16px; text-align: center; color: #94a3b8;">{{ $purchase->invoice_number }}</td>
+                    <td data-label="№" style="padding: 12px 16px; text-align: center; color: #94a3b8;">
+                        <span class="font-mono">{{ $purchase->invoice_number ?? '#' . $purchase->id }}</span>
+                    </td>
                     <td data-label="Товар" style="padding: 12px 16px;">
                         <div style="font-weight: 500;">{{ $purchase->variant->product->name ?? '—' }}</div>
                     </td>
@@ -93,6 +97,16 @@
                     </td>
                     <td data-label="Принял" style="padding: 12px 16px; color: #94a3b8;">
                         {{ $purchase->receivedBy->username ?? '—' }}
+                    </td>
+                    <td data-label="Действия" style="padding: 12px 16px; text-align: right;">
+                        <form action="{{ route('admin.purchases.delete', $purchase) }}" method="POST" 
+                            onsubmit="return confirm('Удалить эту закупку? Это действие нельзя отменить.');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 @empty

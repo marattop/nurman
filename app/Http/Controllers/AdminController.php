@@ -234,7 +234,7 @@ class AdminController extends Controller
             'description' => 'nullable|string',
             'category_id' => 'nullable|exists:categories,id',
             'retail_price' => 'required|numeric|min:0',
-            'supplier_price' => 'nullable|numeric|min:0',
+            'supplier_price' => 'required|numeric|min:0',  // Обязательно!
             'wholesale_price' => 'nullable|numeric|min:0',
             'brand' => 'nullable|string|max:100',
             'material' => 'nullable|string|max:100',

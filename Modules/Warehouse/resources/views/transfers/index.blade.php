@@ -38,17 +38,17 @@
                         <div class="text-[10px] text-muted">{{ $transfer->created_at->format('H:i') }}</div>
                     </td>
                     <td class="px-6 py-4">
-                        <div class="text-white text-sm">{{ $transfer->fromShop->name ?? 'Склад' }}</div>
+                        <div class="text-white text-sm">{{ $transfer->from_location }}</div>
                     </td>
                     <td class="px-6 py-4">
-                        <div class="text-white text-sm">{{ $transfer->toShop->name ?? 'Магазин' }}</div>
+                        <div class="text-white text-sm">{{ $transfer->to_location }}</div>
                     </td>
                     <td class="px-6 py-4 text-center">
-                        <span class="text-white text-sm">{{ $transfer->items_count ?? 0 }}</span>
+                        <span class="text-white text-sm">{{ $transfer->items_count }}</span>
                     </td>
                     <td class="px-6 py-4 text-right">
-                        <span class="badge badge-{{ $transfer->status === 'completed' ? 'success' : 'warning' }}">
-                            {{ $transfer->status === 'completed' ? 'Выполнено' : 'В пути' }}
+                        <span class="badge badge-success">
+                            Выполнено
                         </span>
                     </td>
                 </tr>

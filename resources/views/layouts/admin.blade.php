@@ -187,7 +187,10 @@
                     <i class="bi bi-gear"></i> Настройки
                 </a>
                 <a href="{{ route('admin.activity-log') }}" class="menu-item {{ request()->routeIs('admin.activity-log') ? 'active' : '' }}">
-                    <i class="bi bi-journal-text"></i> Журнал
+                    <i class="bi bi-shield-check"></i> Audit Log
+                </a>
+                <a href="{{ route('admin.staff-logs.index') }}" class="menu-item {{ request()->routeIs('admin.staff-logs.*') ? 'active' : '' }}">
+                    <i class="bi bi-journal-text"></i> Журнал персонала
                 </a>
 
                 {{-- Выход в конце меню --}}

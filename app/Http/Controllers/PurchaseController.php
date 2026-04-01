@@ -200,17 +200,24 @@ class PurchaseController extends Controller
             'warehouse_id' => 'nullable|exists:warehouses,id',
             'comment' => 'nullable|string',
             'purchase_date' => 'required|date',
+            'invoice_number' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
         try {
             $totalAmount = 0;
-            
+            $invoiceNumber = $validated['invoice_number'] ?? null;
+
             foreach ($validated['items'] as $item) {
                 $variant = ProductVariant::findOrFail($item['variant_id']);
-                
+
+                // Генерируем номер накладной если не указан
+                if (!$invoiceNumber) {
+                    $invoiceNumber = 'PUR-' . strtoupper(uniqid());
+                }
+
                 $purchase = Purchase::create([
-                    'invoice_number' => 'PUR-' . strtoupper(uniqid()),
+                    'invoice_number' => $invoiceNumber,
                     'variant_id' => $item['variant_id'],
                     'shop_id' => $validated['location_type'] === 'shop' ? ($validated['shop_id'] ?? null) : null,
                     'warehouse_id' => $validated['location_type'] === 'warehouse' ? ($validated['warehouse_id'] ?? null) : null,
@@ -256,6 +263,56 @@ class PurchaseController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withErrors(['error' => 'Ошибка при создании закупки: ' . $e->getMessage()])->withInput();
+        }
+    }
+
+    /**
+     * Удаление закупки.
+     */
+    public function destroy(Purchase $purchase)
+    {
+        DB::beginTransaction();
+        try {
+            // Возвращаем товар на склад (уменьшаем остаток)
+            if ($purchase->shop_id) {
+                $stock = Stock::where('variant_id', $purchase->variant_id)
+                    ->where('shop_id', $purchase->shop_id)
+                    ->first();
+                if ($stock) {
+                    $stock->decrement('quantity', $purchase->quantity);
+                }
+            } elseif ($purchase->warehouse_id) {
+                $stock = Stock::where('variant_id', $purchase->variant_id)
+                    ->where('warehouse_id', $purchase->warehouse_id)
+                    ->first();
+                if ($stock) {
+                    $stock->decrement('quantity', $purchase->quantity);
+                }
+            }
+
+            // Логируем удаление
+            \App\Models\ActivityLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'purchase_deleted',
+                'model_type' => Purchase::class,
+                'model_id' => $purchase->id,
+                'description' => 'Удалена закупка #' . ($purchase->invoice_number ?? $purchase->id) . ' от ' . $purchase->variant->product->name,
+                'old_values' => [
+                    'variant_id' => $purchase->variant_id,
+                    'quantity' => $purchase->quantity,
+                    'supplier_price' => $purchase->supplier_price,
+                    'total_amount' => $purchase->total_amount,
+                ],
+            ]);
+
+            $purchase->delete();
+
+            DB::commit();
+
+            return back()->with('success', 'Закупка удалена');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Ошибка при удалении: ' . $e->getMessage()]);
         }
     }
 }

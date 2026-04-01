@@ -53,7 +53,7 @@ class PurchasesController extends Controller
         $totalAmount = $validated['quantity'] * $validated['supplier_price'];
 
         $purchase = Purchase::create([
-            'invoice_number' => $validated['invoice_number'] ?? null,
+            'invoice_number' => $validated['invoice_number'] ?? ('PUR-' . strtoupper(uniqid())),
             'variant_id' => $validated['variant_id'],
             'shop_id' => $validated['shop_id'] ?? null,
             'warehouse_id' => $validated['warehouse_id'] ?? null,
@@ -76,6 +76,22 @@ class PurchasesController extends Controller
         );
 
         $stock->addQuantity($validated['quantity']);
+
+        // Логируем создание закупки
+        \App\Models\ActivityLog::create([
+            'user_id' => auth()->id(),
+            'action' => 'purchase_created',
+            'model_type' => \Modules\Warehouse\Models\Purchase::class,
+            'model_id' => $purchase->id,
+            'description' => 'Создана закупка #' . ($purchase->invoice_number ?? $purchase->id) . ' от ' . $variant->product->name . ' (' . $validated['quantity'] . ' шт)',
+            'new_values' => [
+                'variant_id' => $validated['variant_id'],
+                'quantity' => $validated['quantity'],
+                'supplier_price' => $validated['supplier_price'],
+                'total_amount' => $totalAmount,
+                'location' => $validated['shop_id'] ? 'Магазин #' . $validated['shop_id'] : 'Склад #' . $validated['warehouse_id'],
+            ],
+        ]);
 
         return redirect()->route('warehouse.purchases.index')
             ->with('success', 'Закупка успешно добавлена');

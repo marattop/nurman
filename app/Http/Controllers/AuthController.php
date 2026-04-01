@@ -18,6 +18,8 @@ use App\Http\Middleware\RateLimitAuth;
  * Контроллер аутентификации системы NURMAN.
  * Безопасная аутентификация с rate limiting и защитой от brute-force.
  */
+use App\Services\AdminSecurityService;
+
 class AuthController extends Controller
 {
     /**
@@ -31,7 +33,8 @@ class AuthController extends Controller
     const DECAY_MINUTES = 5;
 
     public function __construct(
-        protected SecurityLogger $securityLogger
+        protected SecurityLogger $securityLogger,
+        protected AdminSecurityService $securityService
     ) {}
 
     /**
@@ -47,7 +50,20 @@ class AuthController extends Controller
     }
 
     /**
-     * Обработка входа в систему с rate limiting.
+     * Отображение формы второго этапа защиты.
+     */
+    public function showVerifyForm(Request $request)
+    {
+        // Только если пользователь ввел пароль, но не ввел ключ
+        if (!$request->session()->has('auth_step_1')) {
+            return redirect()->route('login');
+        }
+
+        return view('auth.verify');
+    }
+
+    /**
+     * Обработка входа в систему с rate limiting и защитой по IP/VPN.
      */
     public function login(Request $request)
     {
@@ -55,6 +71,18 @@ class AuthController extends Controller
             'username' => 'required|string',
             'password' => 'required|string',
         ]);
+
+        // 1. ЖЕСТКАЯ ПРОВЕРКА IP и VPN
+        $ipCheck = $this->securityService->validateRequest($request->ip());
+        if (!$ipCheck['valid']) {
+            $msg = $ipCheck['reason'] === 'foreign_ip' 
+                ? "Доступ запрещен из вашей страны ({$ipCheck['country']}). Разрешен только Кыргызстан."
+                : "Доступ запрещен. Использование VPN или Прокси недопустимо.";
+
+            $this->securityLogger->logSuspiciousActivity(null, $msg, ['ip' => $request->ip()]);
+
+            return back()->withErrors(['username' => $msg])->onlyInput('username');
+        }
 
         // Rate limiting ключ
         $throttleKey = 'login|'.$request->ip().'|'.Str::lower($request->input('username'));
@@ -65,84 +93,73 @@ class AuthController extends Controller
 
             $this->securityLogger->logLoginFailed($request->username, 'rate_limit');
 
-            ActivityLog::create([
-                'action' => 'login_failed_rate_limit',
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'description' => 'Превышение лимита попыток входа. Блокировка на '.$seconds.' сек.',
-            ]);
-
             return back()->withErrors([
                 'username' => 'Слишком много попыток входа. Попробуйте через '.ceil($seconds / 60).' мин.',
             ])->onlyInput('username');
         }
 
-        // Попытка аутентификации
-        if (Auth::attempt($credentials = ['username' => $request->username, 'password' => $request->password], $request->boolean('remember'))) {
-            $request->session()->regenerate();
-
+        // 2. ПОПЫТКА АУТЕНТИФИКАЦИИ (ШАГ 1: ЛОГИН/ПАРОЛЬ)
+        if (Auth::attempt(['username' => $request->username, 'password' => $request->password], $request->boolean('remember'))) {
             $user = Auth::user();
 
             // Проверка активности пользователя
             if (!$user->is_active) {
                 Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-
-                $this->securityLogger->logSuspiciousActivity(
-                    $user,
-                    'Попытка входа неактивного пользователя',
-                    ['ip' => $request->ip()]
-                );
-
-                return back()->withErrors([
-                    'username' => 'Ваша учётная запись деактивирована. Обратитесь к администратору.',
-                ])->onlyInput('username');
+                return back()->withErrors(['username' => 'Ваша учётная запись деактивирована.'])->onlyInput('username');
             }
 
-            // Проверка активности роли
-            if ($user->role && !$user->role->is_active) {
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
+            // ПЕРЕХОД НА ШАГ 2: СЕКРЕТНЫЙ КЛЮЧ
+            $request->session()->put('auth_step_1', true);
+            $request->session()->put('auth_user_id', $user->id);
 
-                return back()->withErrors([
-                    'username' => 'Роль "' . $user->role->display_name . '" деактивирована. Обратитесь к администратору.',
-                ])->onlyInput('username');
-            }
-
-            // Логирование входа через SecurityLogger
-            $this->securityLogger->logLoginSuccess($user, $request);
-
-            // Обновление данных о последнем входе
-            $user->update([
-                'last_login_at' => now(),
-                'last_login_ip' => $request->ip(),
-            ]);
-
-            // Очистка rate limiter после успешного входа
+            // Очистка rate limiter после успешного пароля
             RateLimiter::clear($throttleKey);
 
-            // Редирект в зависимости от роли
-            return redirect()->intended($user->getRedirectPath());
+            return redirect()->route('login.verify');
         }
 
-        // Неверные учётные данные - увеличиваем счётчик попыток
+        // Неверные учётные данные
         RateLimiter::hit($throttleKey, static::DECAY_MINUTES * 60);
-
-        // Логирование неудачной попытки
         $this->securityLogger->logLoginFailed($request->username, 'invalid_credentials');
-
-        ActivityLog::create([
-            'action' => 'login_failed',
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'description' => 'Неверная попытка входа для пользователя: '.$request->username,
-        ]);
 
         return back()->withErrors([
             'username' => 'Неверное имя пользователя или пароль',
         ])->onlyInput('username');
+    }
+
+    /**
+     * Обработка второго этапа защиты (Секретный ключ).
+     */
+    public function verify(Request $request)
+    {
+        if (!$request->session()->has('auth_step_1')) {
+            return redirect()->route('login');
+        }
+
+        $request->validate([
+            'secret_key' => 'required|string',
+        ]);
+
+        // ПРОВЕРКА КЛЮЧА (Текущий год)
+        if ($this->securityService->validateSecretKey($request->secret_key)) {
+            $request->session()->forget('auth_step_1');
+            $request->session()->forget('auth_user_id');
+            $request->session()->put('auth_verified', true);
+            
+            $user = Auth::user();
+            $request->session()->regenerate();
+
+            // Логирование успеха
+            $this->securityLogger->logLoginSuccess($user, $request);
+            $user->update(['last_login_at' => now(), 'last_login_ip' => $request->ip()]);
+
+            return redirect()->intended($user->getRedirectPath());
+        }
+
+        // Неверный ключ
+        $this->securityLogger->logSuspiciousActivity(Auth::user(), 'Неверный секретный ключ 2FA');
+        
+        return back()->withErrors(['secret_key' => 'Неверный секретный ключ. Доступ заблокирован.']);
     }
 
     /**

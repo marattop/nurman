@@ -115,6 +115,66 @@
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
         .stats-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+
+        /* Кнопки */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            border: none;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: #38bdf8;
+            color: #0f172a;
+        }
+        .btn-primary:hover {
+            background: #0ea5e9;
+        }
+        .btn-success {
+            background: #10b981;
+            color: #0f172a;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.25);
+        }
+        .btn-outline {
+            background: rgba(56, 189, 248, 0.1);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+        .btn-outline:hover {
+            background: rgba(56, 189, 248, 0.15);
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 8px;
+        }
+        .btn-lg {
+            padding: 14px 24px;
+            font-size: 16px;
+            border-radius: 12px;
+        }
+        .justify-center { justify-content: center; }
+        .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); }
+        .shadow-accent\\/20 { box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.2); }
+        .shadow-success\\/20 { box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.2); }
     </style>
     @stack('styles')
 </head>

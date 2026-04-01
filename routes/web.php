@@ -29,6 +29,12 @@ Route::get('/', function () {
 // АУТЕНТИФИКАЦИЯ
 // ============================================================================
 
+// ВТОРОЙ ЭТАП ЗАЩИТЫ (Вне групп guest/admin.security чтобы избежать петель)
+Route::middleware(['auth'])->group(function () {
+    Route::get('login/verify', [AuthController::class, 'showVerifyForm'])->name('login.verify');
+    Route::post('login/verify', [AuthController::class, 'verify'])->name('login.verify.post');
+});
+
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('login', [AuthController::class, 'login'])->name('login.post');
@@ -59,7 +65,7 @@ Route::middleware('auth')->prefix('2fa')->name('auth.2fa.')->group(function () {
 // Защита: auth + role:owner + ensure.owner + session.activity
 // ============================================================================
 
-Route::middleware(['auth', 'role:owner', 'ensure.owner', 'session.activity'])
+Route::middleware(['auth', 'admin.security', 'role:owner', 'ensure.owner', 'session.activity'])
     ->prefix('owner')
     ->name('owner.')
     ->group(function () {
@@ -133,7 +139,7 @@ Route::middleware(['auth', 'role:owner', 'ensure.owner', 'session.activity'])
 // Защита: auth + role:admin + ensure.admin + session.activity + 2fa.verified
 // ============================================================================
 
-Route::middleware(['auth', 'role:admin', 'ensure.admin', 'session.activity', '2fa.verified'])
+Route::middleware(['auth', 'admin.security', 'role:admin', 'ensure.admin', 'session.activity', '2fa.verified'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
@@ -200,6 +206,7 @@ Route::middleware(['auth', 'role:admin', 'ensure.admin', 'session.activity', '2f
             Route::get('/create', [\App\Http\Controllers\PurchaseController::class, 'create'])->name('create');
             Route::get('/variant/{id}/info', [\App\Http\Controllers\PurchaseController::class, 'getVariantInfo'])->name('variant.info');
             Route::post('/store', [\App\Http\Controllers\PurchaseController::class, 'store'])->name('store');
+            Route::delete('/{purchase}', [\App\Http\Controllers\PurchaseController::class, 'destroy'])->name('delete');
         });
 
         // Привязка продавцов к магазинам
@@ -242,6 +249,14 @@ Route::middleware(['auth', 'role:admin', 'ensure.admin', 'session.activity', '2f
         // Журнал действий
         Route::get('activity-log', [AdminController::class, 'activityLog'])->name('activity-log');
 
+        // Журнал действий персонала (кладовщики и продавцы)
+        Route::prefix('staff-logs')->name('staff-logs.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\StaffActivityLogController::class, 'index'])->name('index');
+            Route::get('/{log}', [\App\Http\Controllers\StaffActivityLogController::class, 'show'])->name('show');
+            Route::post('/clear', [\App\Http\Controllers\StaffActivityLogController::class, 'clear'])->name('clear');
+            Route::get('/export/csv', [\App\Http\Controllers\StaffActivityLogController::class, 'export'])->name('export');
+        });
+
         // QR-сканер
         Route::prefix('qr')->name('qr.')->group(function () {
             Route::get('scan', [QrScannerController::class, 'scan'])->name('scan');
@@ -265,7 +280,7 @@ Route::middleware(['auth', 'role:admin', 'ensure.admin', 'session.activity', '2f
 // POS-терминал, оформление продаж, работа с клиентами
 // ============================================================================
 
-Route::middleware(['auth', 'role:seller'])
+Route::middleware(['auth', 'admin.security', 'role:seller'])
     ->prefix('seller')
     ->name('seller.')
     ->group(function () {
@@ -358,4 +373,38 @@ Route::middleware(['auth', 'role:client'])
             Route::get('/', [ClientController::class, 'coupons'])->name('index');
             Route::get('{coupon}/print', [ClientController::class, 'printCoupon'])->name('print');
         });
+    });
+
+// ============================================================================
+// КЛАДОВЩИК (STOREKEEPER) - Уровень 20
+// Склад, инвентаризация, сканирование товаров, остатки
+// БЕЗ цен и финансовой информации
+// ============================================================================
+
+Route::middleware(['auth', 'admin.security', 'role:warehouse', 'ensure.warehouse'])
+    ->prefix('storekeeper')
+    ->name('storekeeper.')
+    ->group(function () {
+        // Дашборд
+        Route::get('/', [App\Http\Controllers\StorekeeperController::class, 'dashboard'])->name('dashboard');
+
+        // Профиль
+        Route::get('profile', [App\Http\Controllers\StorekeeperController::class, 'profile'])->name('profile.index');
+        Route::post('profile', [App\Http\Controllers\StorekeeperController::class, 'updateProfile'])->name('profile.update');
+
+        // Наличие товаров (склад)
+        Route::get('stock', [App\Http\Controllers\StorekeeperController::class, 'stock'])->name('stock.index');
+
+        // Товары по категориям
+        Route::get('products', [App\Http\Controllers\StorekeeperController::class, 'productsByCategory'])->name('products.index');
+        Route::get('products/category/{categoryId}', [App\Http\Controllers\StorekeeperController::class, 'productsByCategory'])->name('products.category');
+        Route::get('products/{id}', [App\Http\Controllers\StorekeeperController::class, 'productDetail'])->name('products.detail');
+
+        // Поиск товара
+        Route::get('search', [App\Http\Controllers\StorekeeperController::class, 'searchProduct'])->name('search');
+
+        // Инвентаризация
+        Route::get('inventory', [App\Http\Controllers\StorekeeperController::class, 'inventory'])->name('inventory.index');
+        Route::post('inventory/scan', [App\Http\Controllers\StorekeeperController::class, 'scanInventory'])->name('inventory.scan');
+        Route::post('inventory/save', [App\Http\Controllers\StorekeeperController::class, 'saveInventory'])->name('inventory.save');
     });

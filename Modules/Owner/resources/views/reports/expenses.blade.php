@@ -4,9 +4,14 @@
 @section('page-subtitle', 'Все расходы по категориям')
 
 @section('page-actions')
-    <a href="{{ route('owner.reports.index') }}" class="glass px-4 py-2 rounded-xl text-sm font-bold hover:bg-white/10 transition-colors flex items-center gap-2">
-        <i class="bi bi-arrow-left"></i> Назад
-    </a>
+    <div class="flex gap-2">
+        <a href="{{ route('owner.module.expenses.create') }}" class="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-glow transition-all flex items-center gap-2">
+            <i class="bi bi-plus-lg"></i> Добавить расход
+        </a>
+        <a href="{{ route('owner.reports.index') }}" class="glass px-4 py-2 rounded-xl text-sm font-bold hover:bg-white/10 transition-colors flex items-center gap-2">
+            <i class="bi bi-arrow-left"></i> Назад
+        </a>
+    </div>
 @endsection
 
 @section('content')

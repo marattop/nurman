@@ -1,49 +1,331 @@
 @extends('layouts.warehouse')
 
 @section('page-title', 'Новое перемещение')
-@section('page-subtitle', 'Создание перемещения товаров')
+@section('page-subtitle', 'Перемещение товаров между складами/магазинами')
 
 @section('content')
-<div class="max-w-4xl mx-auto">
-    <div class="glass rounded-[2rem] p-8 border border-white/5 shadow-2xl">
-        <form method="POST" action="{{ route('warehouse.transfers.store') }}" class="space-y-6">
-            @csrf
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-3">Откуда</label>
-                    <select name="from_shop" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent">
-                        <option value="">Выберите...</option>
-                        <option value="warehouse">Основной склад</option>
-                        <!-- Добавить другие магазины -->
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-3">Куда</label>
-                    <select name="to_shop" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent">
-                        <option value="">Выберите...</option>
-                        <!-- Добавить магазины -->
-                    </select>
-                </div>
-            </div>
-            
-            <div>
-                <label class="block text-xs font-bold text-muted uppercase tracking-widest mb-3">Товары</label>
-                <div class="glass rounded-xl border border-white/10 p-4">
-                    <p class="text-muted text-sm">Добавление товаров будет реализовано</p>
-                </div>
-            </div>
-            
-            <div class="flex gap-4 pt-6">
-                <button type="submit" class="btn btn-primary flex-1 py-4 rounded-2xl font-black shadow-glow">
-                    <i class="bi bi-check-lg"></i> СОЗДАТЬ ПЕРЕМЕЩЕНИЕ
-                </button>
-                <a href="{{ route('warehouse.transfers.index') }}" class="btn btn-outline px-8 py-4 rounded-2xl font-black">
-                    ОТМЕНА
-                </a>
-            </div>
-        </form>
+<style>
+    .card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+    }
+    .input {
+        width: 100%;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 10px 14px;
+        color: #f8fafc;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+    .input:focus {
+        outline: none;
+        border-color: #38bdf8;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+        text-decoration: none;
+        border: none;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+    .btn-primary {
+        background: #38bdf8;
+        color: #0f172a;
+    }
+    .btn-primary:hover {
+        background: #0ea5e9;
+    }
+    .btn-outline {
+        background: rgba(56, 189, 248, 0.1);
+        color: #38bdf8;
+        border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+    .btn-outline:hover {
+        background: rgba(56, 189, 248, 0.15);
+    }
+    .btn-danger {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+    }
+    .btn-danger:hover {
+        background: rgba(239, 68, 68, 0.25);
+    }
+    .text-success { color: #10b981 !important; }
+    .text-danger { color: #ef4444 !important; }
+    .text-muted { color: #94a3b8 !important; }
+    .text-accent { color: #38bdf8 !important; }
+    .text-text { color: #f8fafc !important; }
+</style>
+
+@if(session('error'))
+<div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+    <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
+</div>
+@endif
+
+@if($errors->any())
+<div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+    <i class="bi bi-exclamation-triangle"></i>
+    <ul style="margin: 8px 0 0 20px; padding: 0;">
+        @foreach($errors->all() as $error)
+            <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
+
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(56,189,248,0.15); display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 24px;">
+        <i class="bi bi-arrow-left-right"></i>
+    </div>
+    <div>
+        <h1 style="font-size: 28px; font-weight: 700; margin: 0;">Новое перемещение</h1>
+        <p style="font-size: 14px; color: #94a3b8; margin: 4px 0 0 0;">Перемещение товаров между складами/магазинами</p>
+    </div>
+    <div style="margin-left: auto;">
+        <a href="{{ route('warehouse.transfers.index') }}" class="btn btn-outline">
+            <i class="bi bi-arrow-left"></i> Назад
+        </a>
     </div>
 </div>
+
+<form action="{{ route('warehouse.transfers.store') }}" method="POST" style="display: flex; flex-direction: column; gap: 24px;">
+    @csrf
+
+    {{-- Откуда/Куда --}}
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.03); display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-geo-alt" style="color: #38bdf8; font-size: 18px;"></i>
+            <h3 style="font-size: 16px; font-weight: 600; margin: 0;">Направление</h3>
+        </div>
+        <div style="padding: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f8fafc; font-size: 14px;">Откуда <span style="color: #ef4444;">*</span></label>
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <label style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(56,189,248,0.1); border-radius: 8px; cursor: pointer;">
+                            <input type="radio" name="from_type" value="warehouse" checked onchange="updateFromLocation()" style="accent-color: #38bdf8;">
+                            <span style="font-size: 13px;">Склад</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(16,185,129,0.1); border-radius: 8px; cursor: pointer;">
+                            <input type="radio" name="from_type" value="shop" onchange="updateFromLocation()" style="accent-color: #10b981;">
+                            <span style="font-size: 13px;">Магазин</span>
+                        </label>
+                    </div>
+                    <select name="from_id" id="from_id" class="input" required>
+                        <option value="">Выберите...</option>
+                        @foreach($warehouses as $warehouse)
+                            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                        @endforeach
+                    </select>
+                    <select name="from_shop_id" id="from_shop_id" class="input" style="display: none;" required>
+                        <option value="">Выберите магазин...</option>
+                        @foreach($shops as $shop)
+                            <option value="{{ $shop->id }}">{{ $shop->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f8fafc; font-size: 14px;">Куда <span style="color: #ef4444;">*</span></label>
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <label style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(56,189,248,0.1); border-radius: 8px; cursor: pointer;">
+                            <input type="radio" name="to_type" value="shop" checked onchange="updateToLocation()" style="accent-color: #38bdf8;">
+                            <span style="font-size: 13px;">Магазин</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: rgba(16,185,129,0.1); border-radius: 8px; cursor: pointer;">
+                            <input type="radio" name="to_type" value="warehouse" onchange="updateToLocation()" style="accent-color: #10b981;">
+                            <span style="font-size: 13px;">Склад</span>
+                        </label>
+                    </div>
+                    <select name="to_shop_id" id="to_shop_id" class="input" required>
+                        <option value="">Выберите магазин...</option>
+                        @foreach($shops as $shop)
+                            <option value="{{ $shop->id }}">{{ $shop->name }}</option>
+                        @endforeach
+                    </select>
+                    <select name="to_id" id="to_id" class="input" style="display: none;" required>
+                        <option value="">Выберите...</option>
+                        @foreach($warehouses as $warehouse)
+                            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Товары --}}
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.03); display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-box-seam" style="color: #38bdf8; font-size: 18px;"></i>
+                <h3 style="font-size: 16px; font-weight: 600; margin: 0;">Товары</h3>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="addTransferItem()">
+                <i class="bi bi-plus-lg"></i> Добавить товар
+            </button>
+        </div>
+        <div style="padding: 20px;">
+            <div id="transfer-items-container">
+                <!-- Товары добавляются через JS -->
+            </div>
+            <p id="no-items-message" style="text-align: center; color: #94a3b8; padding: 40px 20px;">
+                <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 12px;"></i>
+                Нажмите "Добавить товар" для выбора
+            </p>
+        </div>
+    </div>
+
+    {{-- Комментарий --}}
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.03); display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-chat-left-text" style="color: #38bdf8; font-size: 18px;"></i>
+            <h3 style="font-size: 16px; font-weight: 600; margin: 0;">Комментарий</h3>
+        </div>
+        <div style="padding: 20px;">
+            <textarea name="comment" class="input" rows="3" placeholder="Комментарий к перемещению..." style="resize: vertical;"></textarea>
+        </div>
+    </div>
+
+    {{-- Кнопки --}}
+    <div style="display: flex; gap: 12px;">
+        <button type="submit" class="btn btn-primary" style="flex: 1; padding: 14px 24px; font-size: 15px;">
+            <i class="bi bi-check2-circle"></i> <span>СОЗДАТЬ ПЕРЕМЕЩЕНИЕ</span>
+        </button>
+        <a href="{{ route('warehouse.transfers.index') }}" class="btn btn-outline" style="padding: 14px 24px; font-size: 15px;">
+            <i class="bi bi-arrow-left"></i> ОТМЕНА
+        </a>
+    </div>
+</form>
+
+<script>
+const products = @json($products);
+let itemCounter = 0;
+
+function updateFromLocation() {
+    const fromType = document.querySelector('input[name="from_type"]:checked').value;
+    const warehouseSelect = document.getElementById('from_id');
+    const shopSelect = document.getElementById('from_shop_id');
+    
+    if (fromType === 'warehouse') {
+        warehouseSelect.style.display = 'block';
+        warehouseSelect.required = true;
+        warehouseSelect.disabled = false;
+        shopSelect.required = false;
+        shopSelect.disabled = true;
+        shopSelect.value = '';
+    } else {
+        warehouseSelect.style.display = 'none';
+        warehouseSelect.required = false;
+        warehouseSelect.disabled = true;
+        warehouseSelect.value = '';
+        shopSelect.style.display = 'block';
+        shopSelect.required = true;
+        shopSelect.disabled = false;
+    }
+}
+
+function updateToLocation() {
+    const toType = document.querySelector('input[name="to_type"]:checked').value;
+    const shopSelect = document.getElementById('to_shop_id');
+    const warehouseSelect = document.getElementById('to_id');
+    
+    if (toType === 'shop') {
+        shopSelect.style.display = 'block';
+        shopSelect.required = true;
+        shopSelect.disabled = false;
+        warehouseSelect.required = false;
+        warehouseSelect.disabled = true;
+        warehouseSelect.value = '';
+    } else {
+        shopSelect.style.display = 'none';
+        shopSelect.required = false;
+        shopSelect.disabled = true;
+        shopSelect.value = '';
+        warehouseSelect.style.display = 'block';
+        warehouseSelect.required = true;
+        warehouseSelect.disabled = false;
+    }
+}
+
+function addTransferItem() {
+    const container = document.getElementById('transfer-items-container');
+    const noItemsMsg = document.getElementById('no-items-message');
+    
+    if (noItemsMsg) {
+        noItemsMsg.style.display = 'none';
+    }
+    
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'transfer-item';
+    itemDiv.style.cssText = 'display: flex; gap: 12px; margin-bottom: 16px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; align-items: flex-end;';
+    
+    itemDiv.innerHTML = `
+        <div style="flex: 2;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f8fafc; font-size: 14px;">Товар <span style="color: #ef4444;">*</span></label>
+            <select name="items[${itemCounter}][variant_id]" class="input" required onchange="updateStockInfo(this)">
+                <option value="">Выберите товар</option>
+                ${products.map(p => 
+                    p.variants.map(v => `
+                        <option value="${v.id}" data-stock="${v.stock.reduce((sum, s) => sum + s.quantity, 0)}">
+                            ${p.name} — ${v.size} ${v.color ? '(' + v.color + ')' : ''}
+                        </option>
+                    `).join('')
+                ).flat().join('')}
+            </select>
+        </div>
+        <div style="flex: 1;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f8fafc; font-size: 14px;">Количество <span style="color: #ef4444;">*</span></label>
+            <input type="number" name="items[${itemCounter}][quantity]" class="input" placeholder="0" required min="1" value="1">
+        </div>
+        <div style="flex: 1;">
+            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #f8fafc; font-size: 14px;">Доступно</label>
+            <div class="stock-info" style="padding: 10px; background: rgba(148,163,184,0.1); border-radius: 8px; font-size: 13px; color: #94a3b8;">
+                Выберите товар
+            </div>
+        </div>
+        <button type="button" class="btn btn-danger btn-sm" onclick="removeTransferItem(this)" style="padding: 10px 12px;">
+            <i class="bi bi-trash"></i>
+        </button>
+    `;
+    
+    container.appendChild(itemDiv);
+    itemCounter++;
+}
+
+function removeTransferItem(button) {
+    button.closest('.transfer-item').remove();
+    
+    const container = document.getElementById('transfer-items-container');
+    if (container.children.length === 0) {
+        const noItemsMsg = document.getElementById('no-items-message');
+        if (noItemsMsg) {
+            noItemsMsg.style.display = 'block';
+        }
+    }
+}
+
+function updateStockInfo(select) {
+    const selectedOption = select.options[select.selectedIndex];
+    const stock = selectedOption.getAttribute('data-stock') || 0;
+    const stockInfoDiv = select.closest('.transfer-item').querySelector('.stock-info');
+    stockInfoDiv.textContent = stock + ' шт на складах';
+    stockInfoDiv.style.color = stock > 0 ? '#10b981' : '#ef4444';
+}
+
+// Инициализация
+updateFromLocation();
+updateToLocation();
+</script>
 @endsection

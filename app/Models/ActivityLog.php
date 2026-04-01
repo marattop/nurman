@@ -10,4 +10,9 @@ class ActivityLog extends Model
     protected $casts = ['old_values' => 'array', 'new_values' => 'array'];
 
     public function user() { return $this->belongsTo(User::class); }
+    
+    public function getUserRoleAttribute()
+    {
+        return $this->user?->role?->name ?? null;
+    }
 }

@@ -20,7 +20,7 @@ use Modules\Owner\Http\Controllers\BackupController;
 | избежать конфликтов с основными маршрутами в routes/web.php
 */
 
-Route::middleware(['auth'])->prefix('owner/module')->name('owner.module.')->group(function () {
+Route::middleware(['auth', 'admin.security'])->prefix('owner/module')->name('owner.module.')->group(function () {
 
     // Дашборд владельца
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

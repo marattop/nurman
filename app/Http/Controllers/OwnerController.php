@@ -53,11 +53,13 @@ class OwnerController extends Controller
             ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
             ->where('transactions.type', 'sale')
             ->whereBetween('transactions.created_at', [$dateFrom, $dateTo])
-            ->sum(DB::raw('supplier_price * quantity'));
+            ->sum(DB::raw('COALESCE(supplier_price, 0) * quantity'));
 
         $grossProfit = $revenue->total - $costOfGoods;
         $grossMargin = $revenue->total > 0 ? ($grossProfit / $revenue->total) * 100 : 0;
 
+        // Закупки не вычитаем из прибыли - это пополнение запасов (актив), а не расход
+        // Расходы считаются отдельно (аренда, зарплаты, коммунальные и т.д.)
         $purchases = Purchase::whereBetween('created_at', [$dateFrom, $dateTo])
             ->selectRaw('COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total')
             ->first();
@@ -66,7 +68,9 @@ class OwnerController extends Controller
             ->selectRaw('COUNT(*) as count, COALESCE(SUM(amount), 0) as total')
             ->first();
 
-        $netProfit = $grossProfit - $purchases->total - $expenses->total;
+        // Чистая прибыль = Валовая прибыль - Операционные расходы
+        // Закупки НЕ вычитаем - они уже учтены в себестоимости проданных товаров
+        $netProfit = $grossProfit - $expenses->total;
         $netMargin = $revenue->total > 0 ? ($netProfit / $revenue->total) * 100 : 0;
 
         $revenueBySource = Transaction::sales()
@@ -621,13 +625,14 @@ class OwnerController extends Controller
         }
 
         $today = now()->format('Y-m-d');
+        $todayEnd = now()->endOfDay()->format('Y-m-d H:i:s');
 
         return match($period) {
-            'today' => [$today, $today, 'Сегодня'],
-            'week' => [now()->subDays(7)->format('Y-m-d'), $today, 'Последние 7 дней'],
-            'month' => [now()->subDays(30)->format('Y-m-d'), $today, 'Последние 30 дней'],
-            'year' => [now()->subDays(365)->format('Y-m-d'), $today, 'Год'],
-            default => [now()->subDays(30)->format('Y-m-d'), $today, 'Последние 30 дней'],
+            'today' => [now()->startOfDay()->format('Y-m-d H:i:s'), $todayEnd, 'Сегодня'],
+            'week' => [now()->subDays(7)->startOfDay()->format('Y-m-d H:i:s'), $todayEnd, 'Последние 7 дней'],
+            'month' => [now()->subDays(30)->startOfDay()->format('Y-m-d H:i:s'), $todayEnd, 'Последние 30 дней'],
+            'year' => [now()->subDays(365)->startOfDay()->format('Y-m-d H:i:s'), $todayEnd, 'Год'],
+            default => [now()->subDays(30)->startOfDay()->format('Y-m-d H:i:s'), $todayEnd, 'Последние 30 дней'],
         };
     }
 

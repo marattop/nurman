@@ -27,8 +27,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'rate.limit.auth' => \App\Http\Middleware\RateLimitAuth::class,
             'ensure.owner' => \App\Http\Middleware\EnsureOwnerRole::class,
             'ensure.admin' => \App\Http\Middleware\EnsureAdminRole::class,
+            'ensure.warehouse' => \App\Http\Middleware\EnsureWarehouseRole::class,
+            'geo.block' => \App\Http\Middleware\GeoBlockMiddleware::class,
             'session.activity' => \App\Http\Middleware\SessionActivity::class,
             '2fa.verified' => \App\Http\Middleware\RequireTwoFactorAuthentication::class,
+            'admin.security' => \App\Http\Middleware\AdminSecurityMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -5,6 +5,59 @@
 
 @section('content')
 
+<!-- Main Profit Banner -->
+<div class="glass p-8 rounded-3xl mb-8 relative overflow-hidden border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+        <div>
+            <p class="text-muted text-xs font-bold uppercase tracking-[0.2em] mb-2">Чистая прибыль за {{ $periodLabel }}</p>
+            <div class="flex items-baseline gap-3">
+                <h1 class="text-5xl md:text-6xl font-black {{ $netProfit >= 0 ? 'text-emerald-500' : 'text-rose-500' }} tracking-tight">
+                    {{ number_format(abs($netProfit), 0, '.', ' ') }}
+                </h1>
+                <span class="text-2xl font-bold text-muted">сом</span>
+            </div>
+            <div class="flex items-center gap-4 mt-4">
+                @if($profitGrowth > 0)
+                    <div class="flex items-center text-success font-bold bg-success/10 px-3 py-1 rounded-xl text-sm border border-success/20">
+                        <i class="bi bi-graph-up-arrow mr-2"></i> +{{ number_format(abs($profitGrowth), 1) }}% <span class="text-[10px] opacity-60 ml-2 font-normal">к прош. периоду</span>
+                    </div>
+                @elseif($profitGrowth < 0)
+                    <div class="flex items-center text-danger font-bold bg-danger/10 px-3 py-1 rounded-xl text-sm border border-danger/20">
+                        <i class="bi bi-graph-down-arrow mr-2"></i> -{{ number_format(abs($profitGrowth), 1) }}% <span class="text-[10px] opacity-60 ml-2 font-normal">к прош. периоду</span>
+                    </div>
+                @endif
+                <div class="text-muted text-xs font-medium">
+                    <i class="bi bi-info-circle mr-1"></i> Рассчитано как: Валовая прибыль - Расходы
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4 md:gap-8 border-t md:border-t-0 md:border-l border-white/10 pt-6 md:pt-0 md:pl-10">
+            <div>
+                <p class="text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Выручка</p>
+                <p class="text-xl font-extrabold">{{ number_format($revenue->total, 0, '.', ' ') }} <span class="text-xs font-normal opacity-40">сом</span></p>
+            </div>
+            <div>
+                <p class="text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Расходы</p>
+                <p class="text-xl font-extrabold text-rose-400">{{ number_format($expenses->total, 0, '.', ' ') }} <span class="text-xs font-normal opacity-40">сом</span></p>
+            </div>
+            <div>
+                <p class="text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Маржа (Net)</p>
+                <p class="text-xl font-extrabold text-accent">{{ number_format($netMargin, 1) }}%</p>
+            </div>
+            <div>
+                <p class="text-muted text-[10px] font-bold uppercase tracking-widest mb-1">Закупки</p>
+                <p class="text-xl font-extrabold text-orange-400">{{ number_format($purchases->total, 0, '.', ' ') }} <span class="text-xs font-normal opacity-40">сом</span></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Decorative elements -->
+    <div class="absolute -right-10 -bottom-10 opacity-[0.05] rotate-12">
+        <i class="bi bi-piggy-bank text-[200px]"></i>
+    </div>
+</div>
+
 <!-- Stats Grid -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6 mb-8">
     <!-- Revenue -->

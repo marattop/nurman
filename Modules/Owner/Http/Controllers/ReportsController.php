@@ -17,16 +17,22 @@ class ReportsController extends Controller
         $period = $request->get('period', 'month');
         [$dateFrom, $dateTo, $periodLabel] = $this->getDateRange($period);
 
-        $revenue = Transaction::sales()->whereBetween('created_at', [$dateFrom, $dateTo])->sum('total_amount');
+        $revenue = Transaction::sales()->whereDate('created_at', '>=', $dateFrom)->whereDate('created_at', '<=', $dateTo)->sum('total_amount');
+        
         $costOfGoods = DB::table('transaction_items')
             ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
             ->where('transactions.type', 'sale')
-            ->whereBetween('transactions.created_at', [$dateFrom, $dateTo])
+            ->whereDate('transactions.created_at', '>=', $dateFrom)
+            ->whereDate('transactions.created_at', '<=', $dateTo)
             ->sum(DB::raw('supplier_price * quantity'));
+            
         $grossProfit = $revenue - $costOfGoods;
-        $expenses = Expense::whereBetween('created_at', [$dateFrom, $dateTo])->sum('amount');
-        $purchases = Purchase::whereBetween('created_at', [$dateFrom, $dateTo])->sum('total_amount');
-        $netProfit = $grossProfit - $expenses - $purchases;
+        
+        $expenses = Expense::whereDate('created_at', '>=', $dateFrom)->whereDate('created_at', '<=', $dateTo)->sum('amount');
+        
+        $purchases = Purchase::whereDate('created_at', '>=', $dateFrom)->whereDate('created_at', '<=', $dateTo)->sum('total_amount');
+            
+        $netProfit = $grossProfit - $expenses;
 
         return view('owner::reports.index', compact(
             'period', 'periodLabel', 'dateFrom', 'dateTo',
@@ -74,18 +80,35 @@ class ReportsController extends Controller
 
     public function purchases(Request $request)
     {
-        $period = $request->get('period', 'month');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
         $shopId = $request->get('shop_id');
-        [$dateFrom, $dateTo, $periodLabel] = $this->getDateRange($period);
+        $period = $request->get('period', 'month');
 
-        $query = Purchase::with(['variant.product', 'shop', 'warehouse', 'receivedBy'])
-            ->whereBetween('purchase_date', [$dateFrom, $dateTo]);
+        if (!$dateFrom || !$dateTo) {
+            [$dateFrom, $dateTo, $periodLabel] = $this->getDateRange($period);
+        } else {
+            $periodLabel = date('d.m.Y', strtotime($dateFrom)) . ' - ' . date('d.m.Y', strtotime($dateTo));
+        }
 
-        if ($shopId) $query->where('shop_id', $shopId);
+        $query = Purchase::with(['variant.product', 'shop', 'warehouse', 'receivedBy']);
 
-        $purchases = $query->orderBy('purchase_date', 'desc')->paginate(50);
-        $totalAmount = $purchases->sum('total_amount');
-        $totalQuantity = $purchases->sum('quantity');
+        // Прямая фильтрация как в админке склада
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+        if ($shopId) {
+            $query->where('shop_id', $shopId);
+        }
+
+        // Итоги ДО пагинации
+        $totalAmount = (float) $query->sum('total_amount');
+        $totalQuantity = (int) $query->sum('quantity');
+
+        $purchases = $query->orderBy('created_at', 'desc')->paginate(50)->withQueryString();
         $shops = Shop::where('is_active', 1)->get();
 
         return view('owner::reports.purchases', compact(
@@ -111,7 +134,10 @@ class ReportsController extends Controller
         $expenses = $query->orderBy('expense_date', 'desc')->paginate(50);
         $totalAmount = $expenses->sum('amount');
         $shops = Shop::where('is_active', 1)->get();
-        $categories = Expense::select('category')->distinct()->pluck('category');
+        
+        $dbCategories = Expense::select('category')->distinct()->pluck('category')->toArray();
+        $defaultCategories = ['rent', 'utilities', 'salary', 'taxes', 'marketing', 'office', 'other'];
+        $categories = array_unique(array_merge($defaultCategories, $dbCategories));
 
         return view('owner::reports.expenses', compact(
             'expenses', 'totalAmount',
@@ -135,13 +161,13 @@ class ReportsController extends Controller
         $grossMargin = $revenue > 0 ? ($grossProfit / $revenue) * 100 : 0;
 
         $expenses = Expense::whereBetween('created_at', [$dateFrom, $dateTo])
-            ->selectRaw('category, SUM(amount) as amount')
+            ->selectRaw('category, SUM(amount) as total')
             ->groupBy('category')
             ->get();
-        $totalExpenses = $expenses->sum('amount');
+        $totalExpenses = $expenses->sum('total');
         $expensesByCategory = $expenses;
         $purchases = Purchase::whereBetween('created_at', [$dateFrom, $dateTo])->sum('total_amount');
-        $netProfit = $grossProfit - $totalExpenses - $purchases;
+        $netProfit = $grossProfit - $totalExpenses;
         $netMargin = $revenue > 0 ? ($netProfit / $revenue) * 100 : 0;
 
         $dailyProfit = DB::table('transactions')
