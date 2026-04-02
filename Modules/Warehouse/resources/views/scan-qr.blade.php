@@ -8,27 +8,24 @@
 @section('content')
 <div class="max-w-5xl mx-auto">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
+
         <!-- Scanner Column -->
         <div class="lg:col-span-7 space-y-6">
-            <div class="glass overflow-hidden rounded-[2rem] relative aspect-[4/5] md:aspect-square bg-black shadow-2xl border-white/10" id="scanner-box">
+            <div class="glass overflow-hidden rounded-[2rem] relative aspect-[4/5] md:aspect-square shadow-2xl border-white/10" id="scanner-box">
                 <!-- Camera Viewport -->
                 <div id="scanner-container" class="absolute inset-0"></div>
-                
-                <!-- Overlay Gradients -->
-                <div class="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/60 via-transparent to-black/30"></div>
-                
+
                 <!-- Scanning Frame -->
                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div class="w-64 h-64 md:w-80 md:h-80 border-2 border-white/20 rounded-[2rem] relative">
+                    <div class="w-64 h-64 md:w-80 md:h-80 border border-white/30 rounded-2xl relative">
                         <!-- Corners -->
-                        <div class="absolute -top-1 -left-1 w-12 h-12 border-t-4 border-l-4 border-accent rounded-tl-3xl"></div>
-                        <div class="absolute -top-1 -right-1 w-12 h-12 border-t-4 border-r-4 border-accent rounded-tr-3xl"></div>
-                        <div class="absolute -bottom-1 -left-1 w-12 h-12 border-b-4 border-l-4 border-accent rounded-bl-3xl"></div>
-                        <div class="absolute -bottom-1 -right-1 w-12 h-12 border-b-4 border-r-4 border-accent rounded-br-3xl"></div>
-                        
+                        <div class="absolute -top-0.5 -left-0.5 w-10 h-10 border-t-2 border-l-2 border-accent rounded-tl-xl"></div>
+                        <div class="absolute -top-0.5 -right-0.5 w-10 h-10 border-t-2 border-r-2 border-accent rounded-tr-xl"></div>
+                        <div class="absolute -bottom-0.5 -left-0.5 w-10 h-10 border-b-2 border-l-2 border-accent rounded-bl-xl"></div>
+                        <div class="absolute -bottom-0.5 -right-0.5 w-10 h-10 border-b-2 border-r-2 border-accent rounded-br-xl"></div>
+
                         <!-- Scanning Line -->
-                        <div class="absolute left-4 right-4 h-1 bg-accent/50 shadow-[0_0_15px_rgba(56,189,248,0.8)] animate-[scan_2s_ease-in-out_infinite] top-0 opacity-0"></div>
+                        <div class="absolute left-4 right-4 h-0.5 bg-accent shadow-[0_0_10px_rgba(56,189,248,0.6)] animate-[scan_2s_ease-in-out_infinite] top-0 opacity-0"></div>
                     </div>
                 </div>
 
@@ -151,7 +148,7 @@
 <!-- Mobile Drawer Result Overlay -->
 <div id="mobile-result-overlay" class="fixed inset-0 z-[100] hidden">
     <div class="absolute inset-0 bg-black/80 backdrop-blur-md" onclick="closeMobileResult()"></div>
-    <div class="absolute bottom-0 left-0 right-0 glass rounded-t-[2.5rem] border-t border-white/20 p-6 transform translate-y-full transition-transform duration-300 ease-out max-h-[90vh] overflow-y-auto" id="mobile-drawer">
+    <div class="absolute bottom-0 left-0 right-0 glass rounded-t-[2.5rem] border-t border-white/20 p-6 transform transition-transform duration-300 ease-out max-h-[90vh] overflow-y-auto" id="mobile-drawer" style="transform: translateY(100%);">
         <div class="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-8"></div>
         <div id="mobile-result-content"></div>
     </div>
@@ -166,9 +163,23 @@
 }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Убираем чёрный фон библиотеки html5-qrcode */
+#scanner-container video {
+    object-fit: cover !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+#scanner-container .scanner-margin {
+    display: none !important;
+}
+
 /* Mobile Adaptation */
 @media (max-width: 768px) {
-    body { overflow-x: hidden; position: fixed; width: 100%; }
+    /* Скрываем шапку и подвал */
+    .page-header, .bottom-nav, footer, header { display: none !important; }
+    
+    body { overflow-x: hidden; }
     .main-content { margin-left: 0 !important; padding: 0 !important; }
     .page-header { display: none !important; }
 
@@ -176,25 +187,34 @@
 
     #scanner-box {
         border-radius: 0 !important;
-        height: calc(100vh - 64px) !important; /* Учитываем высоту навбара если он есть */
+        height: 100vh !important;
         width: 100vw !important;
         border: none !important;
         margin: 0 !important;
+        background: transparent !important;
     }
 
     #scanner-container {
         height: 100% !important;
         width: 100% !important;
-        background: #000 !important;
+        background: transparent !important;
     }
 
     .absolute.bottom-24 { bottom: 90px !important; left: 16px !important; right: 16px !important; }
     .absolute.bottom-6 { bottom: 20px !important; left: 16px !important; right: 16px !important; }
 
     .lg\\:col-span-7 { padding: 0 !important; }
+    
+    /* Скрываем все навигационные элементы */
+    .sidebar, .top-nav, .navbar { display: none !important; }
 }
 @media (min-width: 769px) {
     #mobile-result-overlay { display: none !important; }
+    
+    /* На ПК убираем чёрный фон */
+    #scanner-container, #scanner-box {
+        background: transparent !important;
+    }
 }
 </style>
 
@@ -208,7 +228,7 @@ const SCAN_COOLDOWN = 1500;
 let scanInFlight = false;
 
 function isMobile() {
-    return window.matchMedia('(max-width: 1024px)').matches;
+    return window.matchMedia('(max-width: 768px)').matches;
 }
 
 function startScanning() {
@@ -222,15 +242,14 @@ function startScanning() {
 
     html5QrCode = new Html5Qrcode('scanner-container');
 
-    const qrBoxSize = Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.7);
-
     html5QrCode.start(
         { facingMode: 'environment' },
         {
             fps: 24,
-            qrbox: { width: qrBoxSize, height: qrBoxSize },
-            aspectRatio: 1,
-            disableFlip: false
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0,
+            disableFlip: false,
+            showTorchButtonIfSupported: true
         },
         onScanSuccess,
         onScanError
@@ -284,7 +303,8 @@ function onScanError(error) {}
 
 async function fetchProductInfo(qrData) {
     try {
-        const response = await fetch('{{ route('warehouse.qrcodes.scan.process') }}', {
+        const url = '{{ route('warehouse.qrcodes.scan.process') }}'.replace('http://', 'https://');
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -315,43 +335,10 @@ async function lookupManualArticle() {
 function displayProduct(data) {
     const p = data.product;
     const s = data.summary;
-
-    if (isMobile()) {
-        openMobileResult(renderMobileResult(data));
-    } else {
-        document.getElementById('result-placeholder').classList.add('hidden');
-        document.getElementById('scan-result').classList.remove('hidden');
-        
-        document.getElementById('product-photo').src = p.photo || '';
-        document.getElementById('product-name').textContent = p.name;
-        document.getElementById('product-article').textContent = p.article;
-        
-        document.getElementById('total-stock').textContent = s.total_stock + ' шт';
-        document.getElementById('showcase-stock').textContent = s.shop_stock + ' шт';
-        document.getElementById('warehouse-stock').textContent = s.warehouse_stock + ' шт';
-
-        const badges = document.getElementById('badges-container');
-        badges.innerHTML = `
-            <span class="px-3 py-1 bg-success text-bg text-[10px] font-black uppercase rounded-lg shadow-lg">
-                ${data.is_known_qr ? 'NURMAN QR' : 'FOUND'}
-            </span>
-        `;
-
-        const variantsList = document.getElementById('variants-list');
-        variantsList.innerHTML = p.variants.map(v => `
-            <div class="p-4 rounded-2xl bg-white/5 border border-white/5">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-bold text-white">${v.size || '—'} / ${v.color || '—'}</span>
-                    <span class="text-[10px] font-mono text-muted">${v.barcode || 'БЕЗ КОДА'}</span>
-                </div>
-                <div class="grid grid-cols-3 gap-2 text-[10px] font-bold uppercase tracking-tighter">
-                    <div class="text-accent">Σ ${v.total_quantity}</div>
-                    <div class="text-success">V ${v.showcase_quantity}</div>
-                    <div class="text-warning">S ${v.warehouse_quantity}</div>
-                </div>
-            </div>
-        `).join('');
-    }
+    
+    // Всегда используем мобильное окно для телефонов
+    const html = renderMobileResult(data);
+    openMobileResult(html);
 }
 
 function renderMobileResult(data) {
@@ -403,16 +390,24 @@ function renderMobileResult(data) {
 function openMobileResult(html) {
     const overlay = document.getElementById('mobile-result-overlay');
     const drawer = document.getElementById('mobile-drawer');
-    document.getElementById('mobile-result-content').innerHTML = html;
+    const content = document.getElementById('mobile-result-content');
+    
+    content.innerHTML = html;
     overlay.classList.remove('hidden');
-    setTimeout(() => drawer.classList.remove('translate-y-full'), 10);
+    
+    // Принудительно показываем через стиль
+    drawer.style.transform = 'translateY(0)';
+    drawer.style.transition = 'transform 0.3s ease-out';
+    
     document.body.style.overflow = 'hidden';
 }
 
 function closeMobileResult() {
     const overlay = document.getElementById('mobile-result-overlay');
     const drawer = document.getElementById('mobile-drawer');
-    drawer.classList.add('translate-y-full');
+    
+    drawer.style.transform = 'translateY(100%)';
+    
     setTimeout(() => {
         overlay.classList.add('hidden');
         lastScannedCode = '';

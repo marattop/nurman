@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Middleware для проверки 2FA.
+ * Применяется ТОЛЬКО к администраторам и складским работникам.
  */
 class RequireTwoFactorAuthentication
 {
@@ -27,6 +28,14 @@ class RequireTwoFactorAuthentication
             return redirect()->route('login');
         }
 
+        // 2FA применяется ТОЛЬКО к админам и складским работникам (role_id 2, 3, 4)
+        // Клиенты (role_id 5) и владельцы (role_id 1) не проходят 2FA
+        $requires2FA = in_array($user->role_id, [2, 3, 4]);
+        
+        if (!$requires2FA) {
+            return $next($request);
+        }
+
         // Если 2FA не включен - пропускаем
         if (!$user->two_factor_secret) {
             return $next($request);
@@ -35,7 +44,7 @@ class RequireTwoFactorAuthentication
         // Проверяем верификацию через сессию или кэш
         $sessionKey = '2fa_verified_' . $user->id;
         $isVerified = session($sessionKey) || cache($sessionKey);
-        
+
         if (!$isVerified) {
             // Если запрос AJAX - возвращаем JSON
             if ($request->expectsJson()) {

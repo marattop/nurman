@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use BaconQrCode\Writer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Common\ErrorCorrectionLevel;
 
 class QrCode extends Model
 {
@@ -83,10 +85,21 @@ class QrCode extends Model
         // Генерируем QR-код (используем SKU для совместимости)
         $qrCodeContent = $variant->sku;
 
-        // Используем GDLibRenderer (bacon/bacon-qr-code v3)
-        $renderer = new \BaconQrCode\Renderer\GDLibRenderer(300);
-        $writer = new Writer($renderer);
-        $qrCodeImage = $writer->writeString($qrCodeContent, 'UTF-8', \BaconQrCode\Common\ErrorCorrectionLevel::M());
+        try {
+            // Пробуем использовать GDLibRenderer (bacon/bacon-qr-code v3)
+            $renderer = new \BaconQrCode\Renderer\GDLibRenderer(300);
+            $writer = new Writer($renderer);
+            $qrCodeImage = $writer->writeString($qrCodeContent, 'UTF-8', ErrorCorrectionLevel::M());
+        } catch (\Exception $e) {
+            // Запасной вариант: используем PngRenderer с ImageRenderer
+            $imageRenderer = new \BaconQrCode\Renderer\Image\ImagickImageBackEnd();
+            $pngRenderer = new \BaconQrCode\Renderer\PngRenderer(
+                new RendererStyle(300),
+                $imageRenderer
+            );
+            $writer = new Writer($pngRenderer);
+            $qrCodeImage = $writer->writeString($qrCodeContent, 'UTF-8', ErrorCorrectionLevel::M());
+        }
 
         // Сохраняем файл
         file_put_contents(public_path($filepath), $qrCodeImage);

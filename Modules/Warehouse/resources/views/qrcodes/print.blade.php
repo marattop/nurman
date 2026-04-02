@@ -28,25 +28,34 @@
 
     <div class="flex justify-center mb-8">
         <div class="bg-white p-6 rounded-2xl shadow-xl">
-            @if($qrCode->qr_code_path && file_exists(public_path($qrCode->qr_code_path)))
-                <img src="{{ asset($qrCode->qr_code_path) }}" alt="QR Code" class="w-80 h-80">
+            @php
+                $qrPath = $qrCode->qr_code_path ?? null;
+                $fullPath = $qrPath ? public_path($qrPath) : null;
+                $fileExists = $qrPath && file_exists($fullPath);
+            @endphp
+            @if($fileExists)
+                <img src="{{ asset($qrPath) }}" alt="QR Code" class="w-80 h-80">
             @else
                 <div class="w-80 h-80 flex items-center justify-center text-danger">
                     <i class="bi bi-qr-code text-6xl text-muted/30"></i>
-                    <p class="ml-3">QR-код не найден</p>
+                    <div class="ml-3 text-left">
+                        <p>QR-код не найден</p>
+                        @if($qrPath)
+                            <p class="text-xs text-muted mt-2">Путь: {{ $qrPath }}</p>
+                            <p class="text-xs text-muted">Полный путь: {{ $fullPath }}</p>
+                            <p class="text-xs text-muted">Существует: {{ file_exists($fullPath) ? 'да' : 'нет' }}</p>
+                        @endif
+                    </div>
                 </div>
             @endif
         </div>
     </div>
 
     <div class="flex gap-4 justify-center flex-wrap">
-        <button onclick="window.print()" class="btn btn-success btn-lg px-8 py-3">
+        <a href="{{ route('warehouse.qrcodes.print-label', $qrCode) }}" target="_blank" class="btn btn-primary btn-lg px-8 py-3">
             <i class="bi bi-printer me-2"></i>Напечатать
-        </button>
-        <a href="{{ route('warehouse.qrcodes.print', $qrCode) }}" target="_blank" class="btn btn-primary btn-lg px-8 py-3">
-            <i class="bi bi-eye me-2"></i>Показать QR
         </a>
-        <a href="{{ route('warehouse.qrcodes.index') }}" class="btn btn-outline btn-lg px-8 py-3">
+        <a href="{{ route('warehouse.qrcodes.index') }}" class="btn btn-secondary btn-lg px-8 py-3">
             <i class="bi bi-arrow-left me-2"></i>Назад
         </a>
     </div>

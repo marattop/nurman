@@ -75,7 +75,7 @@ class AuthController extends Controller
         // 1. ЖЕСТКАЯ ПРОВЕРКА IP и VPN
         $ipCheck = $this->securityService->validateRequest($request->ip());
         if (!$ipCheck['valid']) {
-            $msg = $ipCheck['reason'] === 'foreign_ip' 
+            $msg = $ipCheck['reason'] === 'foreign_ip'
                 ? "Доступ запрещен из вашей страны ({$ipCheck['country']}). Разрешен только Кыргызстан."
                 : "Доступ запрещен. Использование VPN или Прокси недопустимо.";
 
@@ -98,24 +98,50 @@ class AuthController extends Controller
             ])->onlyInput('username');
         }
 
-        // 2. ПОПЫТКА АУТЕНТИФИКАЦИИ (ШАГ 1: ЛОГИН/ПАРОЛЬ)
-        if (Auth::attempt(['username' => $request->username, 'password' => $request->password], $request->boolean('remember'))) {
-            $user = Auth::user();
+        // 2. ПОПЫТКА АУТЕНТИФИКАЦИИ
+        // Для клиентов (role_id = 5) - вход по телефону
+        // Для остальных - по username
+        $user = null;
+        
+        // Сначала пробуем найти по телефону (для клиентов)
+        if (Str::startsWith($request->username, '+') || preg_match('/^\d{10,15}$/', $request->username)) {
+            $user = User::where('phone', $request->username)->first();
+        }
+        
+        // Если не найдено по телефону, пробуем по username
+        if (!$user) {
+            $user = User::where('username', $request->username)->first();
+        }
 
+        // Проверка пароля
+        if ($user && Hash::check($request->password, $user->password)) {
             // Проверка активности пользователя
             if (!$user->is_active) {
-                Auth::logout();
+                $this->securityLogger->logLoginFailed($request->username, 'account_disabled');
                 return back()->withErrors(['username' => 'Ваша учётная запись деактивирована.'])->onlyInput('username');
             }
 
-            // ПЕРЕХОД НА ШАГ 2: СЕКРЕТНЫЙ КЛЮЧ
-            $request->session()->put('auth_step_1', true);
-            $request->session()->put('auth_user_id', $user->id);
+            // Вход
+            Auth::login($user);
 
-            // Очистка rate limiter после успешного пароля
+            // ПЕРЕХОД НА ШАГ 2: СЕКРЕТНЫЙ КЛЮЧ (только для админов и сотрудников)
+            // Клиенты (role_id = 5) и владельцы (role_id = 1) проходят сразу
+            if (in_array($user->role_id, [2, 3, 4])) {
+                $request->session()->put('auth_step_1', true);
+                $request->session()->put('auth_user_id', $user->id);
+                
+                // Очистка rate limiter после успешного пароля
+                RateLimiter::clear($throttleKey);
+
+                return redirect()->route('login.verify');
+            }
+
+            // Для клиентов и владельцев - сразу вход
             RateLimiter::clear($throttleKey);
+            $this->securityLogger->logLoginSuccess($user, $request);
+            $user->update(['last_login_at' => now(), 'last_login_ip' => $request->ip()]);
 
-            return redirect()->route('login.verify');
+            return redirect()->intended($user->getRedirectPath());
         }
 
         // Неверные учётные данные

@@ -29,10 +29,13 @@ class QrCodeController extends Controller
     public function processScan(Request $request)
     {
         $qrData = $request->get('qr_data');
-        
+
         if (!$qrData) {
             return response()->json(['success' => false, 'message' => 'Код не передан']);
         }
+
+        // Логирование для отладки
+        \Log::debug('QR scan: ' . $qrData);
 
         // Поиск по QR-коду (формат id:code)
         if (str_contains($qrData, ':')) {
@@ -41,24 +44,47 @@ class QrCodeController extends Controller
             if ($qr) {
                 $variant = $qr->variant;
                 $product = $variant->product;
+                \Log::info('Найдено по QR-коду БД: ' . $product->name);
                 return $this->formatScanResponse($product, $variant, true);
             }
+            \Log::debug('Не найдено по QR-коду БД');
         }
 
+        // Поиск по SKU варианта (QR-код содержит SKU)
+        \Log::debug('Поиск по SKU: ' . $qrData);
+        $variant = ProductVariant::where('sku', $qrData)->first();
+        if ($variant) {
+            $product = $variant->product;
+            \Log::info('Найдено по SKU: ' . $product->name);
+            return $this->formatScanResponse($product, $variant, true);
+        }
+        \Log::debug('Не найдено по SKU');
+
         // Поиск по артикулу товара
+        \Log::debug('Поиск по артикулу: ' . $qrData);
         $product = Product::where('article', $qrData)->first();
         if ($product) {
             $variant = $product->variants->first();
+            if (!$variant) {
+                \Log::info('Нет вариантов у товара: ' . $product->name);
+                return response()->json(['success' => false, 'message' => 'У товара нет вариантов']);
+            }
+            \Log::info('Найдено по артикулу: ' . $product->name);
             return $this->formatScanResponse($product, $variant);
         }
+        \Log::debug('Не найдено по артикулу');
 
         // Поиск по штрих-коду варианта
+        \Log::debug('Поиск по barcode: ' . $qrData);
         $variant = ProductVariant::where('barcode', $qrData)->first();
         if ($variant) {
             $product = $variant->product;
+            \Log::info('Найдено по barcode: ' . $product->name);
             return $this->formatScanResponse($product, $variant);
         }
+        \Log::debug('Не найдено по barcode');
 
+        \Log::info('Товар не найден: ' . $qrData);
         return response()->json(['success' => false, 'message' => 'Товар не найден']);
     }
 
@@ -67,6 +93,12 @@ class QrCodeController extends Controller
         $stock = Stock::where('variant_id', $variant->id)->get();
         $shopStock = $stock->whereNotNull('shop_id')->sum('quantity');
         $warehouseStock = $stock->whereNotNull('warehouse_id')->sum('quantity');
+
+        \Log::info('Форматирование ответа: ' . json_encode([
+            'product_name' => $product->name,
+            'variant_id' => $variant->id,
+            'total_stock' => $shopStock + $warehouseStock
+        ]));
 
         return response()->json([
             'success' => true,
@@ -124,13 +156,16 @@ class QrCodeController extends Controller
         ]);
 
         $variant = ProductVariant::findOrFail($validated['variant_id']);
-        
+
         // Проверить, есть ли уже QR-код
         $existingQr = QrCodeModel::where('variant_id', $variant->id)->first();
-        
+
         if ($existingQr) {
             return back()->with('info', 'QR-код уже существует')->with('qr_code', $existingQr);
         }
+
+        // Удалить все старые QR-коды для этого варианта (на случай дублей)
+        QrCodeModel::where('variant_id', $variant->id)->delete();
 
         // Сгенерировать новый QR-код
         $qrCode = QrCodeModel::generateForVariant($variant);
@@ -140,9 +175,40 @@ class QrCodeController extends Controller
 
     public function print(QrCodeModel $qrCode)
     {
-        $qrCode->markAsPrinted(auth()->id());
+        // Проверить, существует ли файл QR-кода
+        if (!$qrCode->qr_code_path || !file_exists(public_path($qrCode->qr_code_path))) {
+            // Файл не найден - перегенерировать QR-код
+            $variant = $qrCode->variant;
+            if ($variant) {
+                // Удалить старый файл если существует
+                if ($qrCode->qr_code_path && file_exists(public_path($qrCode->qr_code_path))) {
+                    unlink(public_path($qrCode->qr_code_path));
+                }
+                
+                // Удалить все QR-коды для этого варианта (чтобы не было дублей)
+                QrCodeModel::where('variant_id', $variant->id)->delete();
+                
+                // Сгенерировать новый QR-код
+                $qrCode = QrCodeModel::generateForVariant($variant);
+                $qrCode->markAsPrinted(auth()->id());
+                
+                return view('warehouse::qrcodes.print', compact('qrCode'));
+            }
+        }
         
+        $qrCode->markAsPrinted(auth()->id());
+
         return view('warehouse::qrcodes.print', compact('qrCode'));
+    }
+
+    /**
+     * Печать только QR-кода (без дизайна)
+     */
+    public function printLabel(QrCodeModel $qrCode)
+    {
+        $qrCode->markAsPrinted(auth()->id());
+
+        return view('warehouse::qrcodes.print-label', compact('qrCode'));
     }
 
     public function batchPrint(Request $request)

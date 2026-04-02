@@ -51,6 +51,7 @@ Route::middleware(['auth', 'role:warehouse'])->prefix('warehouse')->name('wareho
     Route::post('qrcodes/scan', [QrCodeController::class, 'processScan'])->name('qrcodes.scan.process');
     Route::post('qrcodes/generate', [QrCodeController::class, 'generate'])->name('qrcodes.generate');
     Route::get('qrcodes/{qrCode}/print', [QrCodeController::class, 'print'])->name('qrcodes.print');
+    Route::get('qrcodes/{qrCode}/print-label', [QrCodeController::class, 'printLabel'])->name('qrcodes.print-label');
     Route::get('qrcodes/batch-print', [QrCodeController::class, 'batchPrint'])->name('qrcodes.batch-print');
 
     // Инвентаризация

@@ -16,7 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
-        
+        $middleware->append(\App\Http\Middleware\SetAppUrl::class);
+
+        // Исключения для CSRF токена
+        $middleware->validateCsrfTokens(except: [
+            'warehouse/qrcodes/scan/process',
+        ]);
+
         // Регистрация алиасов для RBAC middleware
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,

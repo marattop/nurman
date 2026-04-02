@@ -50,8 +50,11 @@
                     </td>
                     <td data-label="Действия" class="px-6 py-4 text-right">
                         <div class="flex justify-end gap-2">
-                            <a href="{{ route('warehouse.qrcodes.print', $qrCode) }}" class="w-10 h-10 glass rounded-xl flex items-center justify-center text-muted hover:text-accent hover:border-accent/30 transition-all">
+                            <a href="{{ route('warehouse.qrcodes.print-label', $qrCode) }}" target="_blank" class="w-10 h-10 glass rounded-xl flex items-center justify-center text-muted hover:text-accent hover:border-accent/30 transition-all" title="Напечатать">
                                 <i class="bi bi-printer"></i>
+                            </a>
+                            <a href="{{ route('warehouse.qrcodes.print', $qrCode) }}" class="w-10 h-10 glass rounded-xl flex items-center justify-center text-muted hover:text-accent hover:border-accent/30 transition-all" title="Просмотр">
+                                <i class="bi bi-eye"></i>
                             </a>
                         </div>
                     </td>

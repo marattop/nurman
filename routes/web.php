@@ -38,7 +38,7 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('login', [AuthController::class, 'login'])->name('login.post');
-    
+
     // Регистрация для клиентов (покупателей)
     Route::get('client/register', [ClientAuthController::class, 'showRegistrationForm'])->name('client.register');
     Route::post('client/register', [ClientAuthController::class, 'register']);

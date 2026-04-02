@@ -32,12 +32,13 @@ class SecurityHeaders
 
         // Ограничение разрешенных ресурсов (Content Security Policy)
         // Настраиваем базовую политику, разрешающую скрипты с доверенных источников
+        $ngrokDomain = $request->getHost();
         $csp = "default-src 'self'; ";
         $csp .= "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; ";
         $csp .= "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; ";
         $csp .= "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; ";
-        $csp .= "img-src 'self' data: https://api.qrserver.com https://images.unsplash.com; ";
-        $csp .= "connect-src 'self'; ";
+        $csp .= "img-src 'self' data: https: blob: https://api.qrserver.com https://images.unsplash.com https://{$ngrokDomain} http://{$ngrokDomain}; ";
+        $csp .= "connect-src 'self' https: http://{$ngrokDomain}; ";
         $csp .= "frame-ancestors 'none';";
         
         $response->headers->set('Content-Security-Policy', $csp);

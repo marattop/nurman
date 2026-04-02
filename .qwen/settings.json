@@ -5,7 +5,8 @@
       "Bash(git add *)",
       "Bash(git pull)",
       "Bash(git commit *)",
-      "Bash(composer.phar *)"
+      "Bash(composer.phar *)",
+      "Bash(php *)"
     ]
   },
   "$version": 3
