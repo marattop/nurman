@@ -5,6 +5,15 @@
 @section('container-class', 'no-padding')
 @section('max-width-class', 'max-w-none')
 
+@push('styles')
+<style>
+    /* Убираем лишний отступ — лейаут уже добавил padding-bottom */
+    @media (max-width: 768px) {
+        body { padding-bottom: 0 !important; }
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="max-w-5xl mx-auto">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -176,37 +185,29 @@
 
 /* Mobile Adaptation */
 @media (max-width: 768px) {
-    /* Скрываем шапку и подвал */
-    .page-header, .bottom-nav, footer, header { display: none !important; }
-    
-    body { overflow-x: hidden; }
+    body { overflow-x: hidden; padding-bottom: 70px !important; }
     .main-content { margin-left: 0 !important; padding: 0 !important; }
     .page-header { display: none !important; }
 
-    .max-w-5xl { width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+    .max-w-5xl { width: 100% !important; max-width: 100% !important; padding: 8px !important; margin: 0 !important; }
 
     #scanner-box {
-        border-radius: 0 !important;
-        height: 100vh !important;
-        width: 100vw !important;
-        border: none !important;
-        margin: 0 !important;
-        background: transparent !important;
+        border-radius: 1rem !important;
+        height: 60vh !important;
+        width: 100% !important;
+        margin: 0 auto !important;
     }
 
     #scanner-container {
         height: 100% !important;
         width: 100% !important;
-        background: transparent !important;
     }
 
     .absolute.bottom-24 { bottom: 90px !important; left: 16px !important; right: 16px !important; }
-    .absolute.bottom-6 { bottom: 20px !important; left: 16px !important; right: 16px !important; }
+    .absolute.bottom-6 { bottom: 16px !important; left: 16px !important; right: 16px !important; }
 
     .lg\\:col-span-7 { padding: 0 !important; }
-    
-    /* Скрываем все навигационные элементы */
-    .sidebar, .top-nav, .navbar { display: none !important; }
+    .lg\\:col-span-5 { padding: 0 !important; }
 }
 @media (min-width: 769px) {
     #mobile-result-overlay { display: none !important; }

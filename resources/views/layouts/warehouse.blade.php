@@ -73,13 +73,13 @@
 
         /* Mobile specific adjustments */
         @media (max-width: 768px) {
-            .main-content { margin-left: 0 !important; padding-top: 64px; width: 100%; }
+            .main-content { margin-left: 0 !important; padding-top: 64px; width: 100%; padding-bottom: 80px !important; }
             .sidebar { transform: translateX(-100%); z-index: 1000; }
             .sidebar.open { transform: translateX(0); }
             .mobile-overlay { display: none; }
             .mobile-overlay.show { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 40; }
-            .content-container { padding: 16px !important; }
-            .content-container.no-padding { padding: 0 !important; }
+            .content-container { padding: 16px !important; padding-bottom: 80px !important; }
+            .content-container.no-padding { padding: 0 !important; padding-bottom: 80px !important; }
             .content-container.no-padding .page-header-wrapper { display: none !important; }
             .content-container.no-padding .max-w-7xl { max-width: none !important; margin: 0 !important; }
         }

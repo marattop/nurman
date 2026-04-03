@@ -35,57 +35,48 @@ class QrCodeController extends Controller
         }
 
         // Логирование для отладки
-        \Log::debug('QR scan: ' . $qrData);
+        \Log::info('Warehouse QR scan - raw:', ['qr_data' => $qrData]);
 
-        // Поиск по QR-коду (формат id:code)
-        if (str_contains($qrData, ':')) {
-            $parts = explode(':', $qrData);
-            $qr = QrCodeModel::where('id', $parts[0])->where('qr_data', $parts[1])->first();
-            if ($qr) {
-                $variant = $qr->variant;
-                $product = $variant->product;
-                \Log::info('Найдено по QR-коду БД: ' . $product->name);
-                return $this->formatScanResponse($product, $variant, true);
-            }
-            \Log::debug('Не найдено по QR-коду БД');
+        // Парсим JSON если это JSON
+        $decoded = json_decode($qrData, true);
+        if ($decoded && isset($decoded['article'])) {
+            $qrData = $decoded['article'];
+            \Log::info('Warehouse QR scan - извлечён article:', ['article' => $qrData]);
         }
 
         // Поиск по SKU варианта (QR-код содержит SKU)
-        \Log::debug('Поиск по SKU: ' . $qrData);
+        \Log::info('Warehouse - Поиск по SKU:', ['sku' => $qrData]);
         $variant = ProductVariant::where('sku', $qrData)->first();
         if ($variant) {
             $product = $variant->product;
-            \Log::info('Найдено по SKU: ' . $product->name);
+            \Log::info('Warehouse - Найдено по SKU:', ['product' => $product->name]);
             return $this->formatScanResponse($product, $variant, true);
         }
-        \Log::debug('Не найдено по SKU');
 
         // Поиск по артикулу товара
-        \Log::debug('Поиск по артикулу: ' . $qrData);
+        \Log::info('Warehouse - Поиск по article:', ['article' => $qrData]);
         $product = Product::where('article', $qrData)->first();
         if ($product) {
             $variant = $product->variants->first();
             if (!$variant) {
-                \Log::info('Нет вариантов у товара: ' . $product->name);
+                \Log::warning('Warehouse - Нет вариантов:', ['product_id' => $product->id]);
                 return response()->json(['success' => false, 'message' => 'У товара нет вариантов']);
             }
-            \Log::info('Найдено по артикулу: ' . $product->name);
+            \Log::info('Warehouse - Найдено по article:', ['product' => $product->name, 'variant_id' => $variant->id]);
             return $this->formatScanResponse($product, $variant);
         }
-        \Log::debug('Не найдено по артикулу');
 
         // Поиск по штрих-коду варианта
-        \Log::debug('Поиск по barcode: ' . $qrData);
+        \Log::info('Warehouse - Поиск по barcode:', ['barcode' => $qrData]);
         $variant = ProductVariant::where('barcode', $qrData)->first();
         if ($variant) {
             $product = $variant->product;
-            \Log::info('Найдено по barcode: ' . $product->name);
+            \Log::info('Warehouse - Найдено по barcode:', ['product' => $product->name]);
             return $this->formatScanResponse($product, $variant);
         }
-        \Log::debug('Не найдено по barcode');
 
-        \Log::info('Товар не найден: ' . $qrData);
-        return response()->json(['success' => false, 'message' => 'Товар не найден']);
+        \Log::warning('Warehouse - Товар не найден:', ['qr_data' => $qrData]);
+        return response()->json(['success' => false, 'message' => 'Товар не найден. QR: ' . $qrData]);
     }
 
     private function formatScanResponse($product, $variant, $isKnownQr = false)

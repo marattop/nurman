@@ -366,12 +366,15 @@ class PosController extends Controller
      */
     public function scanProduct(Request $request)
     {
+        \Log::info('scanProduct - Вход:', ['qr_data' => $request->qr_data]);
+        
         $request->validate([
             'qr_data' => 'required|string'
         ]);
 
         try {
             $qrData = json_decode($request->qr_data, true);
+            \Log::info('scanProduct - Decoded:', ['qrData' => $qrData]);
 
             // Если JSON с variant_id (старый формат)
             if ($qrData && isset($qrData['variant_id'])) {
@@ -379,6 +382,7 @@ class PosController extends Controller
                     ->find($qrData['variant_id']);
 
                 if ($variant) {
+                    \Log::info('scanProduct - Найдено по variant_id:', ['variant_id' => $variant->id]);
                     return $this->getVariantData($variant);
                 }
             }
@@ -386,16 +390,20 @@ class PosController extends Controller
             // Если JSON с article (новый формат от админки)
             if ($qrData && isset($qrData['article'])) {
                 $article = $qrData['article'];
-                
+                \Log::info('scanProduct - Поиск по article:', ['article' => $article]);
+
                 // Ищем товар по артикулу
                 $product = Product::where('article', $article)->first();
-                
+
                 if (!$product) {
+                    \Log::warning('scanProduct - Товар не найден:', ['article' => $article]);
                     return response()->json([
                         'success' => false,
                         'message' => 'Товар с артикулом "' . $article . '" не найден'
                     ]);
                 }
+                
+                \Log::info('scanProduct - Товар найден:', ['product_id' => $product->id, 'name' => $product->name]);
 
                 // Получаем первый вариант товара
                 $variant = ProductVariant::with(['product'])
@@ -403,8 +411,15 @@ class PosController extends Controller
                     ->first();
 
                 if ($variant) {
+                    \Log::info('scanProduct - Вариант найден:', ['variant_id' => $variant->id]);
                     return $this->getVariantData($variant);
                 }
+                
+                \Log::warning('scanProduct - Вариант не найден для товара:', ['product_id' => $product->id]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'У товара нет вариантов (размеров)'
+                ]);
             }
 
             // Если просто строка/число - ищем по barcode или article
@@ -431,12 +446,15 @@ class PosController extends Controller
                 }
             }
 
+            \Log::info('scanProduct - Не найдено, возвращаем:', ['success' => false]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Товар не найден'
             ]);
 
         } catch (\Exception $e) {
+            \Log::error('scanProduct - Ошибка:', ['message' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Ошибка при сканировании: ' . $e->getMessage()

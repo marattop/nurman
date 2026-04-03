@@ -211,11 +211,30 @@
     .pos-mobile-cart-btn { position: fixed; bottom: 80px; right: 20px; width: 60px; height: 60px; border-radius: 30px; background: #10b981; color: #0f172a; font-size: 24px; display: none; z-index: 1000; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
     .pos-mobile-cart-btn span { position: absolute; top: 0; right: 0; background: #ef4444; color: #fff; font-size: 11px; width: 22px; height: 22px; border-radius: 11px; display: flex; align-items: center; justify-content: center; border: 2px solid #10b981; }
 
-    @media (max-width: 1024px) {
-        .pos-cart-area { position: fixed; right: -100%; top: 0; height: 100vh; z-index: 2000; transition: 0.3s; width: 300px; border-radius: 0; }
+    @media (max-width: 768px) {
+        .pos-app-wrapper { padding: 8px; gap: 8px; height: calc(100vh - 140px); }
+        .pos-products-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .pos-product-card { min-height: auto; }
+        .pos-img-container { height: 70px; }
+        .pos-card-body { padding: 6px; }
+        .pos-p-title { font-size: 11px; }
+        .pos-p-price { font-size: 12px; }
+        .pos-cat-pill { padding: 6px 12px; font-size: 12px; }
+        .pos-input-group input { padding: 8px 8px 8px 34px; font-size: 14px; }
+        .pos-btn-cam { width: 40px; height: 40px; }
+        
+        /* Корзина на весь экран на мобильном */
+        .pos-cart-area { position: fixed; right: -100%; top: 0; height: 100vh; z-index: 2000; transition: 0.3s; width: 100%; max-width: 400px; border-radius: 0; }
         .pos-cart-area.open { right: 0; }
         .pos-mobile-cart-btn { display: block; }
         .pos-close-mobile { display: block; }
+    }
+
+    @media (max-width: 480px) {
+        .pos-products-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .pos-img-container { height: 60px; }
+        .pos-search-row { flex-wrap: wrap; }
+        .pos-btn-cam { flex: 1; }
     }
 </style>
 
@@ -272,17 +291,12 @@
         localStorage.removeItem('posCoupon');
     }
 
-    // Автофокус
+    // Автофокус (убран - не открывать клавиатуру автоматически)
     window.onload = () => {
-        document.getElementById('pos-main-search').focus();
         posLoadFromStorage();
         posUpdateUI();
     };
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.pos-full-modal') && !e.target.closest('input')) {
-            document.getElementById('pos-main-search').focus();
-        }
-    });
+    // Убран автофокус при клике - клавиатура не будет открываться
 
     // Горячие клавиши
     document.addEventListener('keydown', (e) => {
@@ -434,44 +448,101 @@
     }
 
     function posAutoSearch(code) {
-        fetch('{{ route("seller.pos.scan-product") }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-            body: JSON.stringify({ qr_data: code })
-        }).then(r => r.json()).then(data => {
-            if (data.success) {
-                const v = data.variant;
-                posAddToCart(
-                    v.id,
-                    v.name + ' (' + v.size + '/' + v.color + ')',
-                    v.price,
-                    v.quantity,
-                    v.supplier_price || 0
-                );
+        const url = '{{ route("seller.pos.scan-product") }}';
+        const token = '{{ csrf_token() }}';
+        
+        const scanTitle = document.getElementById('pos-scan-title');
+        const originalTitle = scanTitle.textContent;
+        scanTitle.textContent = 'Поиск...';
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('X-CSRF-TOKEN', token);
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        const v = data.variant;
+                        posAddToCart(
+                            v.id,
+                            v.name + ' (' + v.size + '/' + v.color + ')',
+                            v.price,
+                            v.quantity,
+                            v.supplier_price || 0
+                        );
+                        scanTitle.textContent = '✓ Добавлено!';
+                        setTimeout(() => { scanTitle.textContent = originalTitle; }, 1500);
+                    } else {
+                        scanTitle.textContent = '✗ Не найдено';
+                        setTimeout(() => { scanTitle.textContent = originalTitle; }, 2000);
+                        alert(data.message || 'Товар не найден');
+                    }
+                } catch(e) {
+                    scanTitle.textContent = '✗ Ошибка!';
+                    setTimeout(() => { scanTitle.textContent = originalTitle; }, 2000);
+                    alert('Ошибка обработки ответа');
+                }
             } else {
-                document.getElementById('pos-main-search').value = code;
-                document.getElementById('pos-main-search').dispatchEvent(new Event('input'));
+                scanTitle.textContent = '✗ Ошибка ' + xhr.status;
+                setTimeout(() => { scanTitle.textContent = originalTitle; }, 2000);
+                alert('Ошибка сервера: ' + xhr.status);
             }
-        });
+        };
+        
+        xhr.onerror = function() {
+            scanTitle.textContent = '✗ Ошибка!';
+            setTimeout(() => { scanTitle.textContent = originalTitle; }, 2000);
+            alert('Ошибка сети. Проверьте подключение.');
+        };
+        
+        xhr.send(JSON.stringify({ qr_data: code }));
     }
 
     function posFetchCust(code) {
-        fetch('{{ route("seller.pos.scan-customer") }}', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-            body: JSON.stringify({ qr_data: code })
-        }).then(r => r.json()).then(data => {
-            if (data.success) {
-                posCust = data.customer;
-                posCoupon = data.coupon;
-                document.getElementById('pos-selected-cust').style.display = 'block';
-                document.getElementById('pos-cust-btns').style.display = 'none';
-                document.getElementById('pos-cust-name').textContent = data.customer.full_name;
-                document.getElementById('pos-cust-phone').textContent = data.customer.phone;
-                posRecalc();
-                posSaveToStorage();
-            } else alert(data.message);
-        });
+        const url = '{{ route("seller.pos.scan-customer") }}';
+        const token = '{{ csrf_token() }}';
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('X-CSRF-TOKEN', token);
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        
+        xhr.onload = function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        posCust = data.customer;
+                        posCoupon = data.coupon;
+                        document.getElementById('pos-selected-cust').style.display = 'block';
+                        document.getElementById('pos-cust-btns').style.display = 'none';
+                        document.getElementById('pos-cust-name').textContent = data.customer.full_name;
+                        document.getElementById('pos-cust-phone').textContent = data.customer.phone;
+                        posRecalc();
+                        posSaveToStorage();
+                    } else {
+                        alert(data.message || 'Клиент не найден');
+                    }
+                } catch(e) {
+                    alert('Ошибка обработки ответа');
+                }
+            } else {
+                alert('Ошибка сервера: ' + xhr.status);
+            }
+        };
+        
+        xhr.onerror = function() {
+            alert('Ошибка сети. Проверьте подключение.');
+        };
+        
+        xhr.send(JSON.stringify({ qr_data: code }));
     }
 
     function posSearchPhone() { const p = prompt('Введите номер:'); if(p) posFetchCust(p); }

@@ -17,10 +17,20 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
         $middleware->append(\App\Http\Middleware\SetAppUrl::class);
+        
+        // Доверять всем прокси (для ngrok)
+        $middleware->trustProxies(at: '*');
 
-        // Исключения для CSRF токена
+        // Исключения для CSRF токена (для работы через ngrok)
         $middleware->validateCsrfTokens(except: [
             'warehouse/qrcodes/scan/process',
+            'warehouse/qrcodes/scan',
+            'seller/pos/scan-product',
+            'seller/pos/scan-customer',
+            'seller/pos/scan-coupon',
+            'seller/pos/checkout',
+            'seller/products/scan',
+            'owner/scan-product/process',
         ]);
 
         // Регистрация алиасов для RBAC middleware
