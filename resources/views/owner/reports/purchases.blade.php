@@ -92,9 +92,19 @@
                                 <div class="text-[10px] text-muted">{{ $purchase->variant?->size ?? '' }} {{ $purchase->variant?->color ?? '' }}</div>
                             </td>
                             <td class="px-6 py-4" data-label="Магазин">
-                                <span class="px-2 py-0.5 rounded-md bg-white/5 text-[10px] text-white/80 border border-white/10 uppercase tracking-tighter">
-                                    {{ $purchase->shop?->name ?? '-' }}
-                                </span>
+                                @if($purchase->shop)
+                                    <span class="px-2 py-0.5 rounded-md bg-white/5 text-[10px] text-white/80 border border-white/10 uppercase tracking-tighter">
+                                        {{ $purchase->shop->name }}
+                                    </span>
+                                @elseif($purchase->warehouse)
+                                    <span class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-[10px] border border-amber-500/20 uppercase tracking-tighter">
+                                        <i class="bi bi-building"></i> {{ $purchase->warehouse->name }}
+                                    </span>
+                                @else
+                                    <span class="px-2 py-0.5 rounded-md bg-muted/10 text-muted text-[10px]">
+                                        Не указано
+                                    </span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-center" data-label="Кол-во">
                                 <span class="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 text-[10px] font-bold border border-blue-500/20">

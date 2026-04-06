@@ -155,21 +155,44 @@ class AnalyticsController extends Controller
     
     private function getDateRange(string $period): array
     {
-        $today = now()->format('Y-m-d');
-        $labels = [
-            'today' => 'Сегодня',
-            'week' => 'Последние 7 дней',
-            'month' => 'Последние 30 дней',
-            'year' => 'Последние 365 дней',
-        ];
-        $label = $labels[$period] ?? 'Последние 30 дней';
-        
-        return match($period) {
-            'today' => [$today, $today, $label],
-            'week' => [now()->subDays(7)->format('Y-m-d'), $today, $label],
-            'month' => [now()->subDays(30)->format('Y-m-d'), $today, $label],
-            'year' => [now()->subDays(365)->format('Y-m-d'), $today, $label],
-            default => [now()->subDays(30)->format('Y-m-d'), $today, $label],
+        $now = now();
+
+        return match ($period) {
+            'today' => [
+                $now->format('Y-m-d'), 
+                $now->format('Y-m-d'), 
+                'Сегодня'
+            ],
+            'yesterday' => [
+                $now->copy()->subDay()->format('Y-m-d'), 
+                $now->copy()->subDay()->format('Y-m-d'), 
+                'Вчера'
+            ],
+            'week' => [
+                $now->copy()->startOfWeek()->format('Y-m-d'), 
+                $now->copy()->endOfWeek()->format('Y-m-d'), 
+                'Эта неделя'
+            ],
+            'month' => [
+                $now->copy()->startOfMonth()->format('Y-m-d'), 
+                $now->copy()->endOfMonth()->format('Y-m-d'), 
+                'Этот месяц'
+            ],
+            'last_month' => [
+                $now->copy()->subMonth()->startOfMonth()->format('Y-m-d'), 
+                $now->copy()->subMonth()->endOfMonth()->format('Y-m-d'), 
+                'Прошлый месяц'
+            ],
+            'year' => [
+                $now->copy()->startOfYear()->format('Y-m-d'), 
+                $now->copy()->endOfYear()->format('Y-m-d'), 
+                'Этот год'
+            ],
+            default => [
+                $now->copy()->startOfMonth()->format('Y-m-d'), 
+                $now->copy()->endOfMonth()->format('Y-m-d'), 
+                'Этот месяц'
+            ],
         };
     }
 }

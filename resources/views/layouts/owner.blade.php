@@ -55,6 +55,14 @@
             border: 1px solid rgba(255, 255, 255, 0.07);
         }
 
+        /* ── Date input calendar icon visibility ── */
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            filter: brightness(0) saturate(100%) invert(100%) !important;
+            opacity: 1 !important;
+            cursor: pointer;
+        }
+
         /* ── Active nav item ── */
         .active-nav-item {
             background: rgba(168, 85, 247, 0.15) !important;
@@ -253,6 +261,10 @@
                 </a>
 
                 <p class="px-3 text-[10px] font-bold text-muted uppercase tracking-widest mb-2 mt-5">Управление</p>
+                <a href="{{ route('owner.module.products') }}"
+                   class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-muted hover:text-white hover:bg-white/5 transition-all {{ request()->routeIs('owner.module.products*') ? 'active-nav-item' : '' }}">
+                    <i class="bi bi-box-seam mr-3 text-lg"></i> Товары
+                </a>
                 <a href="{{ route('owner.users.index') }}"
                    class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-muted hover:text-white hover:bg-white/5 transition-all {{ request()->routeIs('owner.users.*') ? 'active-nav-item' : '' }}">
                     <i class="bi bi-people-fill mr-3 text-lg"></i> Пользователи
@@ -278,6 +290,10 @@
                 <a href="{{ route('owner.reports.expenses') }}"
                    class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-muted hover:text-white hover:bg-white/5 transition-all {{ request()->routeIs('owner.reports.expenses') ? 'active-nav-item' : '' }}">
                     <i class="bi bi-wallet2 mr-3 text-lg"></i> Расходы
+                </a>
+                <a href="{{ route('owner.reports.analytics') }}"
+                   class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-muted hover:text-white hover:bg-white/5 transition-all {{ request()->routeIs('owner.reports.analytics') ? 'active-nav-item' : '' }}">
+                    <i class="bi bi-graph-up-arrow mr-3 text-lg"></i> Аналитика
                 </a>
             </nav>
 

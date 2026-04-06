@@ -14,7 +14,20 @@
 
 <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
     @csrf
-    
+
+    {{-- Общее сообщение об ошибке --}}
+    @if ($errors->any() || session('error'))
+    <div class="bg-red-500/10 border border-red-500/20 rounded-2xl p-5 mb-6">
+        <div class="flex items-start gap-3">
+            <i class="bi bi-exclamation-triangle-fill text-red-500 text-2xl flex-shrink-0 mt-0.5"></i>
+            <div>
+                <h4 class="text-red-400 font-bold text-sm">Ошибка создания товара</h4>
+                <p class="text-red-400/70 text-xs mt-1">Проверьте правильность заполнения полей и попробуйте снова.</p>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Основная информация --}}
     <div class="card !p-0 overflow-hidden border-white/5 shadow-xl">
         <div class="px-5 py-4 border-b border-white/5 bg-white/5">
@@ -66,8 +79,8 @@
             
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
                 <div>
-                    <label class="block font-semibold mb-2 text-text text-sm">Цена закупки</label>
-                    <input type="number" name="supplier_price" class="input" value="{{ old('supplier_price') }}" min="0" step="0.01" placeholder="0.00">
+                    <label class="block font-semibold mb-2 text-text text-sm">Цена закупки (сом) <span class="text-danger">*</span></label>
+                    <input type="number" name="supplier_price" class="input" value="{{ old('supplier_price') }}" required min="0" step="0.01" placeholder="0.00">
                 </div>
                 <div>
                     <label class="block font-semibold mb-2 text-text text-sm">Материал</label>
@@ -184,7 +197,7 @@
                 <div class="variant-item bg-white/5 p-4 rounded-xl border border-white/5 relative">
                     <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                         <div>
-                            <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Размер</label>
+                            <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Размер <span class="text-danger">*</span></label>
                             <select name="variants[0][size]" class="input" required>
                                 <option value="">Выберите размер</option>
                                 <option value="XS">XS (Extra Small)</option>
@@ -256,7 +269,7 @@
                             <input type="text" name="variants[0][color]" class="input" placeholder="Цвет">
                         </div>
                         <div>
-                            <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Начальное кол-во</label>
+                            <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Начальное кол-во <span class="text-danger">*</span></label>
                             <input type="number" name="variants[0][quantity]" class="input" placeholder="0" required min="0">
                         </div>
                         <div class="flex items-end">
@@ -405,7 +418,7 @@ function addVariant() {
     newVariant.innerHTML = `
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
-                <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Размер</label>
+                <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Размер <span class="text-danger">*</span></label>
                 <select name="variants[${variantCounter}][size]" class="input" required>
                     ${sizeOptionsHtml}
                 </select>
@@ -415,7 +428,7 @@ function addVariant() {
                 <input type="text" name="variants[${variantCounter}][color]" class="input" placeholder="Цвет">
             </div>
             <div>
-                <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Начальное кол-во</label>
+                <label class="block font-semibold mb-1 text-muted text-[11px] uppercase">Начальное кол-во <span class="text-danger">*</span></label>
                 <input type="number" name="variants[${variantCounter}][quantity]" class="input" placeholder="0" required min="0">
             </div>
             <div class="flex items-end">

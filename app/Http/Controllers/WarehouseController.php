@@ -92,7 +92,126 @@ class WarehouseController extends Controller
 
     public function storePurchase(Request $request)
     {
-        return redirect()->route('warehouse.purchases.index')->with('success', 'Приёмка оформлена');
+        // ОТЛАДКА - записываем все данные запроса
+        \Log::info('=== ЗАКУПКА НАЧАЛО ===', [
+            'all_data' => $request->all(),
+            'user_id' => auth()->id(),
+        ]);
+
+        try {
+            $validated = $request->validate([
+                'product_id' => 'required|exists:products,id',
+                'variant_id' => 'nullable|exists:product_variants,id',
+                'quantity' => 'required|integer|min:1',
+                'supplier_price' => 'required|numeric|min:0',
+                'supplier_name' => 'nullable|string|max:255',
+                'comment' => 'nullable|string',
+                'shop_id' => 'nullable|exists:shops,id',
+                'warehouse_id' => 'nullable|exists:warehouses,id',
+            ]);
+
+            \Log::info('ВАЛИДАЦИЯ ПРОШЛА', $validated);
+
+            $variant = null;
+            
+            // Если variant_id не указан, создаём новый вариант
+            if (empty($validated['variant_id'])) {
+                $product = Product::findOrFail($validated['product_id']);
+                $variant = ProductVariant::create([
+                    'product_id' => $product->id,
+                    'size' => 'Стандарт',
+                    'color' => null,
+                    'sku' => $product->article . '-STD-' . time(),
+                    'supplier_price' => $validated['supplier_price'],
+                    'wholesale_price' => null,
+                    'is_active' => true,
+                ]);
+                \Log::info('Создан новый вариант', ['variant_id' => $variant->id]);
+            } else {
+                $variant = ProductVariant::findOrFail($validated['variant_id']);
+                // Обновляем цену закупки
+                $variant->update(['supplier_price' => $validated['supplier_price']]);
+                \Log::info('Используем существующий вариант', ['variant_id' => $variant->id]);
+            }
+
+            // Создаём запись закупки
+            $purchase = Purchase::create([
+                'variant_id' => $variant->id,
+                'quantity' => $validated['quantity'],
+                'price' => $validated['supplier_price'],
+                'total_price' => $validated['quantity'] * $validated['supplier_price'],
+                'supplier_name' => $validated['supplier_name'] ?? null,
+                'comment' => $validated['comment'] ?? null,
+                'shop_id' => $validated['shop_id'] ?? null,
+                'warehouse_id' => $validated['warehouse_id'] ?? null,
+                'received_by' => auth()->id(),
+                'status' => 'completed',
+            ]);
+
+            \Log::info('Создана закупка', ['purchase_id' => $purchase->id]);
+
+            // Обновляем остатки на складе/магазине
+            $stock = null;
+            
+            if (!empty($validated['shop_id'])) {
+                $stock = Stock::firstOrCreate(
+                    [
+                        'variant_id' => $variant->id,
+                        'shop_id' => $validated['shop_id'],
+                    ],
+                    ['quantity' => 0, 'min_stock' => 5]
+                );
+                $stock->increment('quantity', $validated['quantity']);
+                \Log::info('Обновлены остатки в магазине', [
+                    'shop_id' => $validated['shop_id'],
+                    'new_quantity' => $stock->quantity,
+                ]);
+            } elseif (!empty($validated['warehouse_id'])) {
+                $stock = Stock::firstOrCreate(
+                    [
+                        'variant_id' => $variant->id,
+                        'warehouse_id' => $validated['warehouse_id'],
+                    ],
+                    ['quantity' => 0, 'min_stock' => 5]
+                );
+                $stock->increment('quantity', $validated['quantity']);
+                \Log::info('Обновлены остатки на складе', [
+                    'warehouse_id' => $validated['warehouse_id'],
+                    'new_quantity' => $stock->quantity,
+                ]);
+            }
+
+            // Логируем активность
+            ActivityLog::create([
+                'user_id' => auth()->id(),
+                'action' => 'purchase_create',
+                'description' => "Создана закупка: {$variant->product->name} x{$validated['quantity']}",
+                'model_type' => Purchase::class,
+                'model_id' => $purchase->id,
+            ]);
+
+            \Log::info('=== ЗАКУПКА УСПЕШНО ===', ['purchase_id' => $purchase->id]);
+
+            return redirect()->route('warehouse.purchases.index')
+                ->with('success', 'Приёмка оформлена: ' . $variant->product->name . ' x' . $validated['quantity']);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('=== ЗАКУПКА ОШИБКА ВАЛИДАЦИИ ===', [
+                'errors' => $e->errors(),
+                'input' => $request->all(),
+            ]);
+            
+            return back()->withErrors($e->errors())->withInput();
+            
+        } catch (\Exception $e) {
+            \Log::error('=== ЗАКУПКА ОШИБКА ===', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'input' => $request->all(),
+            ]);
+            
+            return back()->with('error', 'Ошибка при оформлении закупки: ' . $e->getMessage())->withInput();
+        }
     }
 
     public function editPurchase($id)

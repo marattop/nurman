@@ -295,5 +295,4 @@
         </div>
     </footer>
 </body>
-</html>
-<?php /**PATH C:\laragon\www\nurman\resources\views/welcome.blade.php ENDPATH**/ ?>
+</html><?php /**PATH C:\laragon\www\nurman\resources\views/welcome.blade.php ENDPATH**/ ?>

@@ -675,6 +675,14 @@ class PosController extends Controller
                 ]);
             }
 
+            // Обновляем профиль клиента (покупки и т.д.)
+            if ($request->customer_id) {
+                $customer = User::with('customerProfile')->find($request->customer_id);
+                if ($customer && $customer->customerProfile) {
+                    $customer->customerProfile->updateAfterPurchase($finalAmount);
+                }
+            }
+
             DB::commit();
 
             // Возвращаем данные для чека с загруженными связями

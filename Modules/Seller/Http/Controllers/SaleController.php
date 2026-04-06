@@ -131,18 +131,16 @@ class SaleController extends Controller
             
             // Обновить историю покупок клиента
             if ($validated['customer_id']) {
-                $bonusEarned = floor($finalAmount / 100); // 1 балл за каждые 100 сом
-                
                 CustomerPurchaseHistory::create([
                     'customer_id' => $validated['customer_id'],
                     'transaction_id' => $transaction->id,
                     'amount' => $finalAmount,
-                    'bonus_earned' => $bonusEarned,
+                    'bonus_earned' => 0,
                 ]);
-                
+
                 // Обновить профиль клиента
                 $customer = \Modules\Core\Models\User::find($validated['customer_id']);
-                $customer->customerProfile?->updateAfterPurchase($finalAmount, $bonusEarned);
+                $customer->customerProfile?->updateAfterPurchase($finalAmount);
             }
             
             DB::commit();

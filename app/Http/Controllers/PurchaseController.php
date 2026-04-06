@@ -190,79 +190,133 @@ class PurchaseController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'items' => 'required|array|min:1',
-            'items.*.variant_id' => 'required|exists:product_variants,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.supplier_price' => 'required|numeric|min:0',
-            'location_type' => 'required|in:shop,warehouse',
-            'shop_id' => 'nullable|exists:shops,id',
-            'warehouse_id' => 'nullable|exists:warehouses,id',
-            'comment' => 'nullable|string',
-            'purchase_date' => 'required|date',
-            'invoice_number' => 'nullable|string',
+        // ОТЛАДКА
+        \Log::info('=== АДМИН ЗАКУПКА НАЧАЛО ===', [
+            'all_data' => $request->all(),
+            'user_id' => auth()->id(),
         ]);
 
-        DB::beginTransaction();
         try {
-            $totalAmount = 0;
-            $invoiceNumber = $validated['invoice_number'] ?? null;
+            $validated = $request->validate([
+                'items' => 'required|array|min:1',
+                'items.*.variant_id' => 'required|exists:product_variants,id',
+                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.supplier_price' => 'required|numeric|min:0',
+                'location_type' => 'required|in:shop,warehouse',
+                'shop_id' => 'nullable|exists:shops,id',
+                'warehouse_id' => 'nullable|exists:warehouses,id',
+                'comment' => 'nullable|string',
+                'purchase_date' => 'required|date',
+                'invoice_number' => 'nullable|string',
+            ]);
 
-            foreach ($validated['items'] as $item) {
-                $variant = ProductVariant::findOrFail($item['variant_id']);
+            \Log::info('ВАЛИДАЦИЯ ПРОШЛА', $validated);
 
-                // Генерируем номер накладной если не указан
-                if (!$invoiceNumber) {
-                    $invoiceNumber = 'PUR-' . strtoupper(uniqid());
+            DB::beginTransaction();
+            try {
+                $totalAmount = 0;
+                $invoiceNumber = $validated['invoice_number'] ?? null;
+
+                foreach ($validated['items'] as $index => $item) {
+                    $variant = ProductVariant::with('product')->findOrFail($item['variant_id']);
+
+                    \Log::info("Обрабатываю товар #$index", [
+                        'variant_id' => $item['variant_id'],
+                        'product_name' => $variant->product->name ?? 'N/A',
+                        'quantity' => $item['quantity'],
+                        'price' => $item['supplier_price'],
+                    ]);
+
+                    // Генерируем номер накладной если не указан
+                    if (!$invoiceNumber) {
+                        $invoiceNumber = 'PUR-' . strtoupper(uniqid());
+                    }
+
+                    $purchase = Purchase::create([
+                        'invoice_number' => $invoiceNumber,
+                        'variant_id' => $item['variant_id'],
+                        'shop_id' => $validated['location_type'] === 'shop' ? ($validated['shop_id'] ?? null) : null,
+                        'warehouse_id' => $validated['location_type'] === 'warehouse' ? ($validated['warehouse_id'] ?? null) : null,
+                        'quantity' => $item['quantity'],
+                        'supplier_price' => $item['supplier_price'],
+                        'total_amount' => $item['supplier_price'] * $item['quantity'],
+                        'received_by' => auth()->id(),
+                        'comment' => $validated['comment'] ?? null,
+                        'purchase_date' => $validated['purchase_date'],
+                    ]);
+
+                    \Log::info('Закупка создана', ['purchase_id' => $purchase->id]);
+
+                    // Обновляем цену закупки в варианте товара
+                    $variant->update([
+                        'supplier_price' => $item['supplier_price']
+                    ]);
+
+                    // Создаем или обновляем остатки
+                    if ($validated['location_type'] === 'shop') {
+                        $shopId = $validated['shop_id'] ?? null;
+                        if ($shopId) {
+                            $stock = Stock::firstOrCreate(
+                                ['variant_id' => $item['variant_id'], 'shop_id' => $shopId],
+                                ['quantity' => 0, 'min_stock' => 5]
+                            );
+                            $stock->increment('quantity', $item['quantity']);
+                            \Log::info('Остатки обновлены в магазине', [
+                                'shop_id' => $shopId,
+                                'variant_id' => $item['variant_id'],
+                                'added_qty' => $item['quantity'],
+                                'new_qty' => $stock->quantity,
+                            ]);
+                        }
+                    } else {
+                        $warehouseId = $validated['warehouse_id'] ?? null;
+                        if ($warehouseId) {
+                            $stock = Stock::firstOrCreate(
+                                ['variant_id' => $item['variant_id'], 'warehouse_id' => $warehouseId],
+                                ['quantity' => 0, 'min_stock' => 5]
+                            );
+                            $stock->increment('quantity', $item['quantity']);
+                            \Log::info('Остатки обновлены на складе', [
+                                'warehouse_id' => $warehouseId,
+                                'variant_id' => $item['variant_id'],
+                                'added_qty' => $item['quantity'],
+                                'new_qty' => $stock->quantity,
+                            ]);
+                        }
+                    }
+
+                    $totalAmount += $item['supplier_price'] * $item['quantity'];
                 }
 
-                $purchase = Purchase::create([
+                DB::commit();
+
+                \Log::info('=== АДМИН ЗАКУПКА УСПЕШНО ===', [
+                    'total_amount' => $totalAmount,
                     'invoice_number' => $invoiceNumber,
-                    'variant_id' => $item['variant_id'],
-                    'shop_id' => $validated['location_type'] === 'shop' ? ($validated['shop_id'] ?? null) : null,
-                    'warehouse_id' => $validated['location_type'] === 'warehouse' ? ($validated['warehouse_id'] ?? null) : null,
-                    'quantity' => $item['quantity'],
-                    'supplier_price' => $item['supplier_price'],
-                    'total_amount' => $item['supplier_price'] * $item['quantity'],
-                    'received_by' => auth()->id(),
-                    'comment' => $validated['comment'] ?? null,
-                    'purchase_date' => $validated['purchase_date'],
                 ]);
 
-                // Обновляем цену закупки в варианте товара
-                $variant->update([
-                    'supplier_price' => $item['supplier_price']
+                return redirect()->route('admin.purchases.index')
+                    ->with('success', 'Закупка успешно создана на сумму ' . number_format($totalAmount, 2) . ' сом');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                \Log::error('=== АДМИН ЗАКУПКА ОШИБКА ВНУТРИ ===', [
+                    'message' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
                 ]);
-
-                // Создаем или обновляем остатки
-                if ($validated['location_type'] === 'shop') {
-                    $shopId = $validated['shop_id'] ?? null;
-                    if ($shopId) {
-                        Stock::updateOrCreate(
-                            ['variant_id' => $item['variant_id'], 'shop_id' => $shopId],
-                            ['quantity' => DB::raw('quantity + ' . $item['quantity'])]
-                        );
-                    }
-                } else {
-                    $warehouseId = $validated['warehouse_id'] ?? null;
-                    if ($warehouseId) {
-                        Stock::updateOrCreate(
-                            ['variant_id' => $item['variant_id'], 'warehouse_id' => $warehouseId],
-                            ['quantity' => DB::raw('quantity + ' . $item['quantity'])]
-                        );
-                    }
-                }
-                
-                $totalAmount += $item['supplier_price'] * $item['quantity'];
+                throw $e;
             }
-
-            DB::commit();
-
-            return redirect()->route('admin.purchases.index')
-                ->with('success', 'Закупка успешно создана на сумму ' . number_format($totalAmount, 2) . ' сом');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('=== АДМИН ЗАКУПКА ОШИБКА ВАЛИДАЦИИ ===', [
+                'errors' => $e->errors(),
+                'input' => $request->all(),
+            ]);
+            return back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withErrors(['error' => 'Ошибка при создании закупки: ' . $e->getMessage()])->withInput();
+            \Log::error('=== АДМИН ЗАКУПКА ОШИБКА ===', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return back()->with('error', 'Ошибка при создании закупки: ' . $e->getMessage())->withInput();
         }
     }
 

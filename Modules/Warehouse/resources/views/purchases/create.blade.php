@@ -98,6 +98,26 @@
 <form action="{{ route('warehouse.purchases.store') }}" method="POST" style="display: flex; flex-direction: column; gap: 24px;">
     @csrf
 
+    {{-- БЛОК ОШИБОК --}}
+    @if($errors->any())
+    <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; padding: 16px; border-radius: 12px;">
+        <h4 style="margin: 0 0 12px 0; font-size: 16px;">
+            <i class="bi bi-exclamation-triangle"></i> Ошибки при оформлении:
+        </h4>
+        <ul style="margin: 0; padding-left: 20px;">
+            @foreach($errors->all() as $error)
+                <li style="margin-bottom: 4px;">{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; padding: 16px; border-radius: 12px;">
+        <i class="bi bi-x-circle"></i> {{ session('error') }}
+    </div>
+    @endif
+
     {{-- Номер накладной и дата --}}
     <div class="card" style="padding: 0; overflow: hidden;">
         <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.03); display: flex; align-items: center; gap: 8px;">
@@ -285,15 +305,74 @@ function calculateTotal() {
 document.addEventListener('DOMContentLoaded', function() {
     const quantityInput = document.querySelector('.quantity-input');
     const supplierPriceInput = document.querySelector('.supplier-price');
-    
+
     if (quantityInput) {
         quantityInput.addEventListener('input', calculateTotal);
     }
     if (supplierPriceInput) {
         supplierPriceInput.addEventListener('input', calculateTotal);
     }
-    
+
     toggleLocation();
+    
+    // ОТЛАДКА - перехватываем отправку формы
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Собираем все данные формы
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+            
+            console.log('=== ОТПРАВКА ФОРМЫ ===', data);
+            console.log('URL:', form.action);
+            console.log('Method:', form.method);
+            
+            // Проверяем обязательные поля
+            const variantId = formData.get('variant_id');
+            const quantity = formData.get('quantity');
+            const supplierPrice = formData.get('supplier_price');
+            
+            if (!variantId) {
+                e.preventDefault();
+                alert('❌ ОШИБКА: Не выбран товар!');
+                return false;
+            }
+            
+            if (!quantity || quantity <= 0) {
+                e.preventDefault();
+                alert('❌ ОШИБКА: Не указано количество!');
+                return false;
+            }
+            
+            if (!supplierPrice || supplierPrice <= 0) {
+                e.preventDefault();
+                alert('❌ ОШИБКА: Не указана цена закупки!');
+                return false;
+            }
+            
+            const locationType = formData.get('location_type');
+            const shopId = formData.get('shop_id');
+            const warehouseId = formData.get('warehouse_id');
+            
+            if (locationType === 'shop' && !shopId) {
+                e.preventDefault();
+                alert('❌ ОШИБКА: Не выбран магазин!');
+                return false;
+            }
+            
+            if (locationType === 'warehouse' && !warehouseId) {
+                e.preventDefault();
+                alert('❌ ОШИБКА: Не выбран склад!');
+                return false;
+            }
+            
+            console.log('✅ Все проверки пройдены, отправляю форму...');
+            // Не отменяем отправку, пусть идёт на сервер
+        });
+    }
 });
 </script>
 @endsection

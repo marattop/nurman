@@ -129,6 +129,8 @@ Route::middleware(['auth', 'admin.security', 'role:owner', 'ensure.owner', 'sess
             Route::get('purchases', [OwnerController::class, 'purchasesReport'])->name('purchases');
             Route::get('profit', [OwnerController::class, 'profitReport'])->name('profit');
             Route::get('expenses', [OwnerController::class, 'expensesReport'])->name('expenses');
+            Route::post('expenses/store', [OwnerController::class, 'storeExpense'])->name('expenses.store');
+            Route::get('analytics', [OwnerController::class, 'analytics'])->name('analytics');
         });
     });
 

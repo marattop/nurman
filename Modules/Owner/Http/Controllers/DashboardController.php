@@ -60,10 +60,11 @@ class DashboardController extends Controller
                     ->selectRaw('COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total, COALESCE(SUM(quantity), 0) as quantity')
                     ->first();
 
-                $expenses = Expense::whereBetween('created_at', [$rangeStart, $rangeEnd])
+                $expenses = Expense::whereBetween('expense_date', [$dateFrom, $dateTo])
                     ->selectRaw('COUNT(*) as count, COALESCE(SUM(amount), 0) as total')
                     ->first();
 
+                // Чистая прибыль = Валовая прибыль - Операционные расходы
                 $netProfit = $grossProfit - $expenses->total;
                 $netMargin = $revenue->total > 0 ? ($netProfit / $revenue->total) * 100 : 0;
 
@@ -83,8 +84,8 @@ class DashboardController extends Controller
                     ->orderBy('date', 'ASC')
                     ->get();
 
-                $dailyExpenses = Expense::whereBetween('created_at', [$rangeStart, $rangeEnd])
-                    ->selectRaw('DATE(created_at) as date, COALESCE(SUM(amount), 0) as total')
+                $dailyExpenses = Expense::whereBetween('expense_date', [$dateFrom, $dateTo])
+                    ->selectRaw('DATE(expense_date) as date, COALESCE(SUM(amount), 0) as total')
                     ->groupBy('date')
                     ->orderBy('date', 'ASC')
                     ->get();
@@ -138,7 +139,7 @@ class DashboardController extends Controller
 
                 $revenueGrowth = $prevRevenue > 0 ? (($revenue->total - $prevRevenue) / $prevRevenue) * 100 : 0;
 
-                $prevExpenses = Expense::whereBetween('created_at', [$prevRangeStart, $prevRangeEnd])->sum('amount');
+                $prevExpenses = Expense::whereBetween('expense_date', [$prevPeriod['from'], $prevPeriod['to']])->sum('amount');
                 $expensesGrowth = $prevExpenses > 0 ? (($expenses->total - $prevExpenses) / $prevExpenses) * 100 : 0;
 
                 $prevNetProfit = DB::table('transaction_items')
@@ -218,7 +219,7 @@ class DashboardController extends Controller
                     ->limit(10)
                     ->get();
 
-                $expensesByCategory = Expense::whereBetween('created_at', [$rangeStart, $rangeEnd])
+                $expensesByCategory = Expense::whereBetween('expense_date', [$rangeStart, $rangeEnd])
                     ->selectRaw('category, SUM(amount) as total')
                     ->groupBy('category')
                     ->orderBy('total', 'desc')
@@ -385,39 +386,83 @@ class DashboardController extends Controller
             return [$customDate, $customDate, date('d.m.Y', strtotime($customDate))];
         }
 
-        $today = now()->format('Y-m-d');
+        $now = now();
 
         return match ($period) {
-            'today' => [$today, $today, 'Сегодня'],
-            'week' => [now()->subDays(7)->format('Y-m-d'), $today, 'Последние 7 дней'],
-            'month' => [now()->subDays(30)->format('Y-m-d'), $today, 'Последние 30 дней'],
-            'year' => [now()->subDays(365)->format('Y-m-d'), $today, 'Последние 365 дней'],
-            default => [now()->subDays(30)->format('Y-m-d'), $today, 'Последние 30 дней'],
+            'today' => [
+                $now->copy()->startOfDay()->format('Y-m-d'), 
+                $now->copy()->endOfDay()->format('Y-m-d'),
+                'Сегодня',
+            ],
+            'yesterday' => [
+                $now->copy()->subDay()->startOfDay()->format('Y-m-d'),
+                $now->copy()->subDay()->endOfDay()->format('Y-m-d'),
+                'Вчера',
+            ],
+            'week' => [
+                $now->copy()->startOfWeek()->format('Y-m-d'),
+                $now->copy()->endOfWeek()->format('Y-m-d'),
+                'Эта неделя',
+            ],
+            'month' => [
+                $now->copy()->startOfMonth()->format('Y-m-d'),
+                $now->copy()->endOfMonth()->format('Y-m-d'),
+                'Этот месяц',
+            ],
+            'last_month' => [
+                $now->copy()->subMonth()->startOfMonth()->format('Y-m-d'),
+                $now->copy()->subMonth()->endOfMonth()->format('Y-m-d'),
+                'Прошлый месяц',
+            ],
+            'year' => [
+                $now->copy()->startOfYear()->format('Y-m-d'),
+                $now->copy()->endOfYear()->format('Y-m-d'),
+                'Этот год',
+            ],
+            default => [
+                $now->copy()->startOfMonth()->format('Y-m-d'), 
+                $now->copy()->endOfMonth()->format('Y-m-d'), 
+                'Этот месяц'
+            ],
         };
     }
 
     private function getPrevPeriod(string $period, string $dateFrom, string $dateTo): array
     {
+        $from = Carbon::parse($dateFrom);
+        $to = Carbon::parse($dateTo);
+
+        // Для кастомных периодов считаем разницу в днях
+        $diff = $from->diffInDays($to) + 1;
+
         return match ($period) {
             'today' => [
-                'from' => date('Y-m-d', strtotime($dateFrom.' -1 day')),
-                'to' => date('Y-m-d', strtotime($dateTo.' -1 day')),
+                'from' => $from->copy()->subDays(2)->format('Y-m-d'),
+                'to' => $to->copy()->subDays(2)->format('Y-m-d'),
+            ],
+            'yesterday' => [
+                'from' => $from->copy()->subDay()->format('Y-m-d'),
+                'to' => $to->copy()->subDay()->format('Y-m-d'),
             ],
             'week' => [
-                'from' => date('Y-m-d', strtotime($dateFrom.' -7 days')),
-                'to' => date('Y-m-d', strtotime($dateTo.' -7 days')),
+                'from' => $from->copy()->subWeek()->format('Y-m-d'),
+                'to' => $to->copy()->subWeek()->format('Y-m-d'),
             ],
             'month' => [
-                'from' => date('Y-m-d', strtotime($dateFrom.' -30 days')),
-                'to' => date('Y-m-d', strtotime($dateTo.' -30 days')),
+                'from' => $from->copy()->subMonth()->format('Y-m-d'),
+                'to' => $to->copy()->subMonth()->format('Y-m-d'),
+            ],
+            'last_month' => [
+                'from' => $from->copy()->subMonths(2)->startOfMonth()->format('Y-m-d'),
+                'to' => $from->copy()->subMonths(2)->endOfMonth()->format('Y-m-d'),
             ],
             'year' => [
-                'from' => date('Y-m-d', strtotime($dateFrom.' -365 days')),
-                'to' => date('Y-m-d', strtotime($dateTo.' -365 days')),
+                'from' => $from->copy()->subYear()->format('Y-m-d'),
+                'to' => $to->copy()->subYear()->format('Y-m-d'),
             ],
             default => [
-                'from' => date('Y-m-d', strtotime($dateFrom.' -30 days')),
-                'to' => date('Y-m-d', strtotime($dateTo.' -30 days')),
+                'from' => $from->copy()->subDays($diff)->format('Y-m-d'),
+                'to' => $to->copy()->subDays($diff)->format('Y-m-d'),
             ]
         };
     }
@@ -571,15 +616,15 @@ class DashboardController extends Controller
         $grossProfit = $revenue->total - $costOfGoods;
         $grossMargin = $revenue->total > 0 ? ($grossProfit / $revenue->total) * 100 : 0;
 
-        $purchases = Purchase::whereBetween('created_at', [$rangeStart, $rangeEnd])
+        $purchases = Purchase::whereBetween('purchase_date', [$dateFrom, $dateTo])
             ->selectRaw('COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total, COALESCE(SUM(quantity), 0) as quantity')
             ->first();
 
-        $expenses = Expense::whereBetween('created_at', [$rangeStart, $rangeEnd])
+        $expenses = Expense::whereBetween('expense_date', [$dateFrom, $dateTo])
             ->selectRaw('COUNT(*) as count, COALESCE(SUM(amount), 0) as total')
             ->first();
 
-        $netProfit = $grossProfit - $purchases->total - $expenses->total;
+        $netProfit = $grossProfit - $expenses->total;
         $netMargin = $revenue->total > 0 ? ($netProfit / $revenue->total) * 100 : 0;
 
         return [

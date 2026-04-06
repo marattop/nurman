@@ -35,6 +35,8 @@
                 <tr>
                     <th style="text-align: left; padding: 12px 16px;">Имя</th>
                     <th style="padding: 12px 16px;">Телефон</th>
+                    <th style="padding: 12px 16px;">Покупки</th>
+                    <th style="padding: 12px 16px;">Сэкономлено</th>
                     <th style="padding: 12px 16px;">Тип скидки</th>
                     <th style="padding: 12px 16px;">QR код</th>
                     <th style="padding: 12px 16px;">Статус</th>
@@ -44,15 +46,62 @@
             <tbody>
                 @forelse($customers as $customer)
                 @php
+                    $profile = $customer->customerProfile;
                     $coupon = $customer->myCoupons->first();
                     $hasCoupon = $coupon !== null;
                     $qrCode = $hasCoupon ? $coupon->qrCode : null;
+                    
+                    // Статистика покупок
+                    $totalPurchases = $profile ? $profile->total_purchases ?? 0 : 0;
+                    $purchaseCount = $profile ? $profile->purchase_count ?? 0 : 0;
+                    $loyaltyLevel = $profile ? $profile->loyalty_level : 'Standard';
+                    
+                    // Сэкономленная сумма (расчетная)
+                    $totalSaved = 0;
+                    if ($hasCoupon && $coupon->discount_type === 'percent') {
+                        $totalSaved = $totalPurchases * ($coupon->discount_value / 100);
+                    }
+                    
+                    // Цвета для уровней лояльности
+                    $loyaltyColors = [
+                        'Platinum' => '#a855f7',
+                        'Gold' => '#eab308',
+                        'Silver' => '#94a3b8',
+                        'Bronze' => '#cd7f32',
+                        'Standard' => '#64748b'
+                    ];
+                    $loyaltyColor = $loyaltyColors[$loyaltyLevel] ?? '#64748b';
                 @endphp
                 <tr>
                     <td data-label="Имя" style="padding: 12px 16px;">
                         <div style="font-weight: 500;">{{ $customer->full_name ?? '—' }}</div>
+                        @if($profile)
+                            <span class="badge" style="background: {{ $loyaltyColor }}20; color: {{ $loyaltyColor }}; font-size: 11px; margin-top: 4px;">
+                                <i class="bi bi-star-fill"></i> {{ $loyaltyLevel }}
+                            </span>
+                        @endif
                     </td>
                     <td data-label="Телефон" style="padding: 12px 16px; color: #94a3b8;">{{ $customer->phone ?? '—' }}</td>
+                    <td data-label="Покупки" style="padding: 12px 16px;">
+                        <div style="font-weight: 600; color: #10b981;">
+                            {{ number_format($totalPurchases, 0, '.', ' ') }} ₽
+                        </div>
+                        <div style="font-size: 12px; color: #64748b;">
+                            {{ $purchaseCount }} {{ trans_choice('раз|раза|раз', $purchaseCount) }}
+                        </div>
+                    </td>
+                    <td data-label="Сэкономлено" style="padding: 12px 16px;">
+                        @if($totalSaved > 0)
+                            <div style="font-weight: 600; color: #f59e0b;">
+                                {{ number_format($totalSaved, 0, '.', ' ') }} ₽
+                            </div>
+                            <div style="font-size: 12px; color: #64748b;">
+                                ~{{ round($coupon->discount_value) }}% от покупок
+                            </div>
+                        @else
+                            <span style="color: #64748b;">—</span>
+                        @endif
+                    </td>
                     <td data-label="Тип скидки" style="padding: 12px 16px;">
                         @if($hasCoupon)
                             @if($coupon->discount_type === 'percent')
@@ -64,14 +113,17 @@
                                     <i class="bi bi-tag"></i> Оптовая (закупочная цена)
                                 </span>
                             @endif
+                            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                                Использовано: {{ $coupon->usage_count }} {{ trans_choice('раз|раза|раз', $coupon->usage_count) }}
+                            </div>
                         @else
                             <span style="color: #64748b;">—</span>
                         @endif
                     </td>
                     <td data-label="QR код" style="padding: 12px 16px;">
                         @if($hasCoupon && $qrCode)
-                            <button class="btn btn-outline btn-qr" 
-                                data-qr='@json($qrCode->qr_data)' 
+                            <button class="btn btn-outline btn-qr"
+                                data-qr='@json($qrCode->qr_data)'
                                 data-name="{{ $customer->full_name ?? '' }}">
                                 <i class="bi bi-qr-code"></i> Показать QR
                             </button>
@@ -96,6 +148,22 @@
                     </td>
                     <td data-label="Действия" style="padding: 12px 16px;">
                         <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                            <button class="btn btn-outline btn-info btn-details"
+                                data-full-name="{{ $customer->full_name ?? '' }}"
+                                data-phone="{{ $customer->phone ?? '' }}"
+                                data-total-purchases="{{ $totalPurchases ?? 0 }}"
+                                data-purchase-count="{{ $purchaseCount ?? 0 }}"
+                                data-loyalty-level="{{ $loyaltyLevel ?? 'Standard' }}"
+                                data-has-coupon="{{ $hasCoupon ? '1' : '0' }}"
+                                data-discount-type="{{ $hasCoupon ? ($coupon->discount_type ?? '') : '' }}"
+                                data-discount-value="{{ $hasCoupon ? ($coupon->discount_value ?? 0) : 0 }}"
+                                data-usage-count="{{ $hasCoupon ? ($coupon->usage_count ?? 0) : 0 }}"
+                                data-is-active="{{ $hasCoupon ? ($coupon->is_active ? '1' : '0') : '0' }}"
+                                data-valid-until="{{ $hasCoupon && $coupon->valid_until ? $coupon->valid_until->format('d.m.Y') : '' }}"
+                                data-created-at="{{ $customer->created_at ? $customer->created_at->format('d.m.Y H:i') : '' }}"
+                                title="Подробная информация">
+                                <i class="bi bi-info-circle"></i>
+                            </button>
                             @if($hasCoupon)
                                 <button class="btn btn-outline btn-edit" 
                                     data-coupon-id="{{ $coupon->id }}"
@@ -142,7 +210,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 3rem; color: #64748b;">Клиенты не найдены</td>
+                    <td colspan="8" style="text-align: center; padding: 3rem; color: #64748b;">Клиенты не найдены</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -276,6 +344,88 @@
     </div>
 </div>
 
+{{-- Модальное окно просмотра деталей клиента --}}
+<div id="detailsModal" class="modal">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="bi bi-person-badge"></i> Информация о клиенте</h3>
+                <button type="button" class="btn-close" onclick="closeDetailsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: rgba(15, 23, 42, 0.5); border-radius: 12px; padding: 20px;">
+                    <!-- Основная информация -->
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="color: #f1f5f9; margin: 0 0 12px 0; font-size: 18px;">
+                            <i class="bi bi-person" style="color: #38bdf8;"></i> <span id="detailsName"></span>
+                        </h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div>
+                                <div style="color: #64748b; font-size: 12px; margin-bottom: 4px;">Телефон</div>
+                                <div style="color: #f1f5f9; font-weight: 500;"><i class="bi bi-phone"></i> <span id="detailsPhone"></span></div>
+                            </div>
+                            <div>
+                                <div style="color: #64748b; font-size: 12px; margin-bottom: 4px;">Дата регистрации</div>
+                                <div style="color: #f1f5f9; font-weight: 500;"><i class="bi bi-calendar"></i> <span id="detailsCreatedAt"></span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Статистика покупок -->
+                    <div style="border-top: 1px solid rgba(148, 163, 184, 0.1); padding-top: 20px; margin-bottom: 20px;">
+                        <h5 style="color: #e2e8f0; margin: 0 0 12px 0; font-size: 16px;">
+                            <i class="bi bi-cart3" style="color: #10b981;"></i> Статистика покупок
+                        </h5>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div style="background: rgba(16, 185, 129, 0.1); padding: 12px; border-radius: 8px;">
+                                <div style="color: #64748b; font-size: 11px; margin-bottom: 4px;">Всего покупок</div>
+                                <div style="color: #10b981; font-weight: 700; font-size: 18px;" id="detailsTotalPurchases"></div>
+                            </div>
+                            <div style="background: rgba(56, 189, 248, 0.1); padding: 12px; border-radius: 8px;">
+                                <div style="color: #64748b; font-size: 11px; margin-bottom: 4px;">Количество</div>
+                                <div style="color: #38bdf8; font-weight: 700; font-size: 18px;" id="detailsPurchaseCount"></div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 12px;">
+                            <div style="color: #64748b; font-size: 12px; margin-bottom: 4px;">Уровень лояльности</div>
+                            <div id="detailsLoyaltyLevel" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-weight: 600;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Информация о купоне -->
+                    <div style="border-top: 1px solid rgba(148, 163, 184, 0.1); padding-top: 20px;">
+                        <h5 style="color: #e2e8f0; margin: 0 0 12px 0; font-size: 16px;">
+                            <i class="bi bi-ticket-perforated" style="color: #f59e0b;"></i> Купонная карта
+                        </h5>
+                        <div id="detailsCouponInfo">
+                            <!-- Заполняется через JS -->
+                        </div>
+                    </div>
+
+                    <!-- Сэкономлено -->
+                    <div style="border-top: 1px solid rgba(148, 163, 184, 0.1); padding-top: 20px; margin-top: 20px;">
+                        <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(239, 68, 68, 0.15)); padding: 16px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.3);">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <div style="color: #64748b; font-size: 12px; margin-bottom: 4px;">💰 Всего сэкономил</div>
+                                    <div style="color: #f59e0b; font-weight: 700; font-size: 24px;" id="detailsTotalSaved"></div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="color: #64748b; font-size: 12px; margin-bottom: 4px;">Средний % скидки</div>
+                                    <div style="color: #f59e0b; font-weight: 600; font-size: 20px;" id="detailsAvgDiscount"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeDetailsModal()">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('styles')
@@ -310,6 +460,34 @@
         border-radius: 6px;
         font-size: 13px;
         font-weight: 500;
+    }
+    .btn-info {
+        color: #38bdf8;
+        border-color: #38bdf8;
+    }
+    .btn-info:hover {
+        background: rgba(56, 189, 248, 0.1);
+    }
+    
+    /* Фикс для мобильной прокрутки */
+    @media (max-width: 768px) {
+        body, html {
+            overflow-x: hidden;
+            max-width: 100vw;
+        }
+        .table {
+            font-size: 13px;
+        }
+        .table th, .table td {
+            padding: 8px 12px !important;
+            white-space: nowrap;
+        }
+        .table thead {
+            position: sticky;
+            top: 0;
+            background: #0f172a;
+            z-index: 10;
+        }
     }
 </style>
 @endpush
@@ -554,6 +732,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Кнопки просмотра деталей клиента
+    document.querySelectorAll('.btn-details').forEach(btn => {
+        btn.addEventListener('click', function() {
+            showCustomerDetails({
+                full_name: this.dataset.fullName,
+                phone: this.dataset.phone,
+                total_purchases: parseFloat(this.dataset.totalPurchases) || 0,
+                purchase_count: parseInt(this.dataset.purchaseCount) || 0,
+                loyalty_level: this.dataset.loyaltyLevel,
+                has_coupon: this.dataset.hasCoupon === '1',
+                discount_type: this.dataset.discountType,
+                discount_value: parseFloat(this.dataset.discountValue) || 0,
+                usage_count: parseInt(this.dataset.usageCount) || 0,
+                is_active: this.dataset.isActive === '1',
+                valid_until: this.dataset.validUntil,
+                created_at: this.dataset.createdAt
+            });
+        });
+    });
+
     // Автоформатирование телефона
     const phoneInput = document.getElementById('createPhone');
     if (phoneInput) {
@@ -569,6 +767,84 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Показать детали клиента
+function showCustomerDetails(data) {
+    // Основная информация
+    document.getElementById('detailsName').textContent = data.full_name || '—';
+    document.getElementById('detailsPhone').textContent = data.phone || '—';
+    document.getElementById('detailsCreatedAt').textContent = data.created_at || '—';
+
+    // Статистика покупок
+    document.getElementById('detailsTotalPurchases').textContent = new Intl.NumberFormat('ru-RU').format(data.total_purchases) + ' ₽';
+    document.getElementById('detailsPurchaseCount').textContent = data.purchase_count + ' раз';
+
+    // Уровень лояльности
+    const loyaltyColors = {
+        'Platinum': '#a855f7',
+        'Gold': '#eab308',
+        'Silver': '#94a3b8',
+        'Bronze': '#cd7f32',
+        'Standard': '#64748b'
+    };
+    const loyaltyEl = document.getElementById('detailsLoyaltyLevel');
+    const color = loyaltyColors[data.loyalty_level] || '#64748b';
+    loyaltyEl.style.background = color + '20';
+    loyaltyEl.style.color = color;
+    loyaltyEl.innerHTML = '<i class="bi bi-star-fill"></i> ' + data.loyalty_level;
+
+    // Расчет сэкономленного
+    const totalSaved = data.discount_type === 'percent' && data.discount_value
+        ? data.total_purchases * (data.discount_value / 100)
+        : 0;
+    document.getElementById('detailsTotalSaved').textContent = new Intl.NumberFormat('ru-RU').format(Math.round(totalSaved)) + ' ₽';
+    document.getElementById('detailsAvgDiscount').textContent = data.discount_value ? data.discount_value + '%' : '—';
+
+    // Информация о купоне
+    const couponInfoEl = document.getElementById('detailsCouponInfo');
+    if (data.has_coupon) {
+        const discountTypeText = data.discount_type === 'percent' ? `Процентная (${data.discount_value}%)` : 'Оптовая (закупочная цена)';
+        const statusText = data.is_active ? '<span style="color: #10b981;"><i class="bi bi-check-circle"></i> Активен</span>' : '<span style="color: #ef4444;"><i class="bi bi-x-circle"></i> Неактивен</span>';
+        const validUntilText = data.valid_until ? `<div style="color: #64748b; font-size: 12px; margin-top: 8px;">Действует до: <span style="color: #f1f5f9;">${data.valid_until}</span></div>` : '';
+        
+        couponInfoEl.innerHTML = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                <div>
+                    <div style="color: #64748b; font-size: 12px; margin-bottom: 4px;">Тип скидки</div>
+                    <div style="color: #f1f5f9; font-weight: 500;">${discountTypeText}</div>
+                </div>
+                <div>
+                    <div style="color: #64748b; font-size: 12px; margin-bottom: 4px;">Статус</div>
+                    <div>${statusText}</div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                    <div style="color: #64748b; font-size: 12px; margin-bottom: 4px;">Использовано</div>
+                    <div style="color: #f1f5f9; font-weight: 500;">${data.usage_count} раз</div>
+                </div>
+                <div>
+                    <div style="color: #64748b; font-size: 12px; margin-bottom: 4px;">Срок действия</div>
+                    <div style="color: #f1f5f9; font-weight: 500;">${data.valid_until || 'Бессрочно'}</div>
+                </div>
+            </div>
+            ${validUntilText}
+        `;
+    } else {
+        couponInfoEl.innerHTML = '<div style="color: #64748b; text-align: center; padding: 12px;"><i class="bi bi-ticket-perforated"></i> Купонная карта не создана</div>';
+    }
+
+    // Открываем модальное окно
+    const modalEl = document.getElementById('detailsModal');
+    const instance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+    instance.show();
+}
+
+function closeDetailsModal() {
+    const modalEl = document.getElementById('detailsModal');
+    const instance = bootstrap.Modal.getInstance(modalEl);
+    if (instance) instance.hide();
+}
 
 // Инициализация
 toggleDiscountValue();

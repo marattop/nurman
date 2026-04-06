@@ -28,11 +28,10 @@ class CustomerProfile extends Model
         };
     }
 
-    public function updateAfterPurchase(float $amount, int $bonusEarned = 0): void
+    public function updateAfterPurchase(float $amount): void
     {
         $this->increment('purchase_count');
         $this->increment('total_purchases', $amount);
-        $this->increment('bonus_points', $bonusEarned);
         $this->update(['last_purchase_at' => now()]);
     }
 }

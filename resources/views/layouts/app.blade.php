@@ -6,7 +6,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'NURMAN')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ asset('css/bootstrap-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/all.min.css') }}">
     <style>
         /* === MODERN GLASSMORPHISM / APPLE UI === */
         :root {
@@ -31,32 +32,32 @@
         /* Светлая тема */
         [data-theme="light"] {
             --bg-primary: #F2F2F7;
-            --bg-secondary: var(--text-main);
+            --bg-secondary: #FFFFFF;
+            --bg-tertiary: #E5E5EA;
             --bg-glass: rgba(255, 255, 255, 0.75);
             --bg-glass-heavy: rgba(255, 255, 255, 0.85);
             --text-primary: #1C1C1E;
-            --text-secondary: #8E8E93;
-            --text-muted: #C7C7CC;
-            --border-color: rgba(0, 0, 0, 0.05);
-            --border-light: rgba(0, 0, 0, 0.1);
-            --sidebar-bg: rgba(255, 255, 255, 0.6);
+            --text-secondary: #6E6E73;
+            --text-muted: #AEAEB2;
+            --border-color: rgba(0, 0, 0, 0.08);
+            --border-light: rgba(0, 0, 0, 0.12);
+            --sidebar-bg: rgba(255, 255, 255, 0.85);
             --sidebar-hover: rgba(0, 0, 0, 0.05);
-            --sidebar-active: rgba(0, 122, 255, 0.15);
-            
+            --sidebar-active: rgba(0, 122, 255, 0.12);
+            --icon-color: #1C1C1E;
+
             /* Алиасы для совместимости */
             --bg-card: var(--bg-glass);
             --bg-card-hover: var(--bg-glass-heavy);
-            --bg-tertiary: var(--bg-secondary);
             --card-shadow: var(--shadow-md);
             --card-shadow-hover: var(--shadow-lg);
-            --gradient-warm: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-dark) 100%);
-            --gradient: var(--gradient-warm);
         }
         
         /* Тёмная тема (по умолчанию) */
         [data-theme="dark"] {
             --bg-primary: #000000;
             --bg-secondary: #1C1C1E;
+            --bg-tertiary: #2C2C2E;
             --bg-glass: rgba(30, 30, 30, 0.8);
             --bg-glass-heavy: rgba(40, 40, 40, 0.9);
             --text-primary: #FFFFFF;
@@ -67,15 +68,13 @@
             --sidebar-bg: rgba(30, 30, 30, 0.7);
             --sidebar-hover: rgba(255, 255, 255, 0.08);
             --sidebar-active: rgba(0, 122, 255, 0.2);
+            --icon-color: #FFFFFF;
 
             /* Алиасы для совместимости */
             --bg-card: var(--bg-glass);
             --bg-card-hover: var(--bg-glass-heavy);
-            --bg-tertiary: var(--bg-secondary);
             --card-shadow: var(--shadow-md);
             --card-shadow-hover: var(--shadow-lg);
-            --gradient-warm: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-dark) 100%);
-            --gradient: var(--gradient-warm);
         }
 
         body {
@@ -84,6 +83,15 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
             overflow-x: hidden;
             min-height: 100vh;
+        }
+
+        /* === ICON VISIBILITY FIX === */
+        [class^="bi-"], [class*=" bi-"] {
+            color: inherit;
+        }
+        .text-muted [class^="bi-"],
+        .text-muted [class*=" bi-"] {
+            color: var(--text-secondary) !important;
         }
 
         /* === WRAPPER === */
@@ -155,7 +163,7 @@
             display: flex;
             align-items: center;
             padding: 12px 16px;
-            color: var(--text-secondary);
+            color: var(--text-primary);
             text-decoration: none;
             border-radius: var(--radius-lg);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -165,18 +173,30 @@
 
         .sidebar-menu a:hover {
             background: var(--sidebar-hover);
-            color: var(--text-primary);
+            color: var(--accent-blue);
         }
 
         .sidebar-menu a.active {
             background: var(--sidebar-active);
             color: var(--accent-blue);
+            font-weight: 600;
         }
 
         .sidebar-menu a i {
             width: 24px;
             margin-right: 12px;
             font-size: 18px;
+            color: var(--text-primary) !important;
+            transition: color 0.3s ease;
+            font-family: 'bootstrap-icons', 'Font Awesome 6 Free', sans-serif !important;
+        }
+
+        .sidebar-menu a:hover i {
+            color: var(--accent-blue) !important;
+        }
+
+        .sidebar-menu a.active i {
+            color: var(--accent-blue) !important;
         }
 
         /* === MAIN CONTENT === */

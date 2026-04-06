@@ -9,3 +9,36 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+@layer components {
+    .hero-bg {
+        background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('/images/hero.jpg');
+        background-size: cover;
+        background-position: center;
+    }
+    .glass {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .map-container iframe {
+        border-radius: 8px;
+    }
+    .qr-wrapper {
+        background: white;
+        padding: 10px;
+        border-radius: 8px;
+        display: inline-block;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    /* Icon visibility fix */
+    [class^="fa"], [class*=" fa"], [class^="bi"], [class*=" bi"] {
+        display: inline-block !important;
+        font-family: 'Font Awesome 7 Free', 'Font Awesome 7 Brands', 'bootstrap-icons', sans-serif !important;
+        font-weight: 900;
+    }
+    .fab {
+        font-family: 'Font Awesome 7 Brands' !important;
+        font-weight: 400 !important;
+    }
+}

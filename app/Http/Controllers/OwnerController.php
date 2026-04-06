@@ -29,30 +29,37 @@ class OwnerController extends Controller
     public function dashboard(Request $request)
     {
         $period = $request->get('period', 'month');
-        $customDate = $request->get('custom_date');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
 
-        [$dateFrom, $dateTo, $periodLabel] = $this->getDateRange($period, $customDate);
+        // Если есть date_from и date_to - используем их
+        if ($dateFrom && $dateTo) {
+            $periodLabel = 'Произвольный период';
+        } else {
+            [$dateFrom, $dateTo, $periodLabel] = $this->getDateRange($period);
+        }
 
-        $cacheKey = 'owner_dashboard_data_'.auth()->id().'_'.$period.'_'.md5($dateFrom.$dateTo);
-
-        $data = Cache::remember($cacheKey, static::CACHE_TTL, function() use ($dateFrom, $dateTo, $periodLabel, $period) {
-            return $this->getDashboardData($dateFrom, $dateTo, $periodLabel, $period);
-        });
+        // ВРЕМЕННО ОТКЛЮЧАЕМ КЕШ - всегда пересчитываем
+        $data = $this->getDashboardData($dateFrom, $dateTo, $periodLabel, $period, $request);
 
         return view('owner::dashboard', $data);
     }
 
-    private function getDashboardData($dateFrom, $dateTo, $periodLabel, $period)
+    private function getDashboardData($dateFrom, $dateTo, $periodLabel, $period, $request = null)
     {
+        // Добавляем время чтобы захватить весь день
+        $dateFromFull = $dateFrom . ' 00:00:00';
+        $dateToFull = $dateTo . ' 23:59:59';
+
         $revenue = Transaction::sales()
-            ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->whereBetween('created_at', [$dateFromFull, $dateToFull])
             ->selectRaw('COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total, COALESCE(AVG(total_amount), 0) as average')
             ->first();
 
         $costOfGoods = DB::table('transaction_items')
             ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
             ->where('transactions.type', 'sale')
-            ->whereBetween('transactions.created_at', [$dateFrom, $dateTo])
+            ->whereBetween('transactions.created_at', [$dateFromFull, $dateToFull])
             ->sum(DB::raw('COALESCE(supplier_price, 0) * quantity'));
 
         $grossProfit = $revenue->total - $costOfGoods;
@@ -60,11 +67,11 @@ class OwnerController extends Controller
 
         // Закупки не вычитаем из прибыли - это пополнение запасов (актив), а не расход
         // Расходы считаются отдельно (аренда, зарплаты, коммунальные и т.д.)
-        $purchases = Purchase::whereBetween('created_at', [$dateFrom, $dateTo])
+        $purchases = Purchase::whereBetween('purchase_date', [$dateFromFull, $dateToFull])
             ->selectRaw('COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total')
             ->first();
 
-        $expenses = Expense::whereBetween('created_at', [$dateFrom, $dateTo])
+        $expenses = Expense::whereBetween('expense_date', [$dateFromFull, $dateToFull])
             ->selectRaw('COUNT(*) as count, COALESCE(SUM(amount), 0) as total')
             ->first();
 
@@ -108,9 +115,10 @@ class OwnerController extends Controller
             ->get();
 
         $recentSales = Transaction::sales()
+            ->whereBetween('created_at', [$dateFrom, $dateTo])
             ->with(['user', 'shop'])
             ->orderBy('created_at', 'desc')
-            ->limit(10)
+            ->limit(15)
             ->get();
 
         $staffStats = [
@@ -147,6 +155,38 @@ class OwnerController extends Controller
             ->orderBy('date')
             ->get();
 
+        // СТАТИСТИКА ПО ДНЯМ для календаря
+        $dailyStats = DB::table('transactions')
+            ->where('type', 'sale')
+            ->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
+            ->selectRaw('DATE(created_at) as date, 
+                COUNT(*) as sales_count,
+                COALESCE(SUM(total_amount), 0) as revenue')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
+
+        // Закупки по дням
+        $dailyPurchases = Purchase::whereBetween('purchase_date', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
+            ->selectRaw('DATE(purchase_date) as date, 
+                COUNT(*) as purchases_count,
+                COALESCE(SUM(total_amount), 0) as cost')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
+
+        // Расходы по дням
+        $dailyExpenses = Expense::whereBetween('expense_date', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
+            ->selectRaw('DATE(expense_date) as date, 
+                COUNT(*) as expenses_count,
+                COALESCE(SUM(amount), 0) as expenses')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->keyBy('date');
+
         $prevDateFrom = date('Y-m-d', strtotime($dateFrom . ' -1 month'));
         $prevDateTo = date('Y-m-d', strtotime($dateTo . ' -1 month'));
         $prevRevenue = Transaction::sales()
@@ -173,14 +213,24 @@ class OwnerController extends Controller
             $purchases->quantity = 0;
         }
 
+        // Средний чек
+        $avgCheck = $revenue->count > 0 ? $revenue->total / $revenue->count : 0;
+
+        // Общая стоимость запасов
+        $inventoryValue = DB::table('stock')
+            ->join('product_variants', 'stock.variant_id', '=', 'product_variants.id')
+            ->sum(DB::raw('COALESCE(product_variants.supplier_price, 0) * stock.quantity'));
+
         return compact(
-            'periodLabel', 'revenue', 'costOfGoods', 'grossProfit', 'grossMargin',
+            'period', 'periodLabel', 'revenue', 'costOfGoods', 'grossProfit', 'grossMargin',
             'purchases', 'expenses', 'netProfit', 'netMargin',
             'revenueBySource', 'revenueByShop', 'topProducts', 'recentSales', 'staffStats',
             'totalShops', 'totalEmployees', 'expensesByCategory',
             'revenueDynamics', 'profitDynamics',
             'revenueGrowth', 'profitGrowth', 'expensesGrowth',
-            'dateFrom', 'dateTo'
+            'dateFrom', 'dateTo',
+            'dailyStats', 'dailyPurchases', 'dailyExpenses',
+            'avgCheck', 'inventoryValue'
         );
     }
 
@@ -271,7 +321,9 @@ class OwnerController extends Controller
 
     public function users(Request $request)
     {
-        $query = User::with('role');
+        // Показываем ТОЛЬКО сотрудников (без клиентов role_id=5)
+        $query = User::with('role')
+            ->whereIn('role_id', [2, 3, 4]); // admin, seller, warehouse
 
         if ($request->filled('search')) {
             $query->where(function($q) use ($request) {
@@ -287,7 +339,7 @@ class OwnerController extends Controller
         }
 
         $users = $query->orderBy('created_at', 'desc')->paginate(20);
-        $roles = Role::all();
+        $roles = Role::whereIn('id', [2, 3, 4])->get();
 
         return view('owner.users.index', compact('users', 'roles'));
     }
@@ -528,9 +580,9 @@ class OwnerController extends Controller
 
         $shops = Shop::all();
 
-        $query = Transaction::where('type', 'purchase')
-            ->whereBetween('created_at', [$dateFrom, $dateTo])
-            ->with(['shop', 'user']);
+        // Закупки из таблицы purchases (админские закупки)
+        $query = Purchase::with(['variant.product', 'shop', 'warehouse', 'receivedBy'])
+            ->whereBetween('purchase_date', [$dateFrom, $dateTo]);
 
         if ($shopId) {
             $query->where('shop_id', $shopId);
@@ -539,11 +591,7 @@ class OwnerController extends Controller
         $purchases = $query->orderByDesc('created_at')->paginate(50);
 
         $totalAmount = $purchases->sum('total_amount');
-        $totalQuantity = DB::table('transaction_items')
-            ->join('transactions', 'transaction_items.transaction_id', '=', 'transactions.id')
-            ->where('transactions.type', 'purchase')
-            ->whereBetween('transactions.created_at', [$dateFrom, $dateTo])
-            ->sum('quantity');
+        $totalQuantity = $purchases->sum('quantity');
 
         return view('owner.reports.purchases', compact('purchases', 'totalAmount', 'totalQuantity', 'periodLabel', 'period', 'shops', 'shopId'));
     }
@@ -618,21 +666,74 @@ class OwnerController extends Controller
         return view('owner.reports.expenses', compact('expenses', 'totalAmount', 'periodLabel', 'period', 'categories', 'category', 'shops', 'shopId'));
     }
 
+    /**
+     * Создание расхода
+     */
+    public function storeExpense(Request $request)
+    {
+        $validated = $request->validate([
+            'expense_date' => 'required|date',
+            'category' => 'required|string',
+            'amount' => 'required|numeric|min:0',
+            'shop_id' => 'nullable|exists:shops,id',
+            'description' => 'nullable|string',
+        ]);
+
+        Expense::create([
+            'expense_date' => $validated['expense_date'],
+            'category' => $validated['category'],
+            'amount' => $validated['amount'],
+            'shop_id' => $validated['shop_id'] ?? null,
+            'description' => $validated['description'] ?? null,
+            'user_id' => auth()->id(),
+        ]);
+
+        return redirect()->route('owner.reports.expenses')
+            ->with('success', 'Расход успешно добавлен');
+    }
+
     private function getDateRange($period, $customDate = null)
     {
         if ($customDate) {
             return [$customDate, $customDate, date('d.m.Y', strtotime($customDate))];
         }
 
-        $today = now()->format('Y-m-d');
-        $todayEnd = now()->endOfDay()->format('Y-m-d H:i:s');
+        $now = now();
+        $todayStart = $now->copy()->startOfDay()->format('Y-m-d H:i:s');
+        $todayEnd = $now->copy()->endOfDay()->format('Y-m-d H:i:s');
 
         return match($period) {
-            'today' => [now()->startOfDay()->format('Y-m-d H:i:s'), $todayEnd, 'Сегодня'],
-            'week' => [now()->subDays(7)->startOfDay()->format('Y-m-d H:i:s'), $todayEnd, 'Последние 7 дней'],
-            'month' => [now()->subDays(30)->startOfDay()->format('Y-m-d H:i:s'), $todayEnd, 'Последние 30 дней'],
-            'year' => [now()->subDays(365)->startOfDay()->format('Y-m-d H:i:s'), $todayEnd, 'Год'],
-            default => [now()->subDays(30)->startOfDay()->format('Y-m-d H:i:s'), $todayEnd, 'Последние 30 дней'],
+            'today' => [$todayStart, $todayEnd, 'Сегодня'],
+            'yesterday' => [
+                $now->copy()->subDay()->startOfDay()->format('Y-m-d H:i:s'),
+                $now->copy()->subDay()->endOfDay()->format('Y-m-d H:i:s'),
+                'Вчера',
+            ],
+            'week' => [
+                $now->copy()->startOfWeek()->format('Y-m-d H:i:s'),
+                $now->copy()->endOfWeek()->format('Y-m-d H:i:s'),
+                'Эта неделя',
+            ],
+            'month' => [
+                $now->copy()->startOfMonth()->format('Y-m-d H:i:s'),
+                $now->copy()->endOfMonth()->format('Y-m-d H:i:s'),
+                'Этот месяц',
+            ],
+            'last_month' => [
+                $now->copy()->subMonth()->startOfMonth()->format('Y-m-d H:i:s'),
+                $now->copy()->subMonth()->endOfMonth()->format('Y-m-d H:i:s'),
+                'Прошлый месяц',
+            ],
+            'year' => [
+                $now->copy()->startOfYear()->format('Y-m-d H:i:s'),
+                $now->copy()->endOfYear()->format('Y-m-d H:i:s'),
+                'Этот год',
+            ],
+            default => [
+                $now->copy()->startOfMonth()->format('Y-m-d H:i:s'),
+                $now->copy()->endOfMonth()->format('Y-m-d H:i:s'),
+                'Этот месяц',
+            ],
         };
     }
 
@@ -898,5 +999,87 @@ class OwnerController extends Controller
         ]);
 
         return redirect()->route('owner.scan-product')->with('success', 'Товар обновлён');
+    }
+
+    /**
+     * Полная аналитика бизнеса
+     */
+    public function analytics(Request $request)
+    {
+        $period = $request->get('period', 'month');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
+
+        if ($dateFrom && $dateTo) {
+            $periodLabel = 'Произвольный период';
+        } else {
+            [$dateFrom, $dateTo, $periodLabel] = $this->getDateRange($period, null);
+        }
+
+        // Продажи по часам
+        $salesByHour = Transaction::sales()
+            ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->selectRaw('HOUR(created_at) as hour, COUNT(*) as count, SUM(total_amount) as revenue')
+            ->groupBy('hour')
+            ->orderBy('hour')
+            ->get();
+
+        // Продажи по дням недели
+        $salesByDay = Transaction::sales()
+            ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->selectRaw('DAYNAME(created_at) as day_name, DAYOFWEEK(created_at) as day_num, COUNT(*) as count, SUM(total_amount) as revenue')
+            ->groupBy('day_name', 'day_num')
+            ->orderBy('day_num')
+            ->get();
+
+        // Топ продавцов
+        $topSellers = DB::table('users')
+            ->join('transactions', 'users.id', '=', 'transactions.user_id')
+            ->where('transactions.type', 'sale')
+            ->whereBetween('transactions.created_at', [$dateFrom, $dateTo])
+            ->selectRaw('users.full_name, users.username, COUNT(*) as sales_count, SUM(transactions.total_amount) as total_revenue')
+            ->groupBy('users.id')
+            ->orderBy('total_revenue', 'desc')
+            ->limit(10)
+            ->get();
+
+        // Топ магазинов
+        $topShops = DB::table('shops')
+            ->leftJoin('transactions', function($join) use ($dateFrom, $dateTo) {
+                $join->on('shops.id', '=', 'transactions.shop_id')
+                     ->where('transactions.type', 'sale')
+                     ->whereBetween('transactions.created_at', [$dateFrom, $dateTo]);
+            })
+            ->selectRaw('shops.name, COUNT(transactions.id) as sales_count, COALESCE(SUM(transactions.total_amount), 0) as total_revenue')
+            ->where('shops.is_active', 1)
+            ->groupBy('shops.id')
+            ->orderBy('total_revenue', 'desc')
+            ->get();
+
+        // Средний чек
+        $avgCheck = Transaction::sales()
+            ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->selectRaw('AVG(total_amount) as avg, MIN(total_amount) as min, MAX(total_amount) as max')
+            ->first();
+
+        // Возвраты
+        $returns = Transaction::where('type', 'return')
+            ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->selectRaw('COUNT(*) as count, SUM(total_amount) as total')
+            ->first();
+
+        // Активность по месяцам
+        $monthlyActivity = Transaction::sales()
+            ->where('created_at', '>=', now()->subMonths(12))
+            ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, COUNT(*) as count, SUM(total_amount) as revenue')
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        return view('owner.analytics.index', compact(
+            'periodLabel', 'dateFrom', 'dateTo',
+            'salesByHour', 'salesByDay', 'topSellers', 'topShops',
+            'avgCheck', 'returns', 'monthlyActivity'
+        ));
     }
 }
