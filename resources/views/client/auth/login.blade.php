@@ -3,6 +3,18 @@
 @section('title', 'Вход для клиентов')
 
 @section('content')
+<style>
+    .form-control:-webkit-autofill,
+    .form-control:-webkit-autofill:hover,
+    .form-control:-webkit-autofill:focus,
+    .form-control:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+        -webkit-text-fill-color: #333 !important;
+        caret-color: #333;
+        transition: background-color 999999s ease-in-out 0s;
+    }
+</style>
+
 <div class="min-vh-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #FF6B35 0%, #E85A2B 100%);">
     <div class="container">
         <div class="row justify-content-center">
@@ -26,21 +38,23 @@
                             </div>
                         @endif
 
-                        <form action="{{ route('client.login.post') }}" method="POST">
+                        <form action="{{ route('client.login.post') }}" method="POST" autocomplete="off">
                             @csrf
-                            
+
                             <div class="mb-3">
                                 <label for="phone" class="form-label">Номер телефона</label>
-                                <input type="text" class="form-control form-control-lg" id="phone" name="phone" 
-                                    placeholder="+996 XXX XXX XXX" required 
+                                <input type="text" class="form-control form-control-lg" id="phone" name="phone"
+                                    placeholder="+996 XXX XXX XXX" required
                                     value="{{ old('phone') }}"
+                                    autocomplete="off"
                                     style="border-radius: 12px; border: 2px solid #e0e0e0;">
                             </div>
 
                             <div class="mb-4">
                                 <label for="password" class="form-label">Пароль</label>
-                                <input type="password" class="form-control form-control-lg" id="password" name="password" 
-                                    required 
+                                <input type="password" class="form-control form-control-lg" id="password" name="password"
+                                    required
+                                    autocomplete="off"
                                     style="border-radius: 12px; border: 2px solid #e0e0e0;">
                             </div>
 

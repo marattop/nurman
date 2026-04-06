@@ -368,6 +368,7 @@ class AdminController extends Controller
             ->with('error', 'Ошибка создания товара')
             ->withInput();
     }
+    }
 
     /**
      * Редактирование товара.
